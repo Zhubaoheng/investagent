@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
-
 from investagent.schemas.common import BaseAgentOutput
 from investagent.schemas.company import CompanyIntake
 
@@ -21,10 +19,23 @@ class PipelineContext:
         self.stop_reason: str | None = None
 
     def set_result(self, agent_name: str, output: BaseAgentOutput) -> None:
-        raise NotImplementedError
+        """Store agent output. Auto-stops pipeline if StopSignal is set."""
+        self._results[agent_name] = output
+        if output.stop_signal and output.stop_signal.should_stop:
+            self.stop(output.stop_signal.reason)
 
     def get_result(self, agent_name: str) -> BaseAgentOutput:
-        raise NotImplementedError
+        """Return stored output for an agent. Raises KeyError if not found."""
+        return self._results[agent_name]
 
     def is_stopped(self) -> bool:
-        raise NotImplementedError
+        return self.stopped
+
+    def stop(self, reason: str) -> None:
+        """Explicitly halt the pipeline."""
+        self.stopped = True
+        self.stop_reason = reason
+
+    def completed_agents(self) -> list[str]:
+        """Return names of agents that have produced output."""
+        return list(self._results.keys())

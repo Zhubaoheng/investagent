@@ -1,5 +1,7 @@
 """Agent runner — call agent, validate output, store result."""
 
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
@@ -12,5 +14,7 @@ async def run_agent(
     input_data: BaseModel,
     ctx: PipelineContext,
 ) -> BaseAgentOutput:
-    """Run a single agent: inject soul prompt, call, validate, store."""
-    raise NotImplementedError
+    """Run a single agent: call, store result in context."""
+    result = await agent.run(input_data)
+    ctx.set_result(agent.name, result)
+    return result
