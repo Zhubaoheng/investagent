@@ -1,4 +1,4 @@
-"""Thin wrapper around Anthropic's async client."""
+"""Thin wrapper around Anthropic-compatible async clients (Claude, MiniMax)."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ import anthropic
 
 
 class LLMClient:
-    """Async Claude API client.
+    """Async LLM client for Anthropic-compatible APIs.
 
-    Thin wrapper that holds the Anthropic client and exposes a single
-    ``create_message`` method.  Designed to be injected into agents so
+    Works with any provider that exposes the Anthropic Messages API
+    (Claude, MiniMax, etc.).  Designed to be injected into agents so
     that tests can substitute a mock.
     """
 
@@ -19,9 +19,14 @@ class LLMClient:
         self,
         *,
         model: str = "claude-sonnet-4-20250514",
+        base_url: str | None = None,
+        api_key: str | None = None,
         client: anthropic.AsyncAnthropic | None = None,
     ) -> None:
-        self._client = client or anthropic.AsyncAnthropic()
+        self._client = client or anthropic.AsyncAnthropic(
+            base_url=base_url,
+            api_key=api_key,
+        )
         self.model = model
 
     async def create_message(

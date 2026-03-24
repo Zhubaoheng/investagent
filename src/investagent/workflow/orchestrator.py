@@ -46,7 +46,11 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
     10. Investment Committee
     """
     settings = Settings()
-    llm = LLMClient(model=settings.model_name)
+    llm = LLMClient(
+        model=settings.model_name,
+        base_url=settings.api_base_url,
+        api_key=settings.api_key,
+    )
     ctx = PipelineContext(intake)
 
     # Stage 1: Triage
