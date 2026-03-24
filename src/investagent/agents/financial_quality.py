@@ -1,13 +1,23 @@
 """Financial Quality Agent — score financial health across six dimensions."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
-from investagent.schemas.financial_quality import FinancialQualityOutput
+from investagent.schemas.common import BaseAgentOutput
 
 
 class FinancialQualityAgent(BaseAgent):
     name: str = "financial_quality"
 
-    async def run(self, input_data: BaseModel) -> FinancialQualityOutput:
+    def _output_type(self) -> type[BaseAgentOutput]:
+        raise NotImplementedError
+
+    def _agent_role_description(self) -> str:
+        raise NotImplementedError
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
         raise NotImplementedError

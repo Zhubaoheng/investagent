@@ -1,10 +1,15 @@
 """Tests for investagent.workflow.runner."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
+from investagent.llm import LLMClient
 from investagent.schemas.common import AgentMeta, BaseAgentOutput, StopSignal
 from investagent.schemas.company import CompanyIntake
 from investagent.workflow.context import PipelineContext
@@ -28,7 +33,16 @@ class StubAgent(BaseAgent):
     def __init__(self, output: BaseAgentOutput) -> None:
         self._output = output
 
-    async def run(self, input_data):
+    def _output_type(self) -> type[BaseAgentOutput]:
+        return BaseAgentOutput
+
+    def _agent_role_description(self) -> str:
+        return "stub"
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
+        return {}
+
+    async def run(self, input_data: BaseModel) -> BaseAgentOutput:
         return self._output
 
 
@@ -37,7 +51,19 @@ class FailingAgent(BaseAgent):
 
     name: str = "failing"
 
-    async def run(self, input_data):
+    def __init__(self) -> None:
+        pass
+
+    def _output_type(self) -> type[BaseAgentOutput]:
+        return BaseAgentOutput
+
+    def _agent_role_description(self) -> str:
+        return "failing"
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
+        return {}
+
+    async def run(self, input_data: BaseModel) -> BaseAgentOutput:
         raise RuntimeError("LLM call failed")
 
 

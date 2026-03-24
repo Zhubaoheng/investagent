@@ -1,13 +1,23 @@
 """Engineering / Systems Agent."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
-from investagent.schemas.mental_models import SystemsOutput
+from investagent.schemas.common import BaseAgentOutput
 
 
 class SystemsAgent(BaseAgent):
     name: str = "systems"
 
-    async def run(self, input_data: BaseModel) -> SystemsOutput:
+    def _output_type(self) -> type[BaseAgentOutput]:
+        raise NotImplementedError
+
+    def _agent_role_description(self) -> str:
+        raise NotImplementedError
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
         raise NotImplementedError

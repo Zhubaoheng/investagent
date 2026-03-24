@@ -1,13 +1,23 @@
 """Info Capture Agent — gather filings, market data, official sources."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
-from investagent.schemas.info_capture import InfoCaptureOutput
+from investagent.schemas.common import BaseAgentOutput
 
 
 class InfoCaptureAgent(BaseAgent):
     name: str = "info_capture"
 
-    async def run(self, input_data: BaseModel) -> InfoCaptureOutput:
+    def _output_type(self) -> type[BaseAgentOutput]:
+        raise NotImplementedError
+
+    def _agent_role_description(self) -> str:
+        raise NotImplementedError
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
         raise NotImplementedError

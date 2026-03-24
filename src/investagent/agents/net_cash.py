@@ -1,13 +1,23 @@
 """Net Cash & Capital Return Agent — net cash / market cap analysis."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
-from investagent.schemas.net_cash import NetCashOutput
+from investagent.schemas.common import BaseAgentOutput
 
 
 class NetCashAgent(BaseAgent):
     name: str = "net_cash"
 
-    async def run(self, input_data: BaseModel) -> NetCashOutput:
+    def _output_type(self) -> type[BaseAgentOutput]:
+        raise NotImplementedError
+
+    def _agent_role_description(self) -> str:
+        raise NotImplementedError
+
+    def _build_user_context(self, input_data: BaseModel) -> dict[str, Any]:
         raise NotImplementedError

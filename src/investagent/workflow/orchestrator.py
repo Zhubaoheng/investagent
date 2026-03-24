@@ -18,6 +18,8 @@ from investagent.agents.mental_models.systems import SystemsAgent
 from investagent.agents.net_cash import NetCashAgent
 from investagent.agents.triage import TriageAgent
 from investagent.agents.valuation import ValuationAgent
+from investagent.config import Settings
+from investagent.llm import LLMClient
 from investagent.schemas.company import CompanyIntake
 from investagent.workflow.context import PipelineContext
 from investagent.workflow.gates import (
@@ -43,10 +45,12 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
     9. Critic
     10. Investment Committee
     """
+    settings = Settings()
+    llm = LLMClient(model=settings.model_name)
     ctx = PipelineContext(intake)
 
     # Stage 1: Triage
-    await run_agent(TriageAgent(), intake, ctx)
+    await run_agent(TriageAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
     proceed, reason = check_triage_gate(ctx)
@@ -55,17 +59,17 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
         return ctx
 
     # Stage 2: Info Capture
-    await run_agent(InfoCaptureAgent(), intake, ctx)
+    await run_agent(InfoCaptureAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 3: Filing Structuring
-    await run_agent(FilingAgent(), intake, ctx)
+    await run_agent(FilingAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 4: Accounting Risk
-    await run_agent(AccountingRiskAgent(), intake, ctx)
+    await run_agent(AccountingRiskAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
     proceed, reason = check_accounting_risk_gate(ctx)
@@ -74,7 +78,7 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
         return ctx
 
     # Stage 5: Financial Quality
-    await run_agent(FinancialQualityAgent(), intake, ctx)
+    await run_agent(FinancialQualityAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
     proceed, reason = check_financial_quality_gate(ctx)
@@ -83,32 +87,32 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
         return ctx
 
     # Stage 6: Net Cash
-    await run_agent(NetCashAgent(), intake, ctx)
+    await run_agent(NetCashAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 7: Valuation
-    await run_agent(ValuationAgent(), intake, ctx)
+    await run_agent(ValuationAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 8: Mental Models (parallel)
     await asyncio.gather(
-        run_agent(MoatAgent(), intake, ctx),
-        run_agent(CompoundingAgent(), intake, ctx),
-        run_agent(PsychologyAgent(), intake, ctx),
-        run_agent(SystemsAgent(), intake, ctx),
-        run_agent(EcologyAgent(), intake, ctx),
+        run_agent(MoatAgent(llm), intake, ctx),
+        run_agent(CompoundingAgent(llm), intake, ctx),
+        run_agent(PsychologyAgent(llm), intake, ctx),
+        run_agent(SystemsAgent(llm), intake, ctx),
+        run_agent(EcologyAgent(llm), intake, ctx),
     )
     if ctx.is_stopped():
         return ctx
 
     # Stage 9: Critic
-    await run_agent(CriticAgent(), intake, ctx)
+    await run_agent(CriticAgent(llm), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 10: Investment Committee
-    await run_agent(CommitteeAgent(), intake, ctx)
+    await run_agent(CommitteeAgent(llm), intake, ctx)
 
     return ctx
