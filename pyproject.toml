@@ -7,6 +7,9 @@ dependencies = [
     "pydantic>=2.0",
     "anthropic",
     "jinja2",
+    "edgartools",
+    "scrapling[fetchers]",
+    "yfinance",
 ]
 
 [dependency-groups]

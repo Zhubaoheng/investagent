@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from investagent.schemas.common import BaseAgentOutput
 from investagent.schemas.company import CompanyIntake
 
@@ -15,6 +17,7 @@ class PipelineContext:
     def __init__(self, intake: CompanyIntake) -> None:
         self.intake = intake
         self._results: dict[str, BaseAgentOutput] = {}
+        self._data: dict[str, Any] = {}
         self.stopped: bool = False
         self.stop_reason: str | None = None
 
@@ -27,6 +30,14 @@ class PipelineContext:
     def get_result(self, agent_name: str) -> BaseAgentOutput:
         """Return stored output for an agent. Raises KeyError if not found."""
         return self._results[agent_name]
+
+    def set_data(self, key: str, value: Any) -> None:
+        """Store arbitrary data (e.g., raw FilingDocuments) for downstream use."""
+        self._data[key] = value
+
+    def get_data(self, key: str) -> Any:
+        """Return stored data. Raises KeyError if not found."""
+        return self._data[key]
 
     def is_stopped(self) -> bool:
         return self.stopped

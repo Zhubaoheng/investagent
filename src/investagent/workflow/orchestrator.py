@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 
+from investagent.datasources.base import FilingFetcher, MarketDataFetcher
+
 from investagent.agents.accounting_risk import AccountingRiskAgent
 from investagent.agents.committee import CommitteeAgent
 from investagent.agents.critic import CriticAgent
@@ -30,12 +32,18 @@ from investagent.workflow.gates import (
 from investagent.workflow.runner import run_agent
 
 
-async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
+async def run_pipeline(
+    intake: CompanyIntake,
+    *,
+    llm: LLMClient | None = None,
+    filing_fetcher: FilingFetcher | None = None,
+    market_fetcher: MarketDataFetcher | None = None,
+) -> PipelineContext:
     """Run the full 10-stage analysis pipeline.
 
     Stages:
     1. Triage -> gate check
-    2. Info Capture
+    2. Info Capture (with real data fetching)
     3. Filing Structuring
     4. Accounting Risk -> gate check
     5. Financial Quality -> gate check
@@ -45,12 +53,13 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
     9. Critic
     10. Investment Committee
     """
-    settings = Settings()
-    llm = LLMClient(
-        model=settings.model_name,
-        base_url=settings.api_base_url,
-        api_key=settings.api_key,
-    )
+    if llm is None:
+        settings = Settings()
+        llm = LLMClient(
+            model=settings.model_name,
+            base_url=settings.api_base_url,
+            api_key=settings.api_key,
+        )
     ctx = PipelineContext(intake)
 
     # Stage 1: Triage
@@ -62,8 +71,13 @@ async def run_pipeline(intake: CompanyIntake) -> PipelineContext:
         ctx.stop(reason)
         return ctx
 
-    # Stage 2: Info Capture
-    await run_agent(InfoCaptureAgent(llm), intake, ctx)
+    # Stage 2: Info Capture (with datasource integration)
+    info_agent = InfoCaptureAgent(
+        llm,
+        filing_fetcher=filing_fetcher,
+        market_fetcher=market_fetcher,
+    )
+    await run_agent(info_agent, intake, ctx)
     if ctx.is_stopped():
         return ctx
 
