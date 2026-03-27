@@ -37,6 +37,7 @@ def serialize_filing_for_prompt(ctx: Any) -> dict[str, Any]:
         "accounting_standard": m.accounting_standard,
         "years_covered": m.fiscal_years_covered,
         "currency": m.currency,
+        "market_currency": m.market_currency,
     }
 
     # Income statement (compact: one dict per year)

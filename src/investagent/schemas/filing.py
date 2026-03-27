@@ -21,8 +21,9 @@ class FilingMeta(BaseModel, frozen=True):
     accounting_standard: str  # "CAS" | "IFRS" | "US_GAAP" | "HKFRS"
     fiscal_years_covered: list[str]
     filing_types: list[str]  # A股: ["年报","半年报"] / 港股: ["年报","中期报告"] / 中概: ["20-F","6-K"]
-    currency: str            # "CNY" | "HKD" | "USD"
+    currency: str            # "CNY" | "HKD" | "USD" — 财报报告货币
     reporting_language: str  # "zh-CN" | "zh-HK" | "en"
+    market_currency: str | None = None  # 股价货币 (可能与 currency 不同, e.g., HKD vs CNY)
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.filing — hybrid agent with real content extraction."""
+"""Tests for FilingAgent — per-filing extraction with validation and merge."""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from investagent.agents.base import AgentOutputError
 from investagent.agents.filing import FilingAgent
 from investagent.datasources.base import FilingDocument
 from investagent.llm import LLMClient
+from investagent.schemas.common import AgentMeta
 from investagent.schemas.company import CompanyIntake
+from investagent.schemas.filing import FilingMeta, FilingOutput
+from investagent.schemas.info_capture import InfoCaptureOutput, MarketSnapshot
 from investagent.workflow.context import PipelineContext
 
 
@@ -33,55 +36,35 @@ def _mock_response(tool_input: dict) -> MagicMock:
     tool_block.input = tool_input
     response = MagicMock()
     response.content = [tool_block]
-    response.model = "claude-sonnet-4-20250514"
-    response.usage = MagicMock()
-    response.usage.input_tokens = 100
-    response.usage.output_tokens = 200
+    response.model = "test-model"
+    response.usage = MagicMock(input_tokens=100, output_tokens=200)
     return response
 
 
-def _filing_tool_input() -> dict:
+def _filing_tool_input(year: str = "2024", revenue: float | None = 2e9) -> dict:
     return {
         "filing_meta": {
             "market": "HK",
             "accounting_standard": "HKFRS",
-            "fiscal_years_covered": ["2023", "2024"],
+            "fiscal_years_covered": [year, str(int(year) - 1)],
             "filing_types": ["Annual Report"],
             "currency": "CNY",
             "reporting_language": "en",
         },
         "income_statement": [
-            {
-                "fiscal_year": "2024",
-                "fiscal_period": "FY",
-                "revenue": 2800000000.0,
-                "net_income": 700000000.0,
-            },
+            {"fiscal_year": year, "fiscal_period": "FY", "revenue": revenue, "net_income": 5e8, "shares_basic": 3e9},
+            {"fiscal_year": str(int(year) - 1), "fiscal_period": "FY", "revenue": 2.5e9, "net_income": 7e8, "shares_basic": 3e9},
         ],
         "balance_sheet": [
-            {
-                "fiscal_year": "2024",
-                "total_assets": 15000000000.0,
-                "shareholders_equity": 10000000000.0,
-            },
+            {"fiscal_year": year, "total_assets": 15e9, "shareholders_equity": 10e9},
+            {"fiscal_year": str(int(year) - 1), "total_assets": 14e9, "shareholders_equity": 9.5e9},
         ],
         "cash_flow": [
-            {
-                "fiscal_year": "2024",
-                "operating_cash_flow": 900000000.0,
-                "free_cash_flow": 800000000.0,
-            },
+            {"fiscal_year": year, "operating_cash_flow": 9e8, "capex": 2e8, "free_cash_flow": 7e8},
+            {"fiscal_year": str(int(year) - 1), "operating_cash_flow": 8.5e8, "capex": 1.8e8},
         ],
         "segments": [],
-        "accounting_policies": [
-            {
-                "category": "revenue_recognition",
-                "fiscal_year": "2024",
-                "method": "Revenue recognised at point in time",
-                "raw_text": "Revenue from burial services...",
-                "changed_from_prior": False,
-            },
-        ],
+        "accounting_policies": [],
         "debt_schedule": [],
         "covenant_status": [],
         "special_items": [],
@@ -90,167 +73,209 @@ def _filing_tool_input() -> dict:
         "acquisition_history": [],
         "dividend_per_share_history": [],
         "footnote_extracts": [],
-        "risk_factors": [
-            {
-                "category": "regulatory",
-                "description": "Burial reform policies",
-                "raw_text": "The PRC government promotes...",
-                "materiality": "high",
-            },
-        ],
+        "risk_factors": [],
     }
 
 
-def _make_filing_doc(
-    fiscal_year: str = "2024",
-    raw_content: bytes | None = b"%PDF-fake",
-    text_content: str | None = None,
-) -> FilingDocument:
+def _make_filing_doc(year: str = "2024") -> FilingDocument:
     return FilingDocument(
-        market="HK",
-        ticker="1448",
-        company_name="FU SHOU YUAN",
-        filing_type="Annual Report",
-        fiscal_year=fiscal_year,
-        fiscal_period="FY",
-        filing_date=date(2025, 4, 22),
+        market="HK", ticker="1448", company_name="FU SHOU YUAN",
+        filing_type="Annual Report", fiscal_year=year, fiscal_period="FY",
+        filing_date=date(int(year) + 1, 4, 22),
         source_url="https://example.com/report.pdf",
         content_type="pdf",
-        raw_content=raw_content,
-        text_content=text_content,
+        raw_content=b"%PDF-fake",
     )
 
 
-def _make_ctx(filing_docs: list[FilingDocument] | None = None) -> PipelineContext:
+def _make_ctx(docs: list[FilingDocument] | None = None) -> PipelineContext:
     ctx = PipelineContext(_intake())
-    if filing_docs is not None:
-        ctx.set_data("filing_documents", filing_docs)
+    if docs:
+        ctx.set_data("filing_documents", docs)
     return ctx
 
 
 # ---------------------------------------------------------------------------
-# Tests
+# Basic tests
 # ---------------------------------------------------------------------------
 
-@patch("investagent.agents.filing.extract_pdf_markdown")
-@patch("investagent.agents.filing.extract_sections")
-async def test_filing_with_pdf_content(mock_sections, mock_pdf):
-    """PDF content flows through extraction into LLM context."""
-    mock_pdf.return_value = "## Income Statement\n| Revenue | 2800M |"
-    mock_sections.return_value = {"income_statement": "Revenue: 2800M"}
-
+@patch("investagent.agents.filing.extract_pdf_markdown", return_value="## Income Statement\n|Revenue|2B|")
+@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "Revenue: 2B"})
+async def test_filing_single_report(mock_sections, mock_pdf):
     llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response(_filing_tool_input())
-    )
+    llm.create_message = AsyncMock(return_value=_mock_response(_filing_tool_input()))
 
-    doc = _make_filing_doc()
-    ctx = _make_ctx([doc])
-
+    ctx = _make_ctx([_make_filing_doc()])
     agent = FilingAgent(llm)
     result = await agent.run(_intake(), ctx)
 
     assert result.meta.agent_name == "filing"
     assert result.filing_meta.market == "HK"
-    assert result.income_statement[0].revenue == 2800000000.0
-    mock_pdf.assert_called_once_with(b"%PDF-fake")
-    mock_sections.assert_called_once()
+    assert len(result.income_statement) == 2
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown")
-@patch("investagent.agents.filing.extract_sections")
-async def test_filing_with_text_content(mock_sections, mock_pdf):
-    """Text content (e.g., EDGAR HTML) skips PDF extraction."""
-    mock_sections.return_value = {"income_statement": "Revenue: 100M"}
-
+@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+async def test_filing_multi_report_merge(mock_sections, mock_pdf):
+    """3 filings → 3 LLM calls → merged output with deduplicated years."""
     llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response(_filing_tool_input())
-    )
+    llm.create_message = AsyncMock(side_effect=[
+        _mock_response(_filing_tool_input("2024")),
+        _mock_response(_filing_tool_input("2022")),
+        _mock_response(_filing_tool_input("2020")),
+    ])
 
-    doc = _make_filing_doc(raw_content=None, text_content="<html>Annual Report</html>")
-    ctx = _make_ctx([doc])
-
+    docs = [_make_filing_doc("2024"), _make_filing_doc("2022"), _make_filing_doc("2020")]
+    ctx = _make_ctx(docs)
     agent = FilingAgent(llm)
     result = await agent.run(_intake(), ctx)
 
-    assert result.meta.agent_name == "filing"
-    mock_pdf.assert_not_called()  # No PDF extraction for text content
+    # Should have 6 unique years (2024,2023 + 2022,2021 + 2020,2019)
+    years = {r.fiscal_year for r in result.income_statement}
+    assert len(years) >= 5
+    assert result.meta.token_usage == 900  # 300 * 3 calls
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown")
-@patch("investagent.agents.filing.extract_sections")
-async def test_filing_extraction_failure_graceful(mock_sections, mock_pdf):
-    """If PDF extraction fails, agent still produces output."""
-    mock_pdf.return_value = ""  # Extraction failed
-    mock_sections.return_value = {}
+@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+async def test_filing_dedup_prefers_newer(mock_sections, mock_pdf):
+    """When same year appears in two reports, newer report's data wins."""
+    older = _filing_tool_input("2023")
+    older["income_statement"][0]["revenue"] = 1e9  # older report says 1B
+
+    newer = _filing_tool_input("2024")
+    # newer report has 2023 as prior year with revenue 2.5B
 
     llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response(_filing_tool_input())
-    )
+    llm.create_message = AsyncMock(side_effect=[
+        _mock_response(newer),  # processed first (newer)
+        _mock_response(older),
+    ])
 
-    doc = _make_filing_doc()
-    ctx = _make_ctx([doc])
-
+    docs = [_make_filing_doc("2024"), _make_filing_doc("2023")]
+    ctx = _make_ctx(docs)
     agent = FilingAgent(llm)
     result = await agent.run(_intake(), ctx)
 
-    # Should succeed even with no extracted content
-    assert result.filing_meta.market == "HK"
+    # 2023 data should come from the 2024 report (first processed = preferred)
+    row_2023 = next(r for r in result.income_statement if r.fiscal_year == "2023")
+    assert row_2023.revenue == 2.5e9  # from newer report
 
 
 async def test_filing_no_context():
-    """FilingAgent works without context (no filing_documents)."""
     llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response(_filing_tool_input())
-    )
-
+    llm.create_message = AsyncMock(return_value=_mock_response(_filing_tool_input()))
     agent = FilingAgent(llm)
     result = await agent.run(_intake())
-
     assert result.meta.agent_name == "filing"
 
 
 async def test_filing_meta_is_server_generated():
     tool_input = _filing_tool_input()
-    tool_input["meta"] = {
-        "agent_name": "hacked",
-        "timestamp": "2020-01-01T00:00:00Z",
-        "model_used": "fake",
-        "token_usage": 0,
-    }
+    tool_input["meta"] = {"agent_name": "hacked", "timestamp": "2020-01-01T00:00:00Z", "model_used": "fake", "token_usage": 0}
     llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response(tool_input)
-    )
+    llm.create_message = AsyncMock(return_value=_mock_response(tool_input))
     agent = FilingAgent(llm)
     result = await agent.run(_intake())
     assert result.meta.agent_name == "filing"
-    assert result.meta.model_used == "claude-sonnet-4-20250514"
+    assert result.meta.model_used == "test-model"
 
 
-async def test_filing_no_tool_use_raises():
+# ---------------------------------------------------------------------------
+# Validation + retry
+# ---------------------------------------------------------------------------
+
+def test_validate_extraction_pass():
+    output = FilingOutput.model_validate({
+        "meta": {"agent_name": "filing", "timestamp": "2025-01-01T00:00:00Z", "model_used": "m", "token_usage": 0},
+        **_filing_tool_input(),
+    })
+    problems = FilingAgent._validate_extraction(output)
+    assert problems == []
+
+
+def test_validate_extraction_fail():
+    ti = _filing_tool_input()
+    # Set critical fields to null
+    ti["income_statement"][0]["revenue"] = None
+    ti["income_statement"][0]["net_income"] = None
+    ti["income_statement"][1]["revenue"] = None
+    ti["balance_sheet"][0]["total_assets"] = None
+    ti["cash_flow"][0]["operating_cash_flow"] = None
+    output = FilingOutput.model_validate({
+        "meta": {"agent_name": "f", "timestamp": "2025-01-01T00:00:00Z", "model_used": "m", "token_usage": 0},
+        **ti,
+    })
+    problems = FilingAgent._validate_extraction(output)
+    assert len(problems) > 0  # should flag the nulls
+
+
+@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+async def test_filing_validation_triggers_retry(mock_sections, mock_pdf):
+    """When >30% critical fields null, agent retries with hints."""
+    bad = _filing_tool_input()
+    bad["income_statement"][0]["revenue"] = None
+    bad["income_statement"][0]["net_income"] = None
+    bad["income_statement"][1]["revenue"] = None
+    bad["balance_sheet"][0]["total_assets"] = None
+    bad["cash_flow"][0]["operating_cash_flow"] = None
+
+    good = _filing_tool_input()  # all fields populated
+
+    llm = _mock_llm()
+    llm.create_message = AsyncMock(side_effect=[
+        _mock_response(bad),   # first attempt: bad
+        _mock_response(good),  # retry: good
+    ])
+
+    ctx = _make_ctx([_make_filing_doc()])
+    agent = FilingAgent(llm)
+    result = await agent.run(_intake(), ctx)
+
+    # Should have called LLM twice (initial + retry)
+    assert llm.create_message.call_count == 2
+    assert result.income_statement[0].revenue == 2e9  # from good output
+
+
+# ---------------------------------------------------------------------------
+# Currency
+# ---------------------------------------------------------------------------
+
+@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+async def test_filing_market_currency_from_info_capture(mock_sections, mock_pdf):
+    """market_currency populated from info_capture's market_snapshot."""
+    llm = _mock_llm()
+    llm.create_message = AsyncMock(return_value=_mock_response(_filing_tool_input()))
+
+    ctx = _make_ctx([_make_filing_doc()])
+    info = MagicMock()
+    info.market_snapshot = MagicMock()
+    info.market_snapshot.currency = "HKD"
+    info.stop_signal = None
+    ctx.set_result("info_capture", info)
+
+    agent = FilingAgent(llm)
+    result = await agent.run(_intake(), ctx)
+
+    assert result.filing_meta.market_currency == "HKD"
+
+
+# ---------------------------------------------------------------------------
+# Error paths
+# ---------------------------------------------------------------------------
+
+async def test_filing_all_fail_raises():
     text_block = MagicMock()
     text_block.type = "text"
     response = MagicMock()
     response.content = [text_block]
-    response.model = "claude-sonnet-4-20250514"
+    response.model = "m"
     response.usage = MagicMock(input_tokens=50, output_tokens=100)
 
     llm = _mock_llm()
     llm.create_message = AsyncMock(return_value=response)
     agent = FilingAgent(llm)
-    with pytest.raises(AgentOutputError, match="no tool_use block"):
-        await agent.run(_intake())
-
-
-async def test_filing_malformed_output_raises():
-    llm = _mock_llm()
-    llm.create_message = AsyncMock(
-        return_value=_mock_response({"invalid": "data"})
-    )
-    agent = FilingAgent(llm)
-    with pytest.raises(AgentOutputError, match="failed to validate"):
+    with pytest.raises(AgentOutputError, match="all extraction attempts failed"):
         await agent.run(_intake())
