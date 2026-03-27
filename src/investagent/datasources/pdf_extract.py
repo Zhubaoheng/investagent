@@ -128,23 +128,30 @@ _SECTION_DEFS_US_ADR: list[tuple[str, list[str], int]] = [
         "Consolidated Statements of Operations",
         "Consolidated Statements of Income",
         "Consolidated Income Statement",
+        "CONSOLIDATED INCOME STATEMENT",
+        "CONSOLI DATED INCOME",  # EDGAR OCR artifact
     ], 15000),
     ("balance_sheet", [
         "Consolidated Balance Sheet",
         "Consolidated Statements of Financial Position",
+        "CONSOLIDATED BALANCE SHEET",
     ], 15000),
     ("cash_flow", [
         "Consolidated Statements of Cash Flows",
         "Consolidated Cash Flow Statement",
+        "CONSOLIDATED STA TEMENTS OF CASH FLOWS",  # EDGAR OCR artifact
+        "CONSOLIDATED STATEMENTS OF CASH FLOWS",
     ], 15000),
     ("accounting_policies", [
         "Significant Accounting Polic",
         "Summary of Significant Accounting",
         "Critical Accounting Polic",
+        "SIGNIFICANT ACCOUNTING POLIC",
     ], 12000),
     ("segments", [
         "Segment Information",
         "Segment Reporting",
+        "SEGMENT INFORMATION",
     ], 10000),
     ("risk_factors", [
         "Risk Factors",
@@ -191,22 +198,46 @@ def extract_pdf_markdown(raw_content: bytes) -> str:
 # Section splitting
 # ---------------------------------------------------------------------------
 
-def _split_by_headers(markdown: str) -> list[tuple[str, str]]:
-    """Split markdown into (header_text, body_text) pairs by ## headers."""
-    # Match ## headers (with optional bold markers)
-    pattern = re.compile(r"^(#{1,3})\s+\**(.+?)\**\s*$", re.MULTILINE)
+def _split_by_headers(text: str) -> list[tuple[str, str]]:
+    """Split text into (header_text, body_text) pairs.
 
-    sections: list[tuple[str, str]] = []
-    matches = list(pattern.finditer(markdown))
+    Supports both markdown headers (## ...) and plain-text ALL-CAPS headers
+    (common in SEC EDGAR filings).
+    """
+    # Try markdown headers first
+    md_pattern = re.compile(r"^(#{1,3})\s+\**(.+?)\**\s*$", re.MULTILINE)
+    md_matches = list(md_pattern.finditer(text))
 
-    for i, match in enumerate(matches):
-        header = match.group(2).strip()
-        start = match.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown)
-        body = markdown[start:end].strip()
-        sections.append((header, body))
+    if md_matches:
+        sections: list[tuple[str, str]] = []
+        for i, match in enumerate(md_matches):
+            header = match.group(2).strip()
+            start = match.end()
+            end = md_matches[i + 1].start() if i + 1 < len(md_matches) else len(text)
+            body = text[start:end].strip()
+            sections.append((header, body))
+        return sections
 
-    return sections
+    # Fallback: ALL-CAPS lines as section headers (EDGAR plain text)
+    # Match lines that are mostly uppercase, at least 20 chars, standalone
+    caps_pattern = re.compile(
+        r"^([A-Z][A-Z\s\(\)\-\,\.\/]{15,})$", re.MULTILINE,
+    )
+    caps_matches = list(caps_pattern.finditer(text))
+
+    if caps_matches:
+        sections = []
+        for i, match in enumerate(caps_matches):
+            header = match.group(1).strip()
+            start = match.end()
+            end = caps_matches[i + 1].start() if i + 1 < len(caps_matches) else len(text)
+            body = text[start:end].strip()
+            # Only keep sections with meaningful body (>50 chars)
+            if len(body) > 50:
+                sections.append((header, body))
+        return sections
+
+    return []
 
 
 def extract_sections(
