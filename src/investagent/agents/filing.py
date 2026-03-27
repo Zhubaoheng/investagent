@@ -342,6 +342,76 @@ class FilingAgent(BaseAgent):
         )
 
     # ------------------------------------------------------------------
+    # Post-processing: compute derived fields
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _compute_derived_fields(output: FilingOutput) -> FilingOutput:
+        """Fill computable fields from available data. Pure arithmetic, no LLM.
+
+        - gross_profit = revenue - cost_of_revenue
+        - eps_basic = net_income / shares_basic (or net_income_to_parent)
+        - eps_diluted = net_income / shares_diluted
+        - free_cash_flow = operating_cash_flow - capex
+        - shares_basic from net_income / eps_basic (if eps known but shares not)
+        """
+        new_is: list[Any] = []
+        for row in output.income_statement:
+            updates: dict[str, Any] = {}
+
+            rev = row.revenue
+            cor = row.cost_of_revenue
+            ni = row.net_income
+            ni_parent = row.net_income_to_parent
+            eps_b = row.eps_basic
+            eps_d = row.eps_diluted
+            sh_b = row.shares_basic
+            sh_d = row.shares_diluted
+
+            # gross_profit
+            if row.gross_profit is None and rev is not None and cor is not None:
+                updates["gross_profit"] = rev - abs(cor)
+
+            # shares from eps: shares = net_income / eps
+            if sh_b is None and eps_b is not None and eps_b != 0:
+                src = ni_parent if ni_parent is not None else ni
+                if src is not None:
+                    updates["shares_basic"] = round(src / eps_b)
+                    sh_b = updates["shares_basic"]
+
+            if sh_d is None and eps_d is not None and eps_d != 0:
+                src = ni_parent if ni_parent is not None else ni
+                if src is not None:
+                    updates["shares_diluted"] = round(src / eps_d)
+
+            # eps from shares: eps = net_income / shares
+            if eps_b is None and sh_b is not None and sh_b != 0:
+                src = ni_parent if ni_parent is not None else ni
+                if src is not None:
+                    updates["eps_basic"] = round(src / sh_b, 4)
+
+            if eps_d is None and sh_d is not None and sh_d != 0:
+                src = ni_parent if ni_parent is not None else ni
+                if src is not None:
+                    updates["eps_diluted"] = round(src / sh_d, 4)
+
+            new_is.append(row.model_copy(update=updates) if updates else row)
+
+        new_cf: list[Any] = []
+        for row in output.cash_flow:
+            updates = {}
+            if row.free_cash_flow is None and row.operating_cash_flow is not None and row.capex is not None:
+                updates["free_cash_flow"] = row.operating_cash_flow - abs(row.capex)
+            new_cf.append(row.model_copy(update=updates) if updates else row)
+
+        if new_is != list(output.income_statement) or new_cf != list(output.cash_flow):
+            return output.model_copy(update={
+                "income_statement": new_is,
+                "cash_flow": new_cf,
+            })
+        return output
+
+    # ------------------------------------------------------------------
     # Main entry point
     # ------------------------------------------------------------------
 
@@ -448,6 +518,9 @@ class FilingAgent(BaseAgent):
 
         # Merge — newest first (already sorted)
         result = self._merge_filing_outputs(partial_outputs)
+
+        # Post-processing: compute derived fields from available data
+        result = self._compute_derived_fields(result)
 
         # Inject market_currency from info_capture
         if ctx is not None:

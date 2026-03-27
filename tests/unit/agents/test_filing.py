@@ -301,6 +301,63 @@ async def test_filing_market_currency_from_info_capture(mock_sections, mock_pdf)
 # Error paths
 # ---------------------------------------------------------------------------
 
+def test_compute_derived_fields():
+    """Post-processing fills eps, gross_profit, fcf from available data."""
+    ti = _filing_tool_input()
+    # Set up: have net_income and shares but no eps; have revenue and cost but no gross_profit
+    ti["income_statement"] = [
+        {
+            "fiscal_year": "2024", "fiscal_period": "FY",
+            "revenue": 2e9, "cost_of_revenue": 1e9,
+            "gross_profit": None,  # should be computed: 2e9 - 1e9 = 1e9
+            "net_income": 5e8, "net_income_to_parent": 4e8,
+            "shares_basic": 2.5e9,
+            "eps_basic": None,  # should be computed: 4e8 / 2.5e9 = 0.16
+            "eps_diluted": None,
+            "shares_diluted": None,
+            "operating_income": 7e8,
+        },
+    ]
+    ti["cash_flow"] = [
+        {
+            "fiscal_year": "2024",
+            "operating_cash_flow": 9e8, "capex": 2e8,
+            "free_cash_flow": None,  # should be computed: 9e8 - 2e8 = 7e8
+            "dividends_paid": 3e8,
+        },
+    ]
+    output = FilingOutput.model_validate({
+        "meta": {"agent_name": "f", "timestamp": "2025-01-01T00:00:00Z", "model_used": "m", "token_usage": 0},
+        **ti,
+    })
+
+    result = FilingAgent._compute_derived_fields(output)
+
+    assert result.income_statement[0].gross_profit == 1e9
+    assert result.income_statement[0].eps_basic == 0.16
+    assert result.cash_flow[0].free_cash_flow == 7e8
+
+
+def test_compute_shares_from_eps():
+    """Derive shares_basic from net_income / eps when shares not extracted."""
+    ti = _filing_tool_input()
+    ti["income_statement"] = [
+        {
+            "fiscal_year": "2024", "fiscal_period": "FY",
+            "revenue": 2e9, "net_income": 5e8, "net_income_to_parent": 4e8,
+            "eps_basic": 0.16,
+            "shares_basic": None,  # should be computed: 4e8 / 0.16 = 2.5e9
+        },
+    ]
+    output = FilingOutput.model_validate({
+        "meta": {"agent_name": "f", "timestamp": "2025-01-01T00:00:00Z", "model_used": "m", "token_usage": 0},
+        **ti,
+    })
+
+    result = FilingAgent._compute_derived_fields(output)
+    assert result.income_statement[0].shares_basic == 2_500_000_000
+
+
 async def test_filing_all_fail_raises():
     text_block = MagicMock()
     text_block.type = "text"
