@@ -11,7 +11,7 @@ _PROVIDER_DEFAULTS: dict[str, dict[str, str | None]] = {
         "api_key_env": None,  # SDK reads ANTHROPIC_API_KEY internally
     },
     "minimax": {
-        "default_model": "MiniMax-M2.7",
+        "default_model": "MiniMax-M2.7-highspeed",
         "base_url_default": "https://api.minimaxi.com/anthropic",
         "base_url_env": "MINIMAX_BASE_URL",
         "api_key_env": "MINIMAX_API_KEY",

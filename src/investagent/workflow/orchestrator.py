@@ -55,10 +55,18 @@ async def run_pipeline(
     """
     if llm is None:
         settings = Settings()
+        # MiniMax-specific parameters
+        extra_body = None
+        if settings.provider == "minimax":
+            extra_body = {
+                "context_window_size": 200000,
+                "effort": "high",
+            }
         llm = LLMClient(
             model=settings.model_name,
             base_url=settings.api_base_url,
             api_key=settings.api_key,
+            extra_body=extra_body,
         )
     ctx = PipelineContext(intake)
 

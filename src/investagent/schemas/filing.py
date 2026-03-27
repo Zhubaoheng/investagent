@@ -109,11 +109,11 @@ class AccountingPolicyEntry(BaseModel, frozen=True):
 
 class DebtInstrument(BaseModel, frozen=True):
     instrument_type: str  # "bank_loan" | "bond" | "convertible" | "credit_facility"
-    principal: float
+    principal: float | None = None
     interest_rate: float | None = None
     maturity_date: str | None = None
-    covenants: list[str]
-    ranking: str  # "senior" | "subordinated" | "secured"
+    covenants: list[str] = []
+    ranking: str | None = None  # "senior" | "subordinated" | "secured"
 
 
 class CovenantStatus(BaseModel, frozen=True):
@@ -155,14 +155,14 @@ class ConcentrationData(BaseModel, frozen=True):
 
 class BuybackRecord(BaseModel, frozen=True):
     fiscal_year: str
-    amount_spent: float
-    shares_retired: float
+    amount_spent: float | None = None
+    shares_retired: float | None = None
     avg_price_paid: float | None = None
 
 
 class AcquisitionRecord(BaseModel, frozen=True):
     fiscal_year: str
-    target: str
+    target: str | None = None
     purchase_price: float | None = None
     goodwill_recognized: float | None = None
     impairment_charges: float | None = None

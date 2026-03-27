@@ -32,7 +32,7 @@ def test_minimax_provider_defaults(monkeypatch):
     monkeypatch.setenv("MINIMAX_API_KEY", "test-key-123")
     s = Settings()
     assert s.provider == "minimax"
-    assert s.model_name == "MiniMax-M2.7"
+    assert s.model_name == "MiniMax-M2.7-highspeed"
     assert s.api_base_url == "https://api.minimaxi.com/anthropic"
     assert s.api_key == "test-key-123"
 

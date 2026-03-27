@@ -22,12 +22,14 @@ class LLMClient:
         base_url: str | None = None,
         api_key: str | None = None,
         client: anthropic.AsyncAnthropic | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> None:
         self._client = client or anthropic.AsyncAnthropic(
             base_url=base_url,
             api_key=api_key,
         )
         self.model = model
+        self._extra_body = extra_body or {}
 
     async def create_message(
         self,
@@ -50,4 +52,7 @@ class LLMClient:
             kwargs["tool_choice"] = {"type": "tool", "name": tools[0]["name"]}
         elif tools:
             kwargs["tool_choice"] = {"type": "any"}
+        # Provider-specific parameters (e.g., MiniMax context_window, effort)
+        if self._extra_body:
+            kwargs["extra_body"] = self._extra_body
         return await self._client.messages.create(**kwargs)
