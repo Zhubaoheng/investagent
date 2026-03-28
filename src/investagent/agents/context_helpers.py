@@ -90,6 +90,9 @@ def data_for_accounting_risk(ctx: Any) -> dict[str, Any]:
         "income_statement": _compact_rows(filing.income_statement),
         "audit": audit_text.strip() if audit_text else None,
         "non_ifrs_adjustments": non_ifrs_text.strip() if non_ifrs_text else None,
+        "notes_tax": _get_notes(ctx, ["notes_tax"]),
+        "notes_goodwill": _get_notes(ctx, ["notes_goodwill_intangibles"]),
+        "notes_contingencies": _get_notes(ctx, ["notes_contingencies"]),
         "mda": _get_mda(ctx),
     }
 
@@ -114,8 +117,19 @@ def data_for_financial_quality(ctx: Any) -> dict[str, Any]:
     }
 
 
+def _get_notes(ctx: Any, note_keys: list[str]) -> dict[str, str]:
+    """Extract specific notes from raw sections."""
+    raw = _safe_data(ctx, "raw_sections_by_year") or {}
+    result: dict[str, str] = {}
+    for year_key, sections in raw.items():
+        for nk in note_keys:
+            if nk in sections:
+                result[f"{year_key}/{nk}"] = sections[nk]
+    return result
+
+
 def data_for_net_cash(ctx: Any) -> dict[str, Any]:
-    """Balance sheet + debt + cash flow + market snapshot."""
+    """Balance sheet + debt + cash flow + notes_borrowings + market snapshot."""
     filing = _get_filing(ctx)
     if not filing:
         return {"has_filing": False}
@@ -130,6 +144,7 @@ def data_for_net_cash(ctx: Any) -> dict[str, Any]:
         "dividend_per_share_history": filing.dividend_per_share_history,
         "footnote_extracts": [f.model_dump() for f in filing.footnote_extracts
                               if f.topic in ("debt", "pledged_assets", "related_party")],
+        "notes_borrowings": _get_notes(ctx, ["notes_borrowings", "liquidity"]),
         "market_snapshot": _get_market_snapshot(ctx),
     }
 

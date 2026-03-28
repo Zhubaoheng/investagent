@@ -134,6 +134,53 @@ _SECTION_DEFS_HK: list[tuple[str, list[str], int]] = [
         "Responsible Minerals",
         "Supplier",
     ], 10000),
+    # Financial statement notes — split by topic
+    ("notes_tax", [
+        "Income tax expense",
+        "Deferred income tax",
+        "Preferential EIT",
+        "Super Deduction",
+    ], 12000),
+    ("notes_goodwill_intangibles", [
+        "Intangible assets",
+        "Impairment test for goodwill",
+        "Goodwill",
+    ], 16000),
+    ("notes_inventory", [
+        "Inventories",
+        "Inventory provision",
+    ], 8000),
+    ("notes_ppe", [
+        "Property, plant and equipment",
+    ], 10000),
+    ("notes_investments", [
+        "Investments accounted for using the equity method",
+        "Major subsidiaries",
+        "controlled structured entities",
+    ], 16000),
+    ("notes_share_based", [
+        "Share-based payments",
+        "Share options granted",
+        "RSUs granted",
+        "Employee fund",
+    ], 12000),
+    ("notes_contingencies", [
+        "Contingencies",
+        "Contingent liabilities",
+    ], 8000),
+    ("notes_borrowings", [
+        "Borrowings",
+    ], 8000),
+    ("notes_earnings_per_share", [
+        "Basic",
+        "Diluted",
+        "Earnings per share",
+    ], 6000),
+    ("five_year_summary", [
+        "Five-Year Financial Summary",
+        "FIVE-YEAR FINANCIAL SUMMARY",
+        "Financial Summary",
+    ], 10000),
 ]
 
 _SECTION_DEFS_A_SHARE: list[tuple[str, list[str], int]] = [
@@ -230,6 +277,34 @@ _SECTION_DEFS_A_SHARE: list[tuple[str, list[str], int]] = [
         "报告期后事项",
         "期后事项",
     ], 8000),
+    ("notes_tax", [
+        "所得税费用",
+        "递延所得税",
+        "税收优惠",
+    ], 12000),
+    ("notes_goodwill_intangibles", [
+        "商誉",
+        "无形资产",
+        "减值测试",
+    ], 16000),
+    ("notes_inventory", [
+        "存货",
+        "存货跌价",
+    ], 8000),
+    ("notes_investments", [
+        "长期股权投资",
+        "合营企业",
+        "联营企业",
+    ], 12000),
+    ("notes_contingencies", [
+        "或有事项",
+        "承诺事项",
+    ], 8000),
+    ("five_year_summary", [
+        "主要财务指标",
+        "最近五年",
+        "财务摘要",
+    ], 10000),
 ]
 
 _SECTION_DEFS_US_ADR: list[tuple[str, list[str], int]] = [
@@ -307,6 +382,25 @@ _SECTION_DEFS_US_ADR: list[tuple[str, list[str], int]] = [
         "Contingencies",
         "Item 8",
     ], 8000),
+    ("notes_tax", [
+        "Income tax",
+        "Deferred tax",
+    ], 12000),
+    ("notes_goodwill_intangibles", [
+        "Goodwill",
+        "Intangible assets",
+        "Impairment",
+    ], 16000),
+    ("notes_investments", [
+        "Equity method",
+        "Variable interest",
+        "Subsidiaries",
+    ], 16000),
+    ("notes_share_based", [
+        "Share-based compensation",
+        "Stock option",
+        "Restricted share",
+    ], 12000),
 ]
 
 _MARKET_DEFS: dict[str, list[tuple[str, list[str], int]]] = {
