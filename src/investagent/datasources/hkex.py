@@ -180,13 +180,18 @@ def _search_filings_sync(
         content_type = "pdf" if ".pdf" in href.lower() else "html"
         fd = _parse_date(dates[idx]) if idx < len(dates) else date.today()
 
+        # Extract fiscal year from title (e.g., "Annual Report 2024" → 2024)
+        # NOT from filing_date (which is the publication date, typically next year)
+        fy_match = re.search(r"(\d{4})", title)
+        fiscal_year = fy_match.group(1) if fy_match else str(fd.year)
+
         results.append(
             FilingDocument(
                 market="HK",
                 ticker=ticker,
                 company_name=stock_name or ticker,
                 filing_type=filing_type,
-                fiscal_year=str(fd.year),
+                fiscal_year=fiscal_year,
                 fiscal_period=_PERIOD_MAP.get(filing_type, "FY"),
                 filing_date=fd,
                 source_url=source_url,
