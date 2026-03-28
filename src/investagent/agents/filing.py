@@ -56,22 +56,24 @@ def _fix_unit_scale(rows: list[Any], field: str) -> list[Any]:
         for i, r in enumerate(rows)
         if getattr(r, field, None) is not None and getattr(r, field) > 0
     ]
-    if len(values) < 3:
+    if len(values) < 2:
         return rows  # not enough data to detect anomalies
 
     nums = sorted(v for _, v in values)
-    median = nums[len(nums) // 2]
+    # Use the MAX as reference — if any row is 50x smaller, it's likely a unit error.
+    # Max is more robust than median when majority of rows have the wrong unit.
+    reference = nums[-1]
 
-    if median == 0:
+    if reference == 0:
         return rows
 
     fixed = list(rows)
     for idx, val in values:
-        ratio = median / val
+        ratio = reference / val
         if ratio > _UNIT_SCALE_THRESHOLD:
             # Find the right multiplier: 1000, 1000000, etc.
             multiplier = 1
-            while val * multiplier * 10 < median:
+            while val * multiplier * 10 < reference:
                 multiplier *= 10
             # Round to nearest power of 10
             if multiplier >= 10:

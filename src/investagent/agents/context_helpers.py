@@ -52,8 +52,31 @@ def _compact_rows(rows: list) -> list[dict]:
     return [{k: v for k, v in r.model_dump().items() if v is not None} for r in rows]
 
 
-def _get_mda(ctx: Any) -> dict[str, str]:
-    return _safe_data(ctx, "mda_by_year") or {}
+def _get_mda(ctx: Any, max_full_years: int = 2, max_chars_per_old: int = 3000) -> dict[str, str]:
+    """Get MD&A text, with older years truncated to save context.
+
+    Latest max_full_years get full text. Older years are truncated to
+    max_chars_per_old chars with a note.
+    """
+    raw = _safe_data(ctx, "mda_by_year") or {}
+    if not raw:
+        return {}
+
+    # Sort by year key (descending = newest first)
+    sorted_keys = sorted(raw.keys(), reverse=True)
+    result: dict[str, str] = {}
+
+    for i, key in enumerate(sorted_keys):
+        text = raw[key]
+        if i < max_full_years:
+            result[key] = text  # full text for newest years
+        else:
+            if len(text) > max_chars_per_old:
+                result[key] = text[:max_chars_per_old] + f"\n\n... (截断：仅保留前 {max_chars_per_old} 字符，完整内容请查阅原始报告)"
+            else:
+                result[key] = text
+
+    return result
 
 
 def format_json(data: Any) -> str:
@@ -117,14 +140,27 @@ def data_for_financial_quality(ctx: Any) -> dict[str, Any]:
     }
 
 
-def _get_notes(ctx: Any, note_keys: list[str]) -> dict[str, str]:
-    """Extract specific notes from raw sections."""
+def _get_notes(ctx: Any, note_keys: list[str], max_full_years: int = 2, max_chars_per_old: int = 3000) -> dict[str, str]:
+    """Extract specific notes from raw sections.
+
+    Latest max_full_years get full text. Older years truncated.
+    """
     raw = _safe_data(ctx, "raw_sections_by_year") or {}
+    if not raw:
+        return {}
+
+    sorted_years = sorted(raw.keys(), reverse=True)
     result: dict[str, str] = {}
-    for year_key, sections in raw.items():
+
+    for i, year_key in enumerate(sorted_years):
+        sections = raw[year_key]
         for nk in note_keys:
             if nk in sections:
-                result[f"{year_key}/{nk}"] = sections[nk]
+                text = sections[nk]
+                if i >= max_full_years and len(text) > max_chars_per_old:
+                    text = text[:max_chars_per_old] + "\n\n... (旧年截断)"
+                result[f"{year_key}/{nk}"] = text
+
     return result
 
 

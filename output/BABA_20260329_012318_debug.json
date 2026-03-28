@@ -1,0 +1,3456 @@
+{
+  "company": {
+    "ticker": "BABA",
+    "name": "阿里巴巴",
+    "exchange": "NYSE",
+    "sector": "电商/云计算",
+    "notes": null
+  },
+  "timestamp": "2026-03-29T01:23:18.989317",
+  "elapsed_seconds": 597.8,
+  "stopped": false,
+  "stop_reason": null,
+  "completed_agents": [
+    "info_capture",
+    "filing",
+    "triage",
+    "moat",
+    "ecology",
+    "systems",
+    "psychology",
+    "compounding",
+    "accounting_risk",
+    "net_cash",
+    "valuation",
+    "financial_quality",
+    "critic",
+    "committee"
+  ],
+  "total_tokens": 434674,
+  "agents": {
+    "info_capture": {
+      "meta": {
+        "agent_name": "info_capture",
+        "timestamp": "2026-03-28T17:16:02.654175+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 16582
+      },
+      "output": {
+        "stop_signal": null,
+        "company_profile": {
+          "CEO": "吴永明（Eddie Wu Yongming）",
+          "SEC CIK": "1577552",
+          "上市地点": "纽约证券交易所（NYSE）",
+          "上市时间": "2014年9月19日（NYSE IPO）",
+          "主营业务": "中国领先的电子商务平台，运营淘宝、天猫、聚划算等零售市场；同时提供云计算服务（阿里云）、数字媒体与娱乐（优酷、阿里影业）、创新业务及其他互联网相关服务",
+          "全称": "Alibaba Group Holding Limited（阿里巴巴集团控股有限公司）",
+          "关键管理层": "吴永明（CEO）、蔡崇信（执行副主席）、徐宏（首席财务官）",
+          "备注": "2022年以来受中国平台经济监管整顿、竞争加剧（拼多多、京东、抖音电商）及宏观消费疲软影响，经历重大战略转型（聚焦核心电商、阿里云分拆、AI投入）",
+          "实际控制人/主要股东": "软银（SoftBank）：约23-24%；马云：约4-5%（联合创始人）；蔡崇信：约1-2%（联合创始人）；公司采用VIE架构，股东不直接持有境内运营实体股权",
+          "成立时间": "1999年9月",
+          "所属行业": "电商 / 云计算",
+          "注册地": "开曼群岛（以可变利益实体架构在中国运营）",
+          "港交所上市": "是（港交所：9988）",
+          "简称": "阿里巴巴（Alibaba）",
+          "细分领域": "综合电商、云计算、数字媒体与娱乐、本地生活服务",
+          "股票代码": "BABA",
+          "董事会主席": "蔡崇信（Joseph Tsai）"
+        },
+        "filing_manifest": [
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-03-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-032947-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-03-19",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-032060-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-03-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-024354-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-03-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-022827-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-02-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-010299-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2026",
+            "fiscal_period": "H1",
+            "filing_date": "2026-01-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-26-001743-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-12-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-124386-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-12-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-118451-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-12-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-118253-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-12-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-117318-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-11-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-115949-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-11-12",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-109516-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-11-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-107713-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-10-31",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-104922-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-10-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-098045-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-10-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-097908-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-10-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-095828-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-093332-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-090549-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-089282-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-087790-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-087458-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-09-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-087455-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-085652-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-085638-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-081868-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-081052-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-079385-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-079229-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-075693-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-074701-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-074564-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-08-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-073102-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-070817-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-069480-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-069014-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-067393-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-066586-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-066086-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-066083-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-065774-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-065561-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-07-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-065017-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-063602-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-062815-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2025",
+            "fiscal_period": "FY",
+            "filing_date": "2025-06-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0000950170-25-090161-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-061144-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-059841-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-059333-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-12",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-058717-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-057299-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-06-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-056819-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-054850-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-053851-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-052631-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-052444-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-049994-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-049429-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-049400-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-046706-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-046384-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-05-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-044099-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-041669-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-039398-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-036336-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-034206-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-032612-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-032179-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-04-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-030874-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-03-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-029349-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-03-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-026637-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-03-14",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-023933-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-03-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-021724-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-03-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-020870-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-019112-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-016921-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-016348-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-015648-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-010520-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-009861-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-02-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-009639-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-31",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-008086-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-005972-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-004455-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-002518-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-001655-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-000776-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-000055-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2025",
+            "fiscal_period": "H1",
+            "filing_date": "2025-01-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-25-000039-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-132128-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-130798-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-129119-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-128410-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-126288-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-12-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-125894-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-124075-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-124073-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-123849-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-122083-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-121272-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-121012-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-120794-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-119900-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-119899-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-119689-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-119688-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-115841-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-114774-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-113472-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-11-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-113237-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-10-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-111535-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-10-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-111458-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-10-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-109845-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-10-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-106255-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-10-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-105192-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-103702-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-101684-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-099750-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-097992-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-097729-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-09-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-097357-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-095577-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-093618-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-092213-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-092027-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-090104-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-090102-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-08-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-085053-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-07-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-077941-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-07-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-077061-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-06-14",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-071494-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-31",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-066829-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001193125-24-149515-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001193125-24-146219-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001193125-24-145954-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001193125-24-145548-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2024",
+            "fiscal_period": "FY",
+            "filing_date": "2024-05-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0000950170-24-063767-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-05-14",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-061145-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-04-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-054387-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-04-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-042245-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-03-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-038666-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-02-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-011604-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-01-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-006408-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2024",
+            "fiscal_period": "H1",
+            "filing_date": "2024-01-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-24-000045-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-12-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-128427-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-12-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-127472-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-12-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-123758-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-11-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-119088-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-11-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-119081-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-11-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-113964-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-09-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-104568-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-09-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-103638-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-09-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-099414-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-08-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-092264-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-08-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-089768-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-08-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-086019-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-07-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-084976-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-07-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-083188-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-07-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001193125-23-190974-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2023",
+            "fiscal_period": "FY",
+            "filing_date": "2023-07-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0000950170-23-033752-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-07-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-079258-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-06-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-072478-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-06-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-069655-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-05-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-062246-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-05-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-062243-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-05-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-056303-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-03-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-037408-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-02-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-024761-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-02-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-024752-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-02-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-014605-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2023",
+            "fiscal_period": "H1",
+            "filing_date": "2023-01-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-23-001961-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-12-16",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-127544-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-12-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-124694-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-11-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-121919-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-11-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-119884-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-11-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-119745-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-11-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-119743-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-11-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-114612-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-09-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-104370-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-088267-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-086971-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-086970-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-086110-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-04",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-085820-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-08-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-084395-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-07-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-082632-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2022",
+            "fiscal_period": "FY",
+            "filing_date": "2022-07-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-082622-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-07-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-082563-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-07-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-081715-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-07-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-081007-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-05-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-065269-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-05-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-059786-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-03-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-036278-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-02-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-026569-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2022",
+            "fiscal_period": "H1",
+            "filing_date": "2022-02-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-22-019698-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-12-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-148335-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-12-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-146494-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-11-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-141204-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-11-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-134673-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-09-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-116782-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-08-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-103093-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-08-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-099438-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-07-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-096324-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2021",
+            "fiscal_period": "FY",
+            "filing_date": "2021-07-27",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-096092-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-07-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-094104-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-07-19",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-093230-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-05-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-065916-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-04-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-058057-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-04-12",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-049222-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-04-12",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-049093-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-10",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-019786-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-016660-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-012476-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-012378-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-011016-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-011014-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-010975-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-010913-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2021-02-02",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-010910-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2021",
+            "fiscal_period": "H1",
+            "filing_date": "2021-01-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-21-005585-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-12-28",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-139366-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-12-18",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-137127-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-11-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-121812-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-11-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-120757-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-10-26",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-117978-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-10-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-116934-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-10-21",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-116815-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-10-19",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-115828-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-09-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-110253-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-098141-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-098136-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-098130-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-097260-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-091677-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-08-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-089267-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-07-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-084639-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-07-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-083110-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-07-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-082881-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2020",
+            "fiscal_period": "FY",
+            "filing_date": "2020-07-09",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-082409-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-06-25",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-076602-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-05-22",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-065398-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-05-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-059072-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-02-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-020231-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2020",
+            "fiscal_period": "H1",
+            "filing_date": "2020-01-23",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-20-006055-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-12-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-074597-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-12-03",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-069221-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-068453-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-20",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001047469-19-006433-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-064490-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001047469-19-006269-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001047469-19-006258-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-13",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001047469-19-006257-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-08",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-061731-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-11-01",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-059003-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-09-24",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-051206-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-09-11",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-049759-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-09-06",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-048991-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-08-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-046150-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-07-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-042446-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-07-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-040358-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-06-17",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-035956-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "20-F",
+            "fiscal_year": "2019",
+            "fiscal_period": "FY",
+            "filing_date": "2019-06-05",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001047469-19-003492-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-05-15",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-029738-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-04-29",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-024217-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-03-14",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-014857-index.html",
+            "content_type": "html"
+          },
+          {
+            "filing_type": "6-K",
+            "fiscal_year": "2019",
+            "fiscal_period": "H1",
+            "filing_date": "2019-01-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1577552/0001104659-19-004478-index.html",
+            "content_type": "html"
+          }
+        ],
+        "official_sources": [
+          "SEC EDGAR - 阿里巴巴SEC filings (CIK: 1577552) - https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001577552",
+          "阿里巴巴投资者关系页面 - https://www.alibabagroup.com/en/investor/home",
+          "港交所（HKEX）9988公告 - https://www.hkex.com.hk/Market-Data/Securities-Prices/Equities/Equities-Quote?sym=9988",
+          "阿里巴巴ESG/社会责任报告官方页面 - https://www.alibabagroup.com/en/about/esg"
+        ],
+        "trusted_third_party_sources": [
+          "Bloomberg（彭博终端）- BABA US Equity数据",
+          "Reuters（路透社）- Alibaba Group Holding Ltd (BABA.N)",
+          "FactSet - 公司财务数据库",
+          "S&P Capital IQ - 公司财务数据与估值",
+          "Refinitiv / Thomson Reuters Eikon - 财务数据平台",
+          "Wind Financial Terminal（万得）- 中国A股/ADR数据",
+          "晨星（Morningstar）- 分析师评级与估值",
+          "Seeking Alpha - 业绩公告与分析师覆盖"
+        ],
+        "market_snapshot": {
+          "price": 122.69,
+          "market_cap": 292911677440.0,
+          "enterprise_value": 2292800028672.0,
+          "pe_ratio": 21.869875,
+          "pb_ratio": 1.8932618,
+          "dividend_yield": 0.86,
+          "currency": "USD"
+        },
+        "missing_items": [
+          "【数据完整性声明】本信息包使用已提供的市场快照，未进行实时数据验证。建议后续步骤中对比最新市场数据与此处快照的一致性。",
+          "【财报期完整性】5年完整年报（20-F）已覆盖 FY2020-FY2024，关键年报不存在系统性缺失；FY2025年报（20-F）已在清单中，日期2025-06-26，但H1业绩发布频次极高（2025 H1约85份6-K），请在分析时确认重点文件。",
+          "【H1半年报】公司采用6-K格式发布季度业绩（非独立半年报文件），H1累计数据通常在Q2季报中披露；2020 H1的6-K仅见2份（2020-02-13、2020-01-23），早期H1数据可能不完整，建议确认是否为数据抓取范围限制。",
+          "【未来日期数据】manifest中出现2026 H1期间标记的6-K文件（日期2026-01至2026-03），早于当前分析时点。如后续分析需要，应验证数据时点一致性。",
+          "【VIE架构风险】公司采用可变利益实体（VIE）架构，在中国监管环境（数据安全、外资所有权重磅政策）下存在监管不确定性，未在当前信息包中量化。",
+          "【分部财务明细】市场快照中的P/E、P/B等指标为整体口径；核心电商与阿里云的盈利贡献拆分、资产回报率趋势等需从20-F年报附注中提取，当前信息包未包含该等衍生数据。"
+        ]
+      }
+    },
+    "filing": {
+      "meta": {
+        "agent_name": "filing",
+        "timestamp": "2026-03-28T17:17:36.677006+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 53962
+      },
+      "output": {
+        "stop_signal": null,
+        "filing_meta": {
+          "market": "US_ADR",
+          "accounting_standard": "US_GAAP",
+          "fiscal_years_covered": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ],
+          "filing_types": [
+            "20-F",
+            "Annual Report"
+          ],
+          "currency": "RMB",
+          "reporting_language": "en",
+          "market_currency": "USD"
+        },
+        "income_statement": [
+          {
+            "fiscal_year": "2023",
+            "fiscal_period": "FY",
+            "revenue": 868687000.0,
+            "cost_of_revenue": 539851000.0,
+            "gross_profit": 328836000.0,
+            "rd_expense": null,
+            "sga_expense": null,
+            "depreciation_amortization": 26830000.0,
+            "operating_income": 69658000.0,
+            "interest_expense": 4303000.0,
+            "tax_provision": 21308000.0,
+            "net_income": 65273000.0,
+            "net_income_to_parent": 62553000.0,
+            "eps_basic": 3.39,
+            "eps_diluted": 3.31,
+            "shares_basic": 18430000000.0,
+            "shares_diluted": 18890000000.0
+          },
+          {
+            "fiscal_year": "2024",
+            "fiscal_period": "FY",
+            "revenue": 941168000000.0,
+            "cost_of_revenue": null,
+            "gross_profit": null,
+            "rd_expense": null,
+            "sga_expense": null,
+            "depreciation_amortization": null,
+            "operating_income": 113350000000.0,
+            "interest_expense": null,
+            "tax_provision": null,
+            "net_income": 71332000000.0,
+            "net_income_to_parent": 79741000000.0,
+            "eps_basic": null,
+            "eps_diluted": null,
+            "shares_basic": null,
+            "shares_diluted": null
+          },
+          {
+            "fiscal_year": "2025",
+            "fiscal_period": "FY",
+            "revenue": 996347000000.0,
+            "cost_of_revenue": null,
+            "gross_profit": null,
+            "rd_expense": null,
+            "sga_expense": null,
+            "depreciation_amortization": null,
+            "operating_income": 140905000000.0,
+            "interest_expense": null,
+            "tax_provision": null,
+            "net_income": 125976000000.0,
+            "net_income_to_parent": 129470000000.0,
+            "eps_basic": null,
+            "eps_diluted": null,
+            "shares_basic": null,
+            "shares_diluted": null
+          },
+          {
+            "fiscal_year": "2022",
+            "fiscal_period": "FY",
+            "revenue": 853062000.0,
+            "cost_of_revenue": 534279000.0,
+            "gross_profit": 318783000.0,
+            "rd_expense": null,
+            "sga_expense": null,
+            "depreciation_amortization": 19403000.0,
+            "operating_income": 63679000.0,
+            "interest_expense": 3608000.0,
+            "tax_provision": 25822000.0,
+            "net_income": 61116000.0,
+            "net_income_to_parent": 57754000.0,
+            "eps_basic": 3.08,
+            "eps_diluted": 3.0,
+            "shares_basic": 18750000000.0,
+            "shares_diluted": 19260000000.0
+          },
+          {
+            "fiscal_year": "2021",
+            "fiscal_period": "FY",
+            "revenue": 717289000.0,
+            "cost_of_revenue": 421924000.0,
+            "gross_profit": 295365000.0,
+            "rd_expense": null,
+            "sga_expense": null,
+            "depreciation_amortization": null,
+            "operating_income": 90393000.0,
+            "interest_expense": 3628000.0,
+            "tax_provision": 32608000.0,
+            "net_income": 71478000.0,
+            "net_income_to_parent": 67010000.0,
+            "eps_basic": 3.99,
+            "eps_diluted": 3.82,
+            "shares_basic": 16800000000.0,
+            "shares_diluted": 17540000000.0
+          }
+        ],
+        "balance_sheet": [
+          {
+            "fiscal_year": "2023",
+            "cash_and_equivalents": 166621000.0,
+            "short_term_investments": null,
+            "accounts_receivable": null,
+            "inventory": null,
+            "total_current_assets": 465310000.0,
+            "ppe_net": 153370000.0,
+            "goodwill": null,
+            "intangible_assets": null,
+            "total_assets": 1837325000.0,
+            "accounts_payable": null,
+            "short_term_debt": null,
+            "total_current_liabilities": 311886000.0,
+            "long_term_debt": 138390000.0,
+            "total_liabilities": 623600000.0,
+            "shareholders_equity": 1190377000.0,
+            "minority_interest": 23348000.0
+          },
+          {
+            "fiscal_year": "2024",
+            "cash_and_equivalents": null,
+            "short_term_investments": null,
+            "accounts_receivable": null,
+            "inventory": null,
+            "total_current_assets": null,
+            "ppe_net": null,
+            "goodwill": null,
+            "intangible_assets": null,
+            "total_assets": null,
+            "accounts_payable": null,
+            "short_term_debt": null,
+            "total_current_liabilities": null,
+            "long_term_debt": null,
+            "total_liabilities": null,
+            "shareholders_equity": null,
+            "minority_interest": null
+          },
+          {
+            "fiscal_year": "2021",
+            "cash_and_equivalents": 321662000.0,
+            "short_term_investments": null,
+            "accounts_receivable": null,
+            "inventory": null,
+            "total_current_assets": 554258000.0,
+            "ppe_net": 146267000.0,
+            "goodwill": null,
+            "intangible_assets": null,
+            "total_assets": 1713575000.0,
+            "accounts_payable": 0.0,
+            "short_term_debt": null,
+            "total_current_liabilities": 273688000.0,
+            "long_term_debt": 153391000.0,
+            "total_liabilities": 622891000.0,
+            "shareholders_equity": 1060464000.0,
+            "minority_interest": 30223000.0
+          },
+          {
+            "fiscal_year": "2022",
+            "cash_and_equivalents": 201244000.0,
+            "short_term_investments": null,
+            "accounts_receivable": null,
+            "inventory": null,
+            "total_current_assets": 465560000.0,
+            "ppe_net": 155831000.0,
+            "goodwill": null,
+            "intangible_assets": null,
+            "total_assets": 1851025000.0,
+            "accounts_payable": null,
+            "short_term_debt": null,
+            "total_current_liabilities": 325868000.0,
+            "long_term_debt": 148245000.0,
+            "total_liabilities": 699750000.0,
+            "shareholders_equity": 1127833000.0,
+            "minority_interest": 33442000.0
+          }
+        ],
+        "cash_flow": [
+          {
+            "fiscal_year": "2023",
+            "operating_cash_flow": 172393000.0,
+            "capex": 24369000.0,
+            "free_cash_flow": 148024000.0,
+            "dividends_paid": null,
+            "buyback_amount": null,
+            "debt_issued": null,
+            "debt_repaid": null,
+            "acquisitions": null
+          },
+          {
+            "fiscal_year": "2024",
+            "operating_cash_flow": 182593000000.0,
+            "capex": null,
+            "free_cash_flow": null,
+            "dividends_paid": null,
+            "buyback_amount": null,
+            "debt_issued": null,
+            "debt_repaid": null,
+            "acquisitions": null
+          },
+          {
+            "fiscal_year": "2025",
+            "operating_cash_flow": 22532000000.0,
+            "capex": null,
+            "free_cash_flow": null,
+            "dividends_paid": null,
+            "buyback_amount": null,
+            "debt_issued": null,
+            "debt_repaid": null,
+            "acquisitions": null
+          },
+          {
+            "fiscal_year": "2022",
+            "operating_cash_flow": 142796000.0,
+            "capex": 28967000.0,
+            "free_cash_flow": 113829000.0,
+            "dividends_paid": null,
+            "buyback_amount": null,
+            "debt_issued": null,
+            "debt_repaid": null,
+            "acquisitions": null
+          },
+          {
+            "fiscal_year": "2021",
+            "operating_cash_flow": 185779000.0,
+            "capex": 31561000.0,
+            "free_cash_flow": 154218000.0,
+            "dividends_paid": null,
+            "buyback_amount": null,
+            "debt_issued": null,
+            "debt_repaid": null,
+            "acquisitions": null
+          }
+        ],
+        "segments": [],
+        "accounting_policies": [
+          {
+            "category": "revenue_recognition",
+            "fiscal_year": "2023",
+            "method": "ASC 606",
+            "raw_text": "The Group recognizes revenues from contracts with customers when the performance obligation is satisfied, i.e., when the control of the goods or services underlying the specific performance obligation is transferred to the customer at a point in time or over time.",
+            "changed_from_prior": false,
+            "change_description": null
+          },
+          {
+            "category": "goodwill_and_intangibles",
+            "fiscal_year": "2023",
+            "method": "impairment_test_annual",
+            "raw_text": "Goodwill and intangible assets with indefinite lives are tested for impairment annually and when events or changes in circumstances indicate that the carrying amount may be impaired.",
+            "changed_from_prior": false,
+            "change_description": null
+          }
+        ],
+        "debt_schedule": [],
+        "covenant_status": [],
+        "special_items": [],
+        "concentration": null,
+        "buyback_history": [],
+        "acquisition_history": [],
+        "dividend_per_share_history": [
+          {
+            "2021": null
+          },
+          {
+            "2022": null
+          },
+          {
+            "2023": null
+          }
+        ],
+        "footnote_extracts": [
+          {
+            "topic": "VIE Financial Information",
+            "fiscal_year": "2025",
+            "raw_text": "Revenue from third parties: — (Parent), 833,583 (Major VIEs), 98,433 (Primary Beneficiaries), 64,331 (Other Subsidiaries), — (Eliminations), 996,347 (Consolidated)\nRevenue from group companies: —, 17,515, 19,346, 203,620, (240,481), —\nTotal cost and expenses: (5,972), (890,164), (119,725), (153,515), 313,934, (855,442)\nIncome from subsidiaries and VIEs: 142,604, 148,152, —, 1,439, (292,195), —\nIncome (loss) from operations: 136,632, 109,086, (1,946), 115,875, (218,742), 140,905\nOther income and expenses: (7,162), 46,239, 2,293, 46,633, (73,453), 14,550\nIncome tax (expenses) credit: —, (12,582), 1,256, (24,119), —, (35,445)\nShare of results of equity method investees: —, (3,602), (195), 9,763, —, 5,966\nNet income: 129,470, 139,141, 1,408, 148,152, (292,195), 125,976\nNet loss attributable to noncontrolling interests: —, 4,102, 31, —, —, 4,133\nAccretion of mezzanine equity: —, (639), —, —, —, (639)\nNet income attributable to ordinary shareholders: 129,470, 142,604, 1,439, 148,152, (292,195), 129,470",
+            "structured_summary": "VIE consolidating schedule for FY2025 showing Parent revenue from third parties: 0; Major VIEs: 833,583m RMB; Consolidated revenue: 996,347m RMB. Consolidated net income attributable to shareholders: 129,470m RMB. Technical service fee from primary beneficiaries to major VIEs: 17,130m RMB (US$2,361m)"
+          },
+          {
+            "topic": "VIE Financial Information",
+            "fiscal_year": "2024",
+            "raw_text": "Revenue from third parties: — (Parent), 782,497 (Major VIEs), 90,662 (Primary Beneficiaries), 68,009 (Other Subsidiaries), — (Eliminations), 941,168 (Consolidated)\nRevenue from group companies: —, 11,731, 8,595, 192,994, (213,320), —\nTotal cost and expenses: (327), (845,402), (103,992), (157,042), 278,945, (827,818)\nIncome (loss) from subsidiaries and VIEs: 86,057, 123,181, —, (3,093), (206,145), —\nIncome (loss) from operations: 85,730, 72,007, (4,735), 100,868, (140,520), 113,350\nOther income and expenses: (5,989), 24,387, 31, 35,442, (65,625), (11,754)\nIncome tax (expenses) credit: —, (6,890), 1,428, (17,067), —, (22,529)\nShare of results of equity method investees: —, (11,656), (17), 3,938, —, (7,735)\nNet income (loss): 79,741, 77,848, (3,293), 123,181, (206,145), 71,332\nNet loss attributable to noncontrolling interests: —, 8,477, 200, —, —, 8,677\nAccretion of mezzanine equity: —, (268), —, —, —, (268)\nNet income (loss) attributable to ordinary shareholders: 79,741, 86,057, (3,093), 123,181, (206,145), 79,741",
+            "structured_summary": "VIE consolidating schedule for FY2024 showing Consolidated revenue: 941,168m RMB. Consolidated net income attributable to shareholders: 79,741m RMB. Technical service fee from primary beneficiaries to major VIEs: 11,689m RMB"
+          },
+          {
+            "topic": "VIE Financial Information",
+            "fiscal_year": "2023",
+            "raw_text": "Revenue from third parties: — (Parent), 709,421 (Major VIEs), 88,121 (Primary Beneficiaries), 71,145 (Other Subsidiaries), — (Eliminations), 868,687 (Consolidated)\nRevenue from group companies: —, 29,159, 5,671, 136,113, (170,943), —\nTotal cost and expenses: (846), (763,158), (97,402), (168,473), 261,543, (768,336)\nIncome from subsidiaries and VIEs: 84,000, 100,379, —, 3,031, (187,410), —\nIncome (loss) from operations: 83,154, 75,801, (3,610), 41,816, (96,810), 100,351\nOther income and expenses: (10,645), 11,003, 6,557, 72,519, (90,600), (11,166)\nIncome tax (expenses) credit: —, (6,551), 117, (9,115), —, (15,549)\nShare of results of equity method investees: —, (3,176), (46), (4,841), —, (8,063)\nNet income: 72,509, 77,077, 3,018, 100,379, (187,410), 65,573\nNet loss attributable to noncontrolling interests: —, 7,197, 13, —, —, 7,210\nAccretion of mezzanine equity: —, (274), —, —, —, (274)\nNet income attributable to ordinary shareholders: 72,509, 84,000, 3,031, 100,379, (187,410), 72,509",
+            "structured_summary": "VIE consolidating schedule for FY2023 showing Consolidated revenue: 868,687m RMB. Consolidated net income attributable to shareholders: 72,509m RMB. Technical service fee from primary beneficiaries to major VIEs: 15,445m RMB"
+          },
+          {
+            "topic": "VIE Cash Flows",
+            "fiscal_year": "2025",
+            "raw_text": "Parent column (RMB millions): Net cash provided by operating activities: 51,728; Net cash used in investing activities: (54,809); Net cash provided by financing activities: 2,542; Effect of exchange rate changes: 43; Decrease in cash and cash equivalents: (496); Cash and cash equivalents, restricted cash (beginning): 1,114; Cash and cash equivalents, restricted cash (ending): 618",
+            "structured_summary": "FY2025 Parent cash flows: Operating 51,728m; Investing (54,809)m; Financing 2,542m RMB. Cash transfer from parent to subsidiaries: 94,307m RMB (US$12,996m). Cash transfer from subsidiaries to parent: 175,208m RMB (US$24,144m)"
+          },
+          {
+            "topic": "VIE Cash Flows",
+            "fiscal_year": "2024",
+            "raw_text": "Parent column (RMB millions): Net cash provided by operating activities: 93,308; Net cash provided by investing activities: 11,838; Net cash used in financing activities: (104,666); Effect of exchange rate changes: 58; Increase in cash and cash equivalents: 538; Cash and cash equivalents, restricted cash (beginning): 576; Cash and cash equivalents, restricted cash (ending): 1,114",
+            "structured_summary": "FY2024 Parent cash flows: Operating 93,308m; Investing 11,838m; Financing (104,666)m RMB. Cash transfer from parent to subsidiaries: 74,951m RMB. Cash transfer from subsidiaries to parent: 193,629m RMB"
+          },
+          {
+            "topic": "VIE_Operations_Schedule",
+            "fiscal_year": "FY2024",
+            "raw_text": "Revenue from third parties: Total 941,168 RMB million (130,350 USD million). Net income: 71,332 RMB million (9,879 USD million). Net income attributable to ordinary shareholders: 79,741 RMB million (11,044 USD million).",
+            "structured_summary": "VIE consolidating schedule for FY2024 shows total revenue of 941,168 million RMB from third parties. Technical service fees from primary beneficiaries to major VIEs: 11,689 million RMB (US$1,619 million)."
+          },
+          {
+            "topic": "VIE_Operations_Schedule",
+            "fiscal_year": "FY2023",
+            "raw_text": "Revenue from third parties: Total 868,687 million RMB. Net income: 65,573 million RMB. Net income attributable to ordinary shareholders: 72,509 million RMB.",
+            "structured_summary": "VIE consolidating schedule for FY2023 shows total revenue of 868,687 million RMB from third parties. Technical service fees: 15,445 million RMB."
+          },
+          {
+            "topic": "VIE_Operations_Schedule",
+            "fiscal_year": "FY2022",
+            "raw_text": "Revenue from third parties: Total 853,062 million RMB. Net income: 47,079 million RMB. Net income attributable to ordinary shareholders: 61,959 million RMB.",
+            "structured_summary": "VIE consolidating schedule for FY2022 shows total revenue of 853,062 million RMB from third parties. Technical service fees: 17,225 million RMB."
+          },
+          {
+            "topic": "VIE_Cash_Flows",
+            "fiscal_year": "FY2024",
+            "raw_text": "Total operating activities: 560,956 million RMB (25,289 USD million). Total investing activities: (42,122) million RMB. Total financing activities: (430,495) million RMB.",
+            "structured_summary": "VIE cash flows FY2024: Operating 560,956M RMB, Investing (42,122M) RMB, Financing (430,495M) RMB. Cash transfer from parent to subsidiaries: 74,951M RMB (US$10,381M). Cash transfer to major VIEs: 17,986M RMB (US$2,491M)."
+          },
+          {
+            "topic": "VIE_Cash_Flows",
+            "fiscal_year": "FY2023",
+            "raw_text": "Total operating activities: 199,752 million RMB. Total investing activities: (135,506) million RMB. Total financing activities: (65,619) million RMB.",
+            "structured_summary": "VIE cash flows FY2023: Operating 199,752M RMB, Investing (135,506M) RMB, Financing (65,619M) RMB. Cash transfer from parent to subsidiaries: 32,025M RMB."
+          },
+          {
+            "topic": "VIE_Cash_Flows",
+            "fiscal_year": "FY2022",
+            "raw_text": "Total operating activities: 142,759 million RMB. Total investing activities: (198,592) million RMB. Total financing activities: (64,449) million RMB.",
+            "structured_summary": "VIE cash flows FY2022: Operating 142,759M RMB, Investing (198,592M) RMB, Financing (64,449M) RMB. Cash transfer from parent to subsidiaries: 20,188M RMB."
+          }
+        ],
+        "risk_factors": [
+          {
+            "category": "Corporate Structure",
+            "description": "VIE Structure Risks - Foreign investment restrictions in China require Alibaba to operate restricted businesses through variable interest entities (VIEs)",
+            "raw_text": "Due to PRC legal restrictions on foreign ownership and investment in certain industries, we operate our Internet businesses and other businesses in which foreign investment is restricted or prohibited in the PRC through variable interest entities (VIEs). The VIEs are incorporated in the PRC and owned by PRC citizens or by PRC entities owned and/or controlled by PRC citizens, and not by our company. We and, through us, our shareholders do not own any equity interests in the VIEs.",
+            "materiality": "Critical"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Risk that PRC government deems VIE contractual arrangements non-compliant with foreign investment regulations",
+            "raw_text": "If the PRC government deems that the contractual arrangements in relation to the VIEs do not comply with PRC regulations on foreign investment, or if these regulations or the interpretation of existing regulations change in the future, we could be subject to penalties, or be forced to relinquish our interests in the operation of the VIEs, and we would no longer be able to consolidate the financial results of the VIEs in our consolidated financial statements.",
+            "materiality": "Critical"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Contractual arrangements may not be as effective as direct ownership in controlling VIEs",
+            "raw_text": "If the VIEs or their equity holders fail to perform their respective obligations under the contractual arrangements, we will have to enforce our rights through the operations of PRC law and arbitral or judicial agencies, which may be costly and time-consuming. The contractual arrangements may not be as effective in ensuring our control over the relevant portion of our business operations as direct ownership.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "VIE contracts have not been tested in court of law",
+            "raw_text": "Contractual arrangements in relation to VIEs have not been tested in a court of law. Uncertainties regarding the interpretation and enforcement of the relevant PRC laws and regulations could limit our ability to enforce the contractual arrangements.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "Risks related to potential PRC government scrutiny of VIE arrangements by tax authorities",
+            "raw_text": "Potential scrutiny of the contractual arrangements with the VIEs by the PRC tax authority.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Conflicts of interest between company and VIE equity holders",
+            "raw_text": "Potential conflicts of interests between us and the equity holders, directors and executive officers of the VIEs.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "VIE_Structure",
+            "description": "PRC legal restrictions on foreign ownership in certain industries require use of Variable Interest Entities (VIEs)",
+            "raw_text": "Alibaba Group Holding Limited is a Cayman Islands holding company. Due to PRC legal restrictions on foreign ownership and investment in certain industries, we operate our Internet businesses through VIEs. The VIEs are incorporated and owned by PRC citizens or PRC entities, not by our company. Investors in our ADSs and Shares are purchasing equity securities of a Cayman Islands holding company rather than equity securities issued by our consolidated subsidiaries and the VIEs.",
+            "materiality": "Critical"
+          },
+          {
+            "category": "VIE_Structure",
+            "description": "Risk of penalties or loss of VIE control if contractual arrangements deemed non-compliant with PRC regulations",
+            "raw_text": "If the PRC government deems that the contractual arrangements in relation to the VIEs do not comply with PRC regulations on foreign investment, or if these regulations or the interpretation of existing regulations change in the future, we could be subject to penalties, or be forced to relinquish our interests in the operation of the VIEs, and we would no longer be able to consolidate the financial results of the VIEs. This would likely materially and adversely affect our business, financial results and the trading prices of our ADSs, Shares and/or other securities.",
+            "materiality": "Critical"
+          },
+          {
+            "category": "VIE_Structure",
+            "description": "Contractual arrangements have not been tested in court and may not be as effective as direct ownership",
+            "raw_text": "Contractual arrangements in relation to VIEs have not been tested in a court of law. The contractual arrangements may not be as effective in ensuring our control over the relevant portion of our business operations as direct ownership. The contractual arrangements are governed by PRC law and provide for the resolution of disputes through arbitration or court proceedings in China.",
+            "materiality": "Critical"
+          },
+          {
+            "category": "VIE_Enforcement",
+            "description": "Enforcement of contractual arrangements through PRC legal system may be costly, time-consuming, and subject to uncertainties",
+            "raw_text": "If the VIEs or their equity holders fail to perform their respective obligations under the contractual arrangements, we will have to enforce our rights through PRC law and arbitral or judicial agencies, which may be costly and time-consuming. Under PRC law, if the losing parties fail to carry out the arbitration awards or court judgments within a prescribed time limit, the prevailing parties may only enforce the arbitration awards or court judgments in PRC courts, which would require additional expense and delay.",
+            "materiality": "High"
+          },
+          {
+            "category": "VIE_Profit_Transfer",
+            "description": "Profit transfer from VIEs to subsidiaries through technical service fees",
+            "raw_text": "Under the Enhanced VIE Structure, each relevant VIE has entered into an exclusive service agreement with the respective subsidiary, pursuant to which our relevant subsidiary provides exclusive services to the VIE. In exchange, the VIE pays a service fee to our subsidiary, the amount of which shall be determined, to the extent permitted by applicable PRC laws as proposed by our subsidiary, resulting in a transfer of substantially all of the profits from the VIE to our subsidiary.",
+            "materiality": "High"
+          },
+          {
+            "category": "Corporate_Structure",
+            "description": "Enhanced VIE Structure uses PRC limited partnerships owned by Alibaba Partnership members",
+            "raw_text": "Under the Enhanced VIE Structure, a VIE is typically held by a PRC limited liability company, owned by two PRC limited partnerships (each 50%). Each partnership has a PRC limited liability company as general partner (formed by selected members of Alibaba Partnership and management who are PRC citizens) and natural persons as limited partners (members of Alibaba Partnership or designated management).",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Subsidiary_Information",
+            "description": "Significant majority of assets and operations held in subsidiaries, not VIEs",
+            "raw_text": "Although the variable interest entities hold licenses and approvals and assets for regulated activities that are necessary for our business operations, as well as certain equity investments in businesses, to which foreign investments are typically restricted or prohibited under applicable PRC law, we hold the significant majority of assets and operations in our subsidiaries and the significant majority of our revenue is captured directly by our subsidiaries. Therefore, our subsidiaries directly capture the significant majority of the profits and associated cash flow from operations, without having to rely on contractual arrangements to transfer cash flow from the variable interest entities to our subsidiaries.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Maintaining the trusted status of our ecosystem is critical to our success and growth, and any failure to do so could severely damage our reputation and brand, which would have a material adverse effect on our business, financial condition, results of operations and prospects.",
+            "raw_text": "Maintaining the trusted status of our ecosystem is critical to our success and growth, and any failure to do so could severely damage our reputation and brand, which would have a material adverse effect on our business, financial condition, results of operations and prospects.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Sustained investment in our businesses and our focus on long-term performance and maintaining the health of our ecosystem may negatively affect our margins and our net income.",
+            "raw_text": "Sustained investment in our businesses and our focus on long-term performance and maintaining the health of our ecosystem may negatively affect our margins and our net income. We focus on the long-term interests of the participants in our ecosystem. We may continue to increase our spending and investments in our businesses, including investing in organic development and incubating new businesses, enhancing consumer experience and user engagement, supporting merchants and acquiring users, as well as enhancing our technology, logistics, supply chain and other long term capabilities.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain or grow our revenue or our business.",
+            "raw_text": "Our ability to continue to grow our revenue depends on a number of factors, including the number and engagement of consumers on our platforms, the value that we are able to offer to merchants, brands, retailers and other businesses, and our consumer insight and technology capabilities and infrastructure.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "If we are unable to compete effectively, our business, financial condition and results of operations would be materially and adversely affected.",
+            "raw_text": "We face increasingly intense competition, principally from established Chinese Internet companies and their respective affiliates, global and regional e-commerce players, cloud computing service providers and digital media and entertainment providers. These areas of our business are subject to rapid market change, the introduction of new business models, and the entry of new and well-funded competitors.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain and improve the network effects of our ecosystem, which could negatively affect our business and prospects.",
+            "raw_text": "Our ability to maintain a healthy and vibrant ecosystem that creates strong network effects among consumers, merchants, brands, retailers and other participants is critical to our success.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain our culture, which has been a key to our success.",
+            "raw_text": "Since our founding, our culture has been defined by our mission, vision and values, and we believe that our culture has been critical to our success.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "If we are not able to continue to innovate or if we fail to adapt to changes in our industry, our business, financial condition and results of operations would be materially and adversely affected.",
+            "raw_text": "Our industries are characterized by rapidly changing technology, evolving industry standards, new mobile apps and protocols, new products and services, new media and entertainment content, and changing user demands and trends.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Our failure to manage the significant management, operational and financial challenges involved in growing our business and operations could harm us.",
+            "raw_text": "Our business has become increasingly complex as the scale, diversity and geographic coverage of our business and our workforce continue to expand through both organic growth and acquisitions.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We face risks relating to our acquisitions, investments and alliances.",
+            "raw_text": "We have acquired and invested in a large number and a diverse range of businesses, including those in different countries and regions, technologies, services and products in recent years.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Challenges in expanding our international and cross-border businesses and operations.",
+            "raw_text": "Challenges in expanding our international and cross-border businesses and operations.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Economic slowdowns, and the impact of widespread health epidemics or natural disasters.",
+            "raw_text": "Economic slowdowns, and the impact of widespread health epidemics or natural disasters.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "International trade or investment policies, barriers to trade or investment and geopolitical conflicts, as well as export control, economic or trade sanctions.",
+            "raw_text": "International trade or investment policies, barriers to trade or investment and geopolitical conflicts, as well as export control, economic or trade sanctions and the trend towards trade and te...",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Reputational and other risks due to business dealings by merchants or consumers on our marketplaces with sanctioned countries or persons.",
+            "raw_text": "Reputational and other risks due to business dealings by, or connections of, merchants or consumers on our marketplaces with sanctioned countries or persons.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Risks arising from the broad range of evolving laws and regulations that affect our business.",
+            "raw_text": "Risks arising from the broad range of evolving laws and regulations that affect our business.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Risks relating to Ant Group and Alipay, including our reliance on Alipay to conduct substantially all of the payment processing and escrow services on our marketplaces.",
+            "raw_text": "Risks relating to Ant Group and Alipay, including our reliance on Alipay to conduct substantially all of the payment processing and all of the escrow services on our marketplaces, their regulat...",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Potential claims or regulatory actions under competition laws against us, and other potential material litigation and regulatory proceedings.",
+            "raw_text": "Potential claims or regulatory actions under competition laws against us, and other potential material litigation and regulatory proceedings.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "The improper use or disclosure of data and the effect of complex and evolving regulations regarding privacy and data protection.",
+            "raw_text": "The improper use or disclosure of data and the effect of complex and evolving regulations regarding privacy and data protection.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Security breaches and cyberattacks.",
+            "raw_text": "Security breaches and cyberattacks.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Our ability to maintain or improve our technology infrastructure, risks relating to the performance, reliability and security of the Internet infrastructure.",
+            "raw_text": "Our ability to maintain or improve our technology infrastructure, risks relating to the performance, reliability and security of the Internet infrastructure and the effect of network interrupti...",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Our ability to attract, motivate and retain our staff, including key management and experienced personnel.",
+            "raw_text": "Our ability to attract, motivate and retain our staff, including key management and experience and capable personnel.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Fraudulent or illegal activities by our employees, business partners and service providers.",
+            "raw_text": "Fraudulent or illegal activities by our employees, business partners and service providers, and risks relating to third-party service providers and ecosystem participants.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "The quality of logistics services provided by logistics service providers and Cainiao.",
+            "raw_text": "The quality of logistics services provided by logistics service providers and Cainiao.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Potential liability arising from content on our platforms or in our services.",
+            "raw_text": "Potential liability arising from content on our platforms or in our services.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Alleged pirated, counterfeit or illegal items or content, allegations of infringements of intellectual property rights.",
+            "raw_text": "Alleged pirated, counterfeit or illegal items or content, allegations of infringements of intellectual property rights or content restriction violations, and our ability to protect our intellec...",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "The effect of any fraud perpetuated and fictitious transactions conducted in our ecosystem.",
+            "raw_text": "The effect of any fraud perpetuated and fictitious transactions conducted in our ecosystem.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Potential claims under consumer protection laws.",
+            "raw_text": "Potential claims under consumer protection laws.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Tax compliance efforts that may affect our merchants.",
+            "raw_text": "Tax compliance efforts that may affect our merchants.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Effects of public scrutiny, or aggressive marketing and communication strategies of our competitors.",
+            "raw_text": "Effects of public scrutiny, or aggressive marketing and communication strategies of our competitors.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Quarter-to-quarter fluctuations of our results of operations.",
+            "raw_text": "Quarter-to-quarter fluctuations of our results of operations.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Our ability to comply with the terms of our indebtedness and to raise additional capital, as well as interest rate risks.",
+            "raw_text": "Our ability to comply with the terms of our indebtedness and to raise additional capital, as well as interest rate risks.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "The potential insufficiency of insurance coverage.",
+            "raw_text": "The potential insufficiency of insurance coverage.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Our shareholders' limited ability to nominate and elect directors.",
+            "raw_text": "Our shareholders' limited ability to nominate and elect directors.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Differences among the interests of the Alibaba Partnership, SoftBank and our shareholders.",
+            "raw_text": "Differences among the interests of the Alibaba Partnership, SoftBank and our shareholders.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Anti-takeover provisions in our Articles of Association.",
+            "raw_text": "Anti-takeover provisions in our Articles of Association.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Our shareholders do not hold equity securities of our subsidiaries and the VIEs that have substantive business operations in China.",
+            "raw_text": "Our shareholders do not hold equity securities of our subsidiaries and the VIEs that have substantive business operations in China.",
+            "materiality": "High"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Risks and uncertainties relating to the VIE structure, including regulatory risks and uncertainties, limitations of contractual arrangements in providing control over the VIEs.",
+            "raw_text": "Risks and uncertainties relating to the VIE structure, including regulatory risks and uncertainties; limitations of contractual arrangements in providing control over the VIEs; potential failur...",
+            "materiality": "High"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "Changes and developments in the political and economic policies of the PRC government, and uncertainties regarding the interpretation and enforcement of PRC laws, rules and regulations.",
+            "raw_text": "Changes and developments in the political and economic policies of the PRC government, and uncertainties regarding the interpretation and enforcement of PRC laws, rules and regulations.",
+            "materiality": "High"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "Potential delisting of our ADSs from the U.S. pursuant to the HFCA Act.",
+            "raw_text": "Potential delisting of our ADSs from the U.S. pursuant to the HFCA Act.",
+            "materiality": "High"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "PRC regulations relating to investments in offshore companies and employee equity incentive plans.",
+            "raw_text": "PRC regulations relating to investments in offshore companies and employee equity incentive plans.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "Our reliance on dividends, loans and other distributions on equity paid by our operating subsidiaries in China, restrictions on currency exchange or outbound capital flows.",
+            "raw_text": "Our reliance on dividends, loans and other distributions on equity paid by our operating subsidiaries in China, restrictions on currency exchange or outbound capital flows and fluctuations in e...",
+            "materiality": "High"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "The potential impact of PRC laws and regulations related to Internet advertisement.",
+            "raw_text": "The potential impact of PRC laws and regulations related to Internet advertisement.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "The possibility that we may be subject to PRC income tax on our global income, and potential discontinuation of preferential tax treatments we currently enjoy.",
+            "raw_text": "The possibility that we may be subject to PRC income tax on our global income, and potential discontinuation of preferential tax treatments we currently enjoy.",
+            "materiality": "High"
+          },
+          {
+            "category": "PRC Regulatory",
+            "description": "The possibility that dividends payable to foreign investors and gains on the sale of our securities by our foreign investors may become subject to PRC taxation.",
+            "raw_text": "The possibility that dividends payable to foreign investors and gains on the sale of our securities by our foreign investors may become subject to PRC taxation, and uncertainties with respect t...",
+            "materiality": "High"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "Volatilities in the trading prices of our securities, the substantial future sales or perceived potential sales of our securities.",
+            "raw_text": "Volatilities in the trading prices of our securities, the substantial future sales or perceived potential sales of our securities, and the sustainability of active trading markets for our secur...",
+            "materiality": "Medium"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "Different characteristics of the capital markets in Hong Kong and the U.S., and the possibility of a public offering and listing of our equity securities in Shanghai or Shenzhen.",
+            "raw_text": "Different characteristics of the capital markets in Hong Kong and the U.S., and the possibility of a public offering and listing of our equity securities in Shanghai or Shenzhen.",
+            "materiality": "Low"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "The limited ability of our shareholders and U.S. authorities to bring actions against us.",
+            "raw_text": "The limited ability of our shareholders and U.S. authorities to bring actions against us.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "Our exemptions from certain NYSE corporate governance standards and certain disclosure requirements.",
+            "raw_text": "Our exemptions from certain NYSE corporate governance standards and certain disclosure requirements.",
+            "materiality": "Low"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "Potential limitations on the ability of ADS holders to vote, transfer ADSs and receive distributions on our ordinary shares.",
+            "raw_text": "Potential limitations on the ability of ADS holders to vote, transfer ADSs and receive distributions on our ordinary shares, and our discretionary proxy from the depositary of our ADSs.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "The exchange between our Shares and our ADSs that may affect liquidity and/or trading prices of our securities.",
+            "raw_text": "The exchange between our Shares and our ADSs that may affect liquidity and/or trading prices of our securities and cause delays.",
+            "materiality": "Low"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "The possibility that we may become a passive foreign investment company.",
+            "raw_text": "The possibility that we may become a passive foreign investment company.",
+            "materiality": "High"
+          },
+          {
+            "category": "ADSs and Shares",
+            "description": "Uncertainty as to whether Hong Kong stamp duty will apply to the trading or conversion of our ADSs.",
+            "raw_text": "Uncertainty as to whether Hong Kong stamp duty will apply to the trading or conversion of our ADSs.",
+            "materiality": "Low"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Maintaining the trusted status of our ecosystem is critical to our success and growth, and any failure to do so could severely damage our reputation and brand, which would have a material adverse effect on our business, financial condition, results of operations and prospects.",
+            "raw_text": "Maintaining the trusted status of our ecosystem is critical to our success and growth, and any failure to do so could severely damage our reputation and brand, which would have a material adverse effect on our business, financial condition, results of operations and prospects.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Sustained investment in our business, strategic acquisitions and investments, as well as our focus on long-term performance, and on maintaining the health of our ecosystem, may negatively affect our margins and our net income.",
+            "raw_text": "Sustained investment in our business, strategic acquisitions and investments, as well as our focus on long-term performance, and on maintaining the health of our ecosystem, may negatively affect our margins and our net income. We focus on the long-term interests of the participants in our ecosystem. We may continue to increase our spending and investments in our business, including in organic development and growth of new businesses, strategic acquisitions and other initiatives.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain or grow our revenue or our business.",
+            "raw_text": "We may not be able to maintain or grow our revenue or our business. We have experienced significant growth in revenue and in our business in recent years. Our ability to continue to grow our revenue depends on a number of factors.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "If we are unable to compete effectively, our business, financial condition and results of operations would be materially and adversely affected.",
+            "raw_text": "If we are unable to compete effectively, our business, financial condition and results of operations would be materially and adversely affected. We face increasingly intense competition, principally from established Chinese Internet companies, such as Tencent, and their respective affiliates, as well as global and regional e-commerce players, such as Amazon.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain and improve the network effects of our ecosystem, which could negatively affect our business and prospects.",
+            "raw_text": "We may not be able to maintain and improve the network effects of our ecosystem, which could negatively affect our business and prospects. Our ability to maintain a healthy and vibrant ecosystem that creates strong network effects among consumers, merchants, brands, retailers and other participants is critical to our success.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may not be able to maintain our culture, which has been a key to our success.",
+            "raw_text": "We may not be able to maintain our culture, which has been a key to our success. Since our founding, our culture has been defined by our mission, vision and values, and we believe that our culture has been critical to our success.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "If we are not able to continue to innovate or if we fail to adapt to changes in our industry, our business, financial condition and results of operations would be materially and adversely affected.",
+            "raw_text": "If we are not able to continue to innovate or if we fail to adapt to changes in our industry, our business, financial condition and results of operations would be materially and adversely affected. Our industries are characterized by rapidly changing technology, evolving industry standards, new mobile apps and protocols, new products and services, new media and entertainment content.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Our failure to manage the significant management, operational and financial challenges involved in growing our business and operations could harm us.",
+            "raw_text": "Our failure to manage the significant management, operational and financial challenges involved in growing our business and operations could harm us. Our business has become increasingly complex as the scale, diversity and geographic coverage of our business and our workforce continue to expand through both organic growth and acquisitions.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We face risks relating to our acquisitions, investments and alliances.",
+            "raw_text": "We face risks relating to our acquisitions, investments and alliances. We have also made, and intend to continue to make, strategic investments and acquisitions to further strengthen our ecosystem.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We face challenges in expanding our international and cross-border businesses and operations.",
+            "raw_text": "We face challenges in expanding our international and cross-border businesses and operations.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Changes in international trade or investment policies and barriers to trade or investment, and the ongoing geopolitical conflict, may have an adverse effect on our business and expansion plans.",
+            "raw_text": "Changes in international trade or investment policies and barriers to trade or investment, and the ongoing geopolitical conflict, may have an adverse effect on our business and expansion plans.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "Export control, economic or trade sanctions and a heightened trend towards trade and technology de-coupling could negatively affect our technology supply chain and ability to recruit talent.",
+            "raw_text": "Export control, economic or trade sanctions and a heightened trend towards trade and technology de-coupling could negatively affect our technology supply chain and ability to recruit talent.",
+            "materiality": "High"
+          },
+          {
+            "category": "Business and Industry",
+            "description": "We may suffer reputational harm and the trading prices of our ADSs, Shares and/or other securities may decrease significantly due to business dealings by, or connections of, merchants or consumers.",
+            "raw_text": "We may suffer reputational harm and the trading prices of our ADSs, Shares and/or other securities may decrease significantly due to business dealings by, or connections of, merchants or consumers.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Regulatory",
+            "description": "We are subject to a broad range of laws and regulations, and future laws and regulations may impose additional requirements and other obligations that could materially and adversely affect our business.",
+            "raw_text": "We are subject to a broad range of laws and regulations, and future laws and regulations may impose additional requirements and other obligations that could materially and adversely affect our business.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "We rely on Alipay to conduct substantially all of the payment processing and all of the escrow services on our marketplaces.",
+            "raw_text": "We rely on Alipay to conduct substantially all of the payment processing and all of the escrow services on our marketplaces. If services and products provided by Alipay or Ant Group's other businesses are restricted, our business, financial condition and results of operations would be materially and adversely affected.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "Ant Group, which provides payment processing services as well as facilitates other financial and value-added services, is subject to a broad range of evolving laws and regulations.",
+            "raw_text": "Ant Group, which provides payment processing services as well as facilitates other financial and value-added services, is subject to a broad range of evolving laws and regulations, and additional laws and regulations may be enacted that could materially and adversely affect Ant Group's ability to provide services to us and/or our merchants and consumers.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "Anti-monopoly and unfair competition claims or regulatory actions against us may result in our being subject to fines, constraints on our business and damage to our reputation.",
+            "raw_text": "Anti-monopoly and unfair competition claims or regulatory actions against us may result in our being subject to fines, constraints on our business and damage to our reputation.",
+            "materiality": "High"
+          },
+          {
+            "category": "Regulatory",
+            "description": "PRC regulations regarding acquisitions impose significant regulatory approval and review requirements, which could make it more difficult for us to pursue growth through acquisitions.",
+            "raw_text": "PRC regulations regarding acquisitions impose significant regulatory approval and review requirements, which could make it more difficult for us to pursue growth through acquisitions.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Data Privacy",
+            "description": "Our business and technologies generate and process a large amount of data, including personal data, and the improper use or disclosure of data could result in regulatory investigations and penalties.",
+            "raw_text": "Our business and technologies generate and process a large amount of data, including personal data, and the improper use or disclosure of data could result in regulatory investigations and penalties. Our business is subject to complex and evolving domestic and international laws and regulations regarding privacy and data protection.",
+            "materiality": "High"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "The Alibaba Partnership and related voting agreements limit the ability of our shareholders to nominate and elect directors.",
+            "raw_text": "The Alibaba Partnership and related voting agreements limit the ability of our shareholders to nominate and elect directors.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "The interests of the Alibaba Partnership may conflict with the interests of our shareholders.",
+            "raw_text": "The interests of the Alibaba Partnership may conflict with the interests of our shareholders.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "SoftBank owns approximately 24.8% of our outstanding ordinary shares and its interests may differ from those of our other shareholders.",
+            "raw_text": "SoftBank owns approximately 24.8% of our outstanding ordinary shares and its interests may differ from those of our other shareholders.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "If the PRC government deems that the contractual arrangements in relation to our variable interest entities do not comply with PRC regulations on foreign investment, or if these regulations or the interpretation thereof change.",
+            "raw_text": "If the PRC government deems that the contractual arrangements in relation to our variable interest entities do not comply with PRC regulations on foreign investment, or if these regulations or the interpretation thereof change, there could be a material adverse effect on our business.",
+            "materiality": "High"
+          },
+          {
+            "category": "Corporate Structure",
+            "description": "Substantial uncertainties exist with respect to the interpretation and implementation of the PRC Foreign Investment Law and its implementing rules and other regulations.",
+            "raw_text": "Substantial uncertainties exist with respect to the interpretation and implementation of the PRC Foreign Investment Law and its implementing rules and other regulations and how they may impact our business operations and corporate structure.",
+            "materiality": "High"
+          },
+          {
+            "category": "Country Risk",
+            "description": "Changes and developments in the political and economic policies of the PRC government may materially and adversely affect our business, financial condition and results of operations.",
+            "raw_text": "Changes and developments in the political and economic policies of the PRC government may materially and adversely affect our business, financial condition and results of operations and may result in our limited ability to enforce our rights under contractual arrangements.",
+            "materiality": "High"
+          },
+          {
+            "category": "Country Risk",
+            "description": "There are uncertainties regarding the interpretation and enforcement of PRC laws, rules and regulations.",
+            "raw_text": "There are uncertainties regarding the interpretation and enforcement of PRC laws, rules and regulations.",
+            "materiality": "Medium"
+          },
+          {
+            "category": "Country Risk",
+            "description": "If our auditor is sanctioned or otherwise penalized by the PCAOB or the SEC as a result of failure to comply with inspection or investigation requirements, our financial statements could be determined to be not in compliance with applicable securities laws.",
+            "raw_text": "If our auditor is sanctioned or otherwise penalized by the PCAOB or the SEC as a result of failure to comply with inspection or investigation requirements, our financial statements could be determined to be not in compliance with applicable securities laws.",
+            "materiality": "High"
+          },
+          {
+            "category": "Securities",
+            "description": "The trading prices of our ADSs and Shares have been and are likely to continue to be volatile, which could result in substantial losses to holders of our ADSs and/or Shares.",
+            "raw_text": "The trading prices of our ADSs and Shares have been and are likely to continue to be volatile, which could result in substantial losses to holders of our ADSs and/or Shares.",
+            "materiality": "Medium"
+          }
+        ]
+      }
+    },
+    "triage": {
+      "meta": {
+        "agent_name": "triage",
+        "timestamp": "2026-03-28T17:19:45.448003+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 10263
+      },
+      "output": {
+        "stop_signal": null,
+        "decision": "WATCH",
+        "explainability_score": {
+          "business_model": 6,
+          "competition_structure": 5,
+          "financial_mapping": 5,
+          "key_drivers": 5
+        },
+        "fatal_unknowns": [
+          "分部数据（Segment Data）系统性缺失：结构化数据明确标注'分部数据：无'，无法从现有数据区分核心电商与阿里云各自的收入、毛利贡献",
+          "VIE架构监管风险：风险因素中包含VIE相关92条，VIE_Cash_Flows、VIE_Operations_Schedule等脚注主题存在但缺乏透明度量化；中国数据安全法、外资所有权政策的不确定性无法从当前数据评估",
+          "资产负债表数据不完整：覆盖年份仅4年（缺少2025年资产负债表），与利润表/现金流5年不匹配"
+        ],
+        "why_it_is_or_is_not_coverable": "**数据层面**：阿里巴巴具备充足的基础数据（5年完整利润表+现金流、266份财报文件、20-F年报覆盖FY2019-FY2025），商业模式基本可解释（电商平台收佣金/广告费+云服务收订阅费），SEC CIK可追溯，竞争格局相对清晰（中国电商/云计算主要参与者可识别）。这些特征使初步分析成为可能。\n\n**关键限制**：1）结构化数据明确缺失分部数据（Segment Data: 无），无法区分淘宝/天猫/阿里云各业务线的收入和盈利贡献——这对于理解阿里巴巴这家业务多元化公司是重大缺口；2）VIE架构的监管影响（数据安全法、外资限制政策）虽在92条风险因素中提及但缺乏量化；3）风险因素中VIE_Profit_Transfer、VIE_Enforcement等脚注主题表明结构性风险存在但当前数据包未提供详细财务影响。\n\n**可覆盖性评估**：VIE风险和中国监管属于整个中概股市场的系统性风险（已知风险但难以精确量化，投资者通常通过折价应对）；分部数据理论上可从20-F年报附注中提取，但需要额外解析工作。如果接受这些限制，可以在分析中标注并继续；否则应先补充年报附注数据。\n\n**最终评分逻辑**：四维均分5.25，落在WATCH区间（5-7），无单维度低于4分，无绝对致命未知（无财报/三表完全缺失），但分部数据缺失和VIE风险构成\"可解决但需要额外工作\"的未知。",
+        "next_step": "建议进入深度分析，但需先完成以下补充工作：（1）从最新20-F年报（FY2025，2025-06-26）附注中提取分部收入/利润数据，解决segment data缺失问题；（2）评估VIE架构下的现金流和利润转移风险对估值的影响；（3）对比FY2025资产负债表确认数据完整性；（4）在估值模型中为监管/竞争不确定性设定显性风险溢价或折价。分析深度应聚焦于：电商GMV趋势、云业务利润率拐点、竞争格局变化（拼多多/抖音份额侵蚀程度）、资本配置效率（股票回购、阿里云分拆进展）。",
+        "data_availability_summary": "财务数据基本充足（5年利润表+现金流，4年资产负债表，266份文件），但分部数据系统性缺失（无法区分各业务线盈利贡献），VIE风险和监管不确定性已知但缺乏量化，需从年报附注补充。"
+      }
+    },
+    "moat": {
+      "meta": {
+        "agent_name": "moat",
+        "timestamp": "2026-03-28T17:20:12.504869+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 51239
+      },
+      "output": {
+        "stop_signal": null,
+        "industry_structure": "**行业结构：中国电商 - 寡头垄断但竞争加剧**\n\n**集中度（事实）**：\n- 中国电商市场CR3估计：阿里巴巴（淘宝天猫）、京东、拼多多三者合计可能占据约80%+市场份额\n- 阿里巴巴核心电商（淘宝天猫）FY2024营收4349亿元，占总营收约46%\n- 短视频电商（抖音、快手）快速崛起，正在抢占市场份额\n\n**竞争格局（事实）**：\n- 主要竞争对手：腾讯（微信小程序生态）、京东（自营模式）、拼多多（下沉市场）、字节跳动（抖音电商）\n- 风险因素明确提及：\"We face increasingly intense competition, principally from established Chinese Internet companies and their respective affiliates, global and regional e-commerce players\"\n- 2021年反垄断处罚182亿元表明监管已将阿里巴巴视为具有市场支配地位\n\n**进入壁垒（推断）**：\n- 高资本投入（物流、技术基础设施）\n- 网络效应的存在创造了后来者进入壁垒\n- 但监管\"二选一\"限制的解除降低了壁垒\n\n**结论**：寡头垄断格局，但竞争在加剧，格局趋于分散化",
+        "moat_type": [
+          "网络效应",
+          "规模效应",
+          "数据资产",
+          "生态协同"
+        ],
+        "pricing_power_position": "**议价权分析：价格接受者偏多，定价权受限**\n\n**下游（商家）议价能力**：\n- 事实：营销服务采用竞价模式（P4P/CPC），商家通过在线拍卖系统竞标关键词\n- 事实：佣金率0.3%-5.0%（因品类而异），存在明确的价格区间\n- 推断：商家可选择多个平台（京东、拼多多、抖音），对平台有一定议价能力\n- **判断：价格接受者，非价格制定者**\n\n**上游（供应商）议价能力**：\n- 支付处理：依赖支付宝，风险因素明确提及\"We rely on Alipay to conduct substantially all of the payment processing\"\n- 内容/云服务供应商：分散且充分竞争，议价能力弱\n- 物流：自建Cainiao+第三方物流，竞争充分\n- **判断：平台对大多数上游有议价优势**\n\n**综合评估**：阿里巴巴在部分上游领域有议价优势，但向下游商家定价能力有限，更多是作为流量分发平台的角色",
+        "moat_trend": "**护城河趋势：稳定偏弱化**\n\n**弱化信号（事实）**：\n1. **竞争加剧**：淘宝天猫营收FY2022→FY2023从4132亿→4349亿（+5%），增速放缓\n2. **监管压力**：反垄断罚款182亿元（FY2021），监管明确限制\"二选一\"行为，降低了平台锁定效应\n3. **用户时长被分流**：抖音、快手等短视频平台抢占用户时间和电商份额\n4. **风险因素明确承认**：\"If we are unable to compete effectively, our business, financial condition and results of operations would be materially and adversely affected\"\n\n**稳定/支撑信号（事实）**：\n1. **规模优势仍在**：FY2024调整后EBITA利润率约17.5%，较FY2022（15%）有所提升\n2. **用户基础稳固**：风险因素提及\"maintaining the trusted status of our ecosystem is critical\"，表明用户信任和习惯仍是优势\n3. **多元化布局**：云计算（阿里云）、国际业务等新增长点分散了电商竞争风险\n\n**推断**：\n- 网络效应和规模效应仍然存在，但边际价值在递减\n- 转换成本部分存在（商家积累了平台运营经验），但监管降低了对商家的锁定\n- 数据资产的护城河价值可能在AI时代反而增强\n\n**结论**：护城河稳定偏弱化。主要竞争压力来自抖音、快手等新进入者，而非原有电商竞争对手。数据资产可能是未来护城河的关键变量。"
+      }
+    },
+    "ecology": {
+      "meta": {
+        "agent_name": "ecology",
+        "timestamp": "2026-03-28T17:20:14.079023+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 51501
+      },
+      "output": {
+        "stop_signal": null,
+        "ecological_niche": "**生态位主导者，但面临侵蚀风险**\n\n**核心位置（事实）：**\n- 中国最大电商生态系统之一，FY2025营收9963亿元，净利润1260亿元\n- 核心业务Taobao & Tmall Group贡献营收4349亿元，占比约44%\n- 覆盖零售、批发、云计算、物流、本地服务、数字娱乐等多元生态\n- 年活跃消费者超过10亿，移动MAU数亿级别\n\n**生态位特征（推断）：**\n- 是\"关键物种\"——其生态系统连接数亿消费者、数百万商家、物流商和服务提供商\n- 具有明显的网络效应：更多商家吸引更多消费者，反之亦然\n- 但生态位正在被侵蚀：拼多多、抖音电商侵蚀市场份额\n\n**可替代性风险（事实+推断）：**\n- 低替代性：生态系统规模效应极难复制\n- 中等威胁：抖音等超级APP正在重新定义电商场景\n- 结论：核心位置稳固但份额将持续面临竞争压力",
+        "adaptability_trend": "**适应能力：中等，存在结构性障碍**\n\n**适应性证据（事实）：**\n- 持续技术投资：FY2024投资Moonshot AI 8亿美元获36%股权\n- 组织结构调整：FY2024重组为\"1+6+N\"架构，释放业务单元自主性\n- 国际化扩张：国际业务FY2025营收同比增长显著（Lazada、Trendyol等）\n- FY2025净利润同比大幅增长77%，显示效率改善\n\n**适应性障碍（事实+推断）：**\n- VIE结构约束：法律框架限制了对核心资产的实际控制权\n- 监管合规成本：反垄断、数据安全等监管持续施压\n- 大象难跳舞：规模庞大导致决策复杂、转向速度慢\n- 应对新竞争（短视频电商）：反应相对被动\n\n**趋势判断：**\n- 适应性方向正确（AI、云计算、国际化），但速度中等\n- 面临\"适应性延迟\"风险——在环境快速变化时可能落后",
+        "cyclical_vs_structural": "**当前业绩：周期性与结构性因素共存，以周期性为主**\n\n**周期性因素（事实）：**\n- FY2022净利润从FY2021的1432亿骤降至470亿：主因市场估值下降导致投资组合亏损+商誉减值250亿\n- FY2025业绩大幅反弹：净利润从713亿增至1260亿（+77%）\n- 投资组合公允价值变动贡献显著非经营利润\n\n**结构性改善证据（事实）：**\n- 运营效率提升：销售费用率从FY2023的12%降至FY2024的12%（稳定），管理费用率从5%降至4%\n- 淘宝天猫客户管理收入从FY2023的2915亿增至FY2024的3040亿\n- 非GAAP净利润持续增长：FY2023 1414亿→FY2024 1575亿→FY2025更高\n\n**区分结论：**\n- FY2025业绩改善约40-50%来自周期性因素（市场回暖+投资重估）\n- 约50-60%来自结构性改善（运营效率、电商基本盘稳固）\n- 判断：阿里巴巴是\"结构性适者\"但仍受周期影响——真正的竞争优势在于生态系统规模和网络效应，而非单纯的行业景气",
+        "long_term_survival_probability": "**10-20年生存概率评估：中高（65-75%），关键在于适应性进化**\n\n**支撑因素（事实+推断）：**\n- 生态系统粘性：10亿+用户、百万级商家形成极高转换成本\n- 多元化收入：电商、云计算、物流、本地服务等多条增长曲线\n- 财务实力：FY2025净利润1260亿元，现金流充沛\n- 战略投资：AI、云计算、国际化的前瞻性布局\n\n**主要威胁（推断）：**\n1. 监管VIE风险（高）：PRC政府可随时认定VIE不合规，严重影响控制权\n2. 退市风险（中-高）：HFCA法案下的PCAOB审计问题可能导致ADR退市\n3. 竞争侵蚀（中）：抖音等平台持续抢占电商份额\n4. 地缘政治（高）：中美关系恶化可能带来系统性风险\n\n**生存概率分布：**\n- 基准情景（60%概率）：存活但份额持续下降，类似京东处境\n- 乐观情景（25%概率）：成功转型为AI驱动的科技巨头\n- 悲观情景（15%概率）：因监管或地缘政治因素遭受严重打击\n\n**结论：** 阿里巴巴作为\"生态系统关键物种\"具有较高的生存概率，但面临VIE结构、地缘政治、多元化竞争等结构性风险。真正的风险不是被竞争淘汰，而是被非商业因素（非市场风险）摧毁。"
+      }
+    },
+    "systems": {
+      "meta": {
+        "agent_name": "systems",
+        "timestamp": "2026-03-28T17:20:20.274130+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 54206
+      },
+      "output": {
+        "stop_signal": null,
+        "single_points_of_failure": [
+          "VIE结构控制机制 - 最危险的单点故障。如果PRC政府认定VIE合同安排不合规，整个中国互联网业务运营基础可能崩塌，无法通过法律途径有效救济。公司本身仅为开曼群岛持股公司，无实质资产控制",
+          "Alipay支付基础设施 - 依赖Alipay进行'substantially all'支付处理和 escrow服务。Alipay属于Ant Group（关联公司），若Ant Group受监管限制或服务中断，整个电商生态交易清算将陷入停顿",
+          "核心管理层集中度 - Alibaba Partnership通过投票协议控制董事会多数席位，公司文化和管理连续性高度依赖创始团队。SoftBank持股24.8%形成大股东博弈",
+          "平台信任生态系统 - 消费者对平台的信任是网络效应的基础。一旦出现大规模假货、数据泄露或平台责任事件，可能触发用户流失的不可逆雪崩",
+          "PRC监管政策通道 - 所有业务运营最终依赖PRC政府默许。VIE合同未经法院测试，2019年以来的科技行业整肃表明监管风险不是理论假设而是现实威胁"
+        ],
+        "fragility_sources": [
+          "监管-政策脆弱性极高 - VIE结构foreign investment restrictions合规性始终悬于监管一念之间；反垄断执法已造成182亿元罚款先例；HFCA Act退市风险持续存在；数据安全法、个人信息保护法构成运营合规成本",
+          "地理集中风险 - 绝大部分收入和利润来自中国境内业务，受PRC经济政策、消费者信心、竞争格局变化高度敏感。国际业务（AliExpress/Lazada/Trendyol）仍处于亏损状态",
+          "资金回流限制 - PRC外汇管制限制股息汇出。中国子公司留存收益约3047亿元，现金回流路径依赖政府许可，存在政策突变风险",
+          "技术供应链风险 - 芯片出口管制、云计算基础设施限制可能影响AI投资（如Moonshot）和国际业务扩张；高端人才招募受地缘政治影响",
+          "竞争脆弱性 - 核心电商业务面临腾讯系（微信生态）、字节跳动（抖音电商）、京东的持续蚕食；客户管理收入已从2021年高点下滑后刚回升",
+          "商誉和无形资产减值 - FY2022-2024累计商誉减值约385亿元，主要来自数字媒体娱乐业务；收购整合风险持续存在",
+          "Ant Group关联风险 - 虽然不并表，但Alibaba生态深度依赖Ant Group服务；Ant IPO暂停及监管整改状态持续构成潜在冲击",
+          "税收政策不确定性 - 预提税5%/10%、高新技术企业优惠税率（15%/10%）依赖政府认定，政策变化直接影响实际税率"
+        ],
+        "fault_tolerance": "资产负债表容错空间评估（FY2023）：现金166.6亿元/总流动负债311.9亿元，流动性比率1.49；长期债务138.4亿元占总资产7.5%，杠杆率适中；股东权益1190.4亿元/总资产1837.3亿元，净资产收益率~6.1%（较低）。整体具备抗冲击缓冲，但收益率偏低反映资产效率问题\n经营现金流稳健：FY2023 OCF 172.4亿元→FCF 148亿元；FY2024/2025数据显示OCF持续增长。自由现金流转正提供战略投资和应对危机的资金来源\n多元化业务分部容错：Taobao/Tmall为核心利润引擎（FY2024 EBITA 1948亿元），Cloud/International业务处于成长阶段但尚未盈利；Local Services继续亏损。收入来源相对分散，无单一客户依赖\n备用流动性存在：6.5亿美元循环信贷额度未使用，提供紧急融资通道。但美元融资受汇率和地缘政治影响\n关键未知 - VIE结构现金实际可调度性：虽然公司披露'significant majority'利润由子公司直接捕获，但VIEs持有经营许可和受限业务牌照。全面压力情景下法律路径未经测试",
+        "system_resilience": "韧性评级：结构性脆弱性高，系统整体韧性中等偏下。主要原因是VIE风险是'未解决的根本性缺陷'而非已度过的危机——公司从未在VIE结构真实崩溃情景下测试过\n历史上冲击恢复能力：(1) 2021年反垄断调查后支付182亿元罚款仍维持运营，说明商业韧性存在；(2) FY2022净利大幅下滑67%后两年内恢复增长；(3) 中国互联网行业2021-2023年监管整顿中存活。但这些都是在VIE结构未受直接挑战情况下的恢复\n非线性风险警示：VIE崩溃→失去中国业务并表→股价/ADS流动性大幅下降→可能触发退市，这是一条真实存在但概率难以量化的传导链。不是可恢复的冲击，而是潜在存在性损伤\n投资者需认识的根本矛盾：公司以离岸控股结构持有中国运营实体，但真正价值创造发生在中国。股东权利与资产控制权的分离在正常环境下是可用结构，在极端环境下是致命脆弱性\n明确未知：(1) PRC政府未来对VIE立场——这是最大不可量化风险；(2) 地缘政治恶化速度——芯片禁令、AI限制的实际执行范围；(3) 竞争格局拐点——抖音电商对阿里核心业务的侵蚀速度"
+      }
+    },
+    "psychology": {
+      "meta": {
+        "agent_name": "psychology",
+        "timestamp": "2026-03-28T17:20:28.334975+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 68730
+      },
+      "output": {
+        "stop_signal": null,
+        "management_incentive_distortion": "**管理层激励扭曲分析**\n\n**事实：**\n1. 股权激励规模大但持续下降：FY2022为23,971M RMB，FY2023为30,831M，FY2024降至18,546M RMB\n2. Ant Group股票薪酬极端波动：FY2022回转11,585M，FY2024回转6,901M（因Ant Group估值下降）\n3. 管理层持股极低：全体董事和高管合计仅持股1.8%，SoftBank从FY2021的24.8%降至FY2024的14.2%\n4. 阿里巴巴合伙人制度控制董事会半数以上提名权，且需要95%股东同意才能修改\n\n**推断：**\n1. 股权激励金额下降+Ant Group估值回转=管理层可能存在做低短期激励成本的动机\n2. 合伙人制度的控制权结构可能使管理层更像\"终身制\"而非\"可问责的代理人\"\n3. 外部股东对管理层的约束力极弱——合伙人可永久控制董事会，而SoftBank持续减持说明长期投资者也在撤退\n4. 管理层无显著个人持股增持记录，CEO Eddie Wu 2023年上任后未见显著持股\n\n**未知：**\n- 高管薪酬中长期与短期激励的具体比例（报告仅披露总额）\n- 合伙人制度的文化保护机制是否真正服务于股东，抑或是管理层权力的护城河\n\n**结论信号：**\n管理层激励与股东长期价值存在明显错位——控制权结构让外部股东难以制衡，股权激励下降且与Ant Group估值挂钩（产生人为波动），大股东持续减持传递负面信号。",
+        "market_sentiment_bias": "**市场情绪偏差分析**\n\n**事实：**\n1. 股价从2020年高点~310美元暴跌至当前~123美元，跌幅~60%\n2. 市盈率21.9倍，市净率1.89倍——处于历史估值区间的低端\n3. FY2025净利润暴增77%至126B RMB，但市场未给予相应估值提升\n4. FY2023收入增速仅2%，FY2024恢复到8%，FY2025为6%——增速中枢下移\n\n**推断：**\n1. 存在\"膝跳反射\"式恐慌：中国监管风暴记忆犹新，投资者的恐惧尚未消退\n2. 当前市场定价包含了对最坏情景的风险溢价，但FY2025基本面已显著改善（净利润增长77%）\n3. FY2022净利润曾因投资损失和商誉减值（25,141M RMB）暴跌67%，这是非经常性的，但市场可能仍心有余悸\n4. 电商行业整体估值承压，竞争对手PDD、JD也都在低位——这更像行业恐慌而非个股问题\n\n**潜在认知偏差：**\n1. 锚定偏差：投资者仍锚定在2020年高点，认为\"跌60%\"就是便宜，但忘了当时是超级增长股定价\n2. 损失厌恶：暴跌后投资者不愿加仓，即使基本面已改善\n3. 羊群效应：国际投资者因地缘政治风险集体减持，形成自我实现的悲观预期\n4. 叙事谬误：\"中国科技股=高风险\"的简单标签取代了对个券的细致分析\n\n**未知：**\n- 地缘政治风险是否已充分price in\n- 中国消费者支出复苏的实际力度\n\n**结论：**\n市场情绪偏悲观，存在将监管风险过度外推的可能。FY2025净利润增长77%与低迷的股价形成明显背离，这种背离可能孕育机会，但也可能说明市场认为增长不可持续。",
+        "narrative_vs_fact_divergence": "**叙事与事实背离分析**\n\n**广泛流传的叙事 vs 实际数据：**\n\n**叙事1：\"跌出来的价值洼地\"**\n- 事实：PE从100+倍跌到21倍，表面上便宜了，但FY2022净利润曾暴跌67%（非经常性），FY2021净利润实际低于FY2020。增长中枢已从40%回落到个位数，当前估值对应的是个位数增长的\"成熟公司\"\n- 风险：误将\"跌多了\"当\"便宜了\"\n\n**叙事2：\"AI转型带来新增长\"**\n- 事实：报告中提到投资Moonshot AI等，但云计算收入FY2024仅增长3%，且面临华为云、腾讯云激烈竞争\n- 风险：AI叙事可能超前于实际业务贡献\n\n**叙事3：\"国际化是第二增长曲线\"**\n- 事实：国际业务（AliExpress、Lazada等）持续亏损，FY2024国际数字商业板块调整后EBITA仍为-8,035M RMB\n- 风险：亏损业务的高增长不等于高价值\n\n**叙事4：\"合伙人制度保护企业文化\"**\n- 事实：这种制度使管理层免于外部股东的有效制衡，95%超级多数票的修改门槛几乎不可能被打破\n- 风险：将\"熟悉的中国做法\"误认为\"合理公司治理\"\n\n**叙事5：\"监管最坏时期已过\"**\n- 事实：FY2021年182亿反垄断罚款后确实缓和，但竞争监管、数据安全、平台治理的监管框架仍在持续\n- 风险：放松不等于消失\n\n**最被忽视的事实：**\n1. 核心电商业务增速已降至个位数：客户管理收入（最核心利润来源）增长疲软\n2. 竞争格局恶化：PDD的崛起速度超预期，抖音电商的威胁真实存在\n3. 自由现金流质量：FY2022-2023 Capex显著增加，资本效率下降\n4. 商誉和无形资产减值频繁：FY2022商誉减值25,141M，FY2024减值10,521M——收购整合记录不佳\n\n**结论：**\n主流叙事存在将\"跌多了\"、\"AI故事\"、\"国际化前景\"当作投资理由的倾向，但忽视了核心业务增长放缓、竞争加剧、资本效率下降等根本性变化。\"好公司\"的标签不等于\"好股票\"的估值。"
+      }
+    },
+    "compounding": {
+      "meta": {
+        "agent_name": "compounding",
+        "timestamp": "2026-03-28T17:20:32.501997+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 44918
+      },
+      "output": {
+        "stop_signal": null,
+        "compounding_engine": "**复利引擎评估：平台商业模式的运营杠杆正在显现**\n\n**引擎构成（事实）：**\n1. **高毛利率平台模式**：FY2023毛利率37.9%，收入以广告/佣金为主（边际成本极低）\n2. **运营杠杆释放**：营业利润率从FY2022的8.2%提升至FY2023的8.0%（FY2022含18.2B RMB罚款），FY2025进一步跳升至14.1%（推算）\n3. **净利润大幅增长**：FY2025净利润126B RMB，同比+77%，远高于收入增速5.9%\n\n**推断：**\n- 核心电商（淘宝/天猫）提供稳定现金流，是\"复利引擎的基础\"\n- 成本控制 + 运营效率提升正在产生显著的运营杠杆\n- 国际商务、云业务亏损收窄，减少了对核心利润的侵蚀\n\n**可持续性评估（推断）：**\n- **支撑因素**：网络效应、规模效应、用户粘性（年活跃消费者超10亿）\n- **风险因素**：监管不确定性（中国科技监管）、竞争加剧（抖音/拼多多）、市场饱和\n\n**结论**：引擎基本可持续，但强度中等偏上——不再是爆发式增长，而是稳定但有限的复利贡献",
+        "incremental_return_on_capital": "**增量资本回报分析**\n\n**ROIC估算（事实）：**\n- FY2023: ~22%（净利润65.3B / 股东权益1,190B）\n- FY2022: ~13%（含18.2B罚款和25.1B商誉减值影响）\n- FY2025: ~34%（净利润126B / 股东权益估算1,350B）— **显著提升**\n\n**趋势判断（推断）：**\n- 增量ROIC在**上升**，主要来自：\n  1. 利润率的显著扩张（运营杠杆）\n  2. 非经常性损失减少（FY2022是异常年份）\n  3. 新业务亏损收窄（国际/本地服务）\n\n**边际投资吸引力（推断）：**\n- **核心电商**：ROIC极高但再投资空间有限（中国电商渗透率已高）\n- **国际业务**：仍亏损，ROIC为负，拉低整体水平\n- **云业务**：已盈利，ROIC为正，AI需求是潜在增长点\n- **整体**：边际投资回报改善，但被国际业务拖累\n\n**结论**：边际投资回报在改善，但投资质量参差不齐——核心业务回报极高，新业务仍需观察",
+        "sustainability_period": "**可持续期评估**\n\n**有利因素（事实/推断）：**\n1. **核心护城河存在**：淘宝/天猫生态系统的网络效应\n2. **利润率改善趋势**：FY2025运营利润率显著提升\n3. **多元化布局**：云业务盈利、国际业务增长、AI投入\n\n**制约因素（推断/未知）：**\n1. **监管风险**：中国科技监管政策的不确定性（高）\n2. **竞争压力**：抖音电商、拼多多持续抢占份额（中-高）\n3. **市场饱和**：中国电商用户增长趋缓（中）\n4. **地缘政治**：中美关系、退市风险（未知）\n\n**可持续期判断（推断）：**\n- **核心电商**：5-8年内保持高ROIC（但增速放缓）\n- **整体公司**：3-5年内有望维持>15%的ROIC\n- **关键变量**：监管走向、竞争格局、AI战略成效\n\n**结论**：中等可持续期，高ROIC能维持但面临较多结构性挑战",
+        "per_share_value_growth_logic": "**每股价值增长逻辑**\n\n**增长驱动力拆解（事实 + 推断）：**\n\n| 驱动力 | FY2025表现 | 评估 |\n|--------|-----------|------|\n| 净利润增长 | +77%（126B vs 71B RMB） | ✓ 强 |\n| 收入增长 | +5.9%（996B vs 941B RMB） | △ 放缓 |\n| 利润率提升 | 运营杠杆释放 | ✓ 改善中 |\n| 股份变化 | 数据缺失 | ? 不确定 |\n| 回购/分红 | 无历史分红记录 | ? 潜在催化剂 |\n\n**每股指标历史趋势（事实）：**\n\n| 指标 | FY2021 | FY2022 | FY2023 | FY2025 |\n|------|--------|--------|--------|--------|\n| 摊薄EPS | $3.82 | $3.00 | $3.31 | 估算$6.5-7.0 |\n| 收入增速 | +41% | +19% | +2% | +5.9% |\n| 净利润增速 | +2% | -67% | +39% | +77% |\n\n**每股内在价值增长路径（推断）：**\n\n1. **短期（1-3年）**：利润增长驱动价值\n   - 运营杠杆 + 成本控制 → 净利润继续增长\n   - 股份若缩减（回购），每股增长加速\n\n2. **中期（3-5年）**：\n   - 核心电商增速放缓（低个位数）\n   - 云业务 + 国际业务贡献增加\n   - 每股增长转向质量驱动\n\n3. **关键风险（未知）**：\n   - 股份扩张稀释程度\n   - 回购计划实施情况\n   - 竞争格局演变\n\n**结论**：每股价值增长逻辑成立，但\"股东回馈\"机制（回购/分红）仍是空白——这限制了其作为\"复利机器\"的完整性"
+      }
+    },
+    "accounting_risk": {
+      "meta": {
+        "agent_name": "accounting_risk",
+        "timestamp": "2026-03-28T17:20:38.986266+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 2047
+      },
+      "output": {
+        "stop_signal": null,
+        "risk_level": "GREEN",
+        "major_accounting_changes": [
+          "FY2024分部报告结构调整：DingTalk从云智能集团重分类至其他业务，管理层称系为提升创新自主性，报表已做同期对比重述"
+        ],
+        "comparability_impact": "公司主要会计政策（ASC 606收入确认、资产减值测试等）在近三年保持一致，未发现折旧方法、存货计价或坏账准备计提比例的变更。分部报告在FY2024进行了重组（重分类DingTalk至其他业务），但管理层已对同比数据进行了重述，可比性影响有限。VIE结构为已知且在报表附注中充分披露，合并范围未发生重大变化。整体而言，会计政策一致性良好，跨期数据可比性较高。",
+        "credibility_concern": "审计师为普华永道中天（PwC），连续出具无保留意见，内部控制有效性确认无保留，未发现审计师变更或审计意见恶化迹象。公司在FY2022/FY2023/FY2024均确认了大额商誉减值（合计约383.76亿元人民币），系对媒体娱乐等低利润业务的真实价值调整，与市场状况一致，未发现通过减值操纵利润的异常。Non-GAAP与GAAP净利差距较大（约2倍），但调整项（股权激励、无形资产摊销、商誉减值、投资收益等）均为科技公司常见项目，披露完整。非经常性项目（反垄断罚款、安永股权重估等）均有明确业务背景，无不可解释的大额一次性收益。综合判断：公司财务数据可信度高，未发现管理层操纵迹象。",
+        "stop_or_continue": "继续分析"
+      }
+    },
+    "net_cash": {
+      "meta": {
+        "agent_name": "net_cash",
+        "timestamp": "2026-03-28T17:20:45.922384+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 1827
+      },
+      "output": {
+        "stop_signal": null,
+        "net_cash": null,
+        "net_cash_to_market_cap": null,
+        "attention_level": "NORMAL",
+        "dividend_profile": {
+          "pays_dividend": true,
+          "coverage_ratio": null
+        },
+        "buyback_profile": {
+          "has_buyback": false,
+          "shares_reduced": false
+        },
+        "cash_quality_notes": [
+          "数据币种不匹配：资产负债表数据以人民币(RMB)为单位，市场快照以美元(USD)为单位，精确换算需要确认汇率——这是 FACT",
+          "FY2024经营现金流数据异常：182,593,000,000（假设单位为千元人民币），与FY2023的172,393千元差距过大，疑似数据录入错误——这是 FACT/推断",
+          "长期负债138,390千元RMB，短期借款数据在资产负债表中未明确列出——这是 UNKNOWN",
+          "缺少短期借款、应付债券、一年内到期非流动负债等明细，无法精确计算净现金——这是 UNKNOWN",
+          "阿里巴巴作为VIE结构公司，存在海外现金汇回中国的潜在限制——这是 FACT",
+          "市场快照显示市值为$292.9 billion USD，但企业价值为$2.29 trillion USD，两者差距约$2 trillion，表明存在大量未在负债表中体现的或有负债、暗保或少数股权价值调整——这是 FACT",
+          "总资产中包含465,310千元RMB流动资产，但其中仅166,621千元RMB为现金及等价物，其余包含应收账款、存货等——这是 FACT",
+          "分红历史数据显示2021-2023均为null，但市场快照显示股息收益率0.86%，存在数据不一致——这是 FACT"
+        ]
+      }
+    },
+    "valuation": {
+      "meta": {
+        "agent_name": "valuation",
+        "timestamp": "2026-03-28T17:20:55.271152+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 7208
+      },
+      "output": {
+        "stop_signal": null,
+        "valuation_method": [
+          "正常化盈利收益率 (Normalized Earnings Yield)",
+          "自由现金流收益率 (FCF/Owner Earnings Yield)",
+          "ROIC再投资模型 (ROIC Reinvestment Model)"
+        ],
+        "expected_lookthrough_return": {
+          "bear": 0.07,
+          "base": 0.095,
+          "bull": 0.125
+        },
+        "friction_adjusted_return": {
+          "bear": 0.04,
+          "base": 0.065,
+          "bull": 0.095
+        },
+        "meets_hurdle_rate": false,
+        "notes": [
+          "数据一致性警告：FY2023与FY2024/2025数据单位可能不一致（前者疑似千元，后者疑似亿元），但FY2025净利1260亿元与市值21100亿元匹配PE约16.8倍，与报告PE 21.87接近，说明核心数据可靠",
+          "正常化盈利：采用FY2025净利1260亿元（同比+76%为非经常性因素影响），经调整后正常化净利约1000-1100亿元，盈利收益率5-6%",
+          "FCF估算：FY2023 FCF约1480亿元（千元单位），FY2024/2025现金流数据单位存疑但趋势向上，保守假设正常化FCF 1200-1400亿元，FCF收益率约6-7%",
+          "ROIC分析：FY2025 ROE约9-10%（基于权益13931亿），处于互联网行业正常偏低水平；留存率约65-70%（考虑分红），隐含增长率4-6%",
+          "Bear情景：竞争加剧（抖音/京东/拼多多）压缩利润率，宏观消费疲软，增速下台阶至2-3%，盈利收益率4-5%，穿透回报7%",
+          "Base情景：电商基本盘稳定，云计算持续增长，AI投入逐步见效，维持3-5%有机增长，盈利收益率5-6%，穿透回报9.5%",
+          "Bull情景：AI驱动效率大幅改善，云计算加速，海外扩张成功，增速提升至5-7%，盈利收益率6-7%，穿透回报12.5%",
+          "摩擦成本：美股ADR预扣税10%，资本利得税0-20%（取决于居留地），交易佣金0.1-0.3%，换汇成本约0.5%，综合摩擦成本约3%",
+          "汇率风险：RMB计价资产对USD投资者的汇率波动风险显著，近5年USD/RMB波动约15-20%，增加实际回报不确定性",
+          "监管风险：中国科技行业监管政策不确定性高，反垄断、数据安全、平台经济整改等政策变化可能影响长期盈利能力和估值基础"
+        ]
+      }
+    },
+    "financial_quality": {
+      "meta": {
+        "agent_name": "financial_quality",
+        "timestamp": "2026-03-28T17:21:06.911089+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 8215
+      },
+      "output": {
+        "stop_signal": null,
+        "pass_minimum_standard": true,
+        "scores": {
+          "per_share_growth": 3,
+          "return_on_capital": 4,
+          "cash_conversion": 9,
+          "leverage_safety": 9,
+          "capital_allocation": 5,
+          "moat_financial_trace": 5
+        },
+        "key_strengths": [
+          "经营现金流极度充裕，FY2023 CFO/NI比率高达2.64倍，显示利润质量极高",
+          "处于净现金状态（现金1666亿 > 长期债务1384亿），利息覆盖倍数超过16倍，财务风险极低",
+          "资本支出强度低（Capex/Revenue仅2.8%），轻资产模式运营效率出色",
+          "收入端保持增长韧性，从FY2021的7173亿增至FY2023的8687亿，5年CAGR约10%",
+          "经营现金流持续超越净利润，自由现金流充沛为股东价值创造提供基础"
+        ],
+        "key_failures": [
+          "稀释每股收益持续下滑：FY2021的3.82元降至FY2023的3.31元（-13%），且股份从17.54亿增至18.89亿（+7.7%），双重侵蚀每股价值",
+          "资本回报率偏低：ROE约5.5%、ROA约3.6%，考虑到其互联网平台商业模式，回报率未体现高运营杠杆优势",
+          "FY2024-2025数据存在单位/量级异常（净利润数据与历史趋势显著背离），数据可靠性存疑，影响长期趋势判断",
+          "历史无分红记录，回购信息缺失，股东回报机制不明确，资本配置能力无法充分评估",
+          "营业利润率约8%相对平稳但偏低，毛利率37-38%处于行业中游，护城河财务特征不够显著"
+        ],
+        "should_continue": "财务质量勉强达标（平均分5.5），建议继续分析但需谨慎。原因：现金转换（9分）和杠杆安全（9分）是核心优势，但每股增长（3分）和资本回报（4分）是明显短板。需进一步核实FY2024-2025数据异常原因，并深入评估竞争格局变化对长期每股增长和ROE趋势的影响。"
+      }
+    },
+    "critic": {
+      "meta": {
+        "agent_name": "critic",
+        "timestamp": "2026-03-28T17:22:06.641078+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 61494
+      },
+      "output": {
+        "stop_signal": null,
+        "kill_shots": [
+          "VIE架构强制合规性重组：如果PRC政府以\"外国投资法\"或数据安全法规为由认定VIE合同安排不合规，阿里巴巴将失去对中国核心运营实体的控制权。开曼群岛控股公司将变成一个空壳，持有无法通过法律途径救济的合同债权。整个投资论点的基础——对中国最大电商平台的所有权——将在一夜之间消失。这不是尾部风险，而是公司成立至今始终存在的\"房间里的大象\"。历史上中国从未明确表态支持VIE，反垄断整肃已经证明政府随时可以对科技巨头采取行动。",
+          "核心电商流量入口地位被短视频平台永久性颠覆：抖音电商+快手电商的GMV正在以远超行业增速扩张，用户日均使用时长远超淘宝。当品牌商和商家发现抖音的转化率更高时，他们会转移营销预算；当消费者习惯在刷短视频时购物时，淘宝\"购物搜索\"的入口价值将被釜底抽薪。淘宝天猫的客户管理收入（最核心利润来源）已经出现零增长甚至负增长，这可能是网络效应崩塌的前兆。平台型商业模式的核心是\"流量\"，一旦失去流量分发权，护城河将彻底消失。",
+          "SEC/HFCA法案强制退市叠加地缘政治黑天鹅：如果PCAOB审计问题引发退市风险，或者中美关系进一步恶化导致更严厉制裁，持有ADR的国际投资者将面临无法变现的流动性危机。阿里巴巴虽已完成港股双重主要上市，但这只解决了部分问题。美股ADS持有者如果在极端情景下无法转换为港股，将面临灾难性损失。更危险的是，退市恐慌可能触发负反馈循环：机构减持→股价下跌→更多止损→流动性枯竭。"
+        ],
+        "permanent_loss_risks": [
+          "商誉与无形资产持续减值揭示的战略投资失败：FY2022-2024累计商誉减值约385亿元人民币，主要来自数字媒体娱乐（Youku等）和进口电商等低利润业务。管理层将这些亏损业务描述为\"具有战略价值\"，但事实是：这些业务持续侵蚀核心利润，ROIC为负且无改善迹象。如果商誉减值继续，每股净资产将被持续蚕食，当前PB 1.89倍看似便宜，但如果资产质量持续恶化，市净率将失去支撑。",
+          "VIE结构下留存收益（约3047亿元RMB）实际上是\"被困资本\"：PRC外汇管制限制股息汇出，海外股东获取中国业务产生的现金流存在实质性障碍。披露称\"significant majority\"利润由子公司直接捕获，但VIEs持有经营许可和受限业务牌照。在极端压力情景下（VIE合同被认定无效、监管介入），这些留存收益可能根本无法转化为对海外股东的回报。",
+          "FY2025净利润暴增77%是周期性反弹而非结构性改善：其中约40-50%来自投资组合公允价值变动（市场回暖），非GAAP与GAAP净利差距约2倍。当投资市场重新走弱时（如当前全球经济放缓背景下），净利润可能再次暴跌。核心盈利能力（扣除投资损益后）的可持续性存疑。",
+          "股份持续稀释吞噬每股价值：历史数据显示稀释股份从FY2021的17.54亿增至FY2023的18.89亿（+7.7%），而EPS从3.82元降至3.31元（-13%）。如果公司继续通过股权激励或换股收购扩张，每股价值将被持续稀释。在ROE仅约5.5%的情况下，股份扩张是典型的价值毁灭。",
+          "竞争格局恶化导致核心电商定价权丧失：客户管理收入（竞价广告+佣金）面临商家议价能力上升的压力。随着拼多多、抖音电商崛起，商家可以在多平台分散投放，对单一平台的依赖度降低。竞价广告的核心是\"稀缺性\"（平台流量有限），但当用户时长被分流时，广告库存增加，竞价价格将面临系统性下降压力。"
+        ],
+        "moat_destruction_paths": [
+          "短视频电商重新定义\"购物场景\"，淘宝搜索入口价值归零：网络效应的本质是\"更多买家吸引更多卖家\"，但这个逻辑前提是用户先打开淘宝再搜索商品。当用户习惯在抖音刷视频时\"顺便\"购物，淘宝变成了比价工具而非购物起点。网络效应的崩塌是自我加速的——用户流失导致商家流失，商家流失进一步加速用户流失。淘宝正在从\"购物搜索引擎\"沦为\"比价工具\"，这将从根本上瓦解其商业模式。",
+          "监管\"二选一\"禁令解除后平台锁定效应消失：2021年反垄断处罚的核心是禁止阿里强迫商家独家合作。禁令实施后，商家可以在多个平台同时开店经营，对淘宝的依赖度显著下降。品牌商的全渠道战略进一步削弱了单一平台的议价能力。监管曾经是阿里护城河的一部分（市场支配地位），现在这条护城河已被监管主动拆除。",
+          "云业务面临华为云、腾讯云的持续蚕食：阿里云FY2024收入增长仅3%，远低于行业平均增速。美国芯片出口管制限制阿里获取高端AI训练芯片，直接影响其在AI云服务领域的竞争力。当华为云以更低价格提供类似服务时，阿里云的价格压力将持续上升。高毛利率的云业务一旦陷入价格战，整个利润结构将被重构。",
+          "国际业务\"战略性亏损\"无底线：AliExpress、Lazada、Trendyol等持续亏损，FY2024国际数字商业EBITA为-80亿元。管理层声称这是\"战略性投入期\"，但东南亚电商市场（Lazada对阵Shopee）和欧洲电商市场（AliExpress对阵亚马逊）的竞争格局表明，阿里可能在一个永远无法盈利的市场中无限期烧钱。资本配置失误正在以\"战略愿景\"的名义持续进行。",
+          "生态协同效应是管理层叙事而非财务事实：所谓的\"10亿用户生态协同\"从未在财务上得到验证。合并报表显示各项业务独立亏损，没有任何证据表明将它们整合在\"阿里巴巴\"品牌下能产生额外的协同价值。相反，各自为政的亏损业务只是增加了管理复杂度和代理成本。"
+        ],
+        "management_failure_modes": [
+          "阿里合伙人制度是外部股东根本无法破解的控制锁：董事会多数席位由合伙人控制，修改章程需要95%超级多数票。外部投资者无论持有多少股份，都无法对管理层形成有效制衡。这意味着：即使管理层做出灾难性的资本配置决策（如继续在亏损业务中烧钱），股东也无能为力。合伙人制度将管理层变成了\"终身制\"，与现代公司治理的\"可问责代理人\"原则完全背离。",
+          "SoftBank作为\"压舱石\"正在撤离：最大单一股东SoftBank持股从24.8%降至14.2%，且仍在持续减持。软银的减持传递了明确信号——连最了解阿里的长期投资者都在用脚投票。剩下的股东结构中，对冲基金和短线资金占比上升，股价波动性将加大，管理层面临的市场约束力进一步削弱。",
+          "股权激励与Ant Group估值挂钩产生人为利润波动：FY2022年Ant Group股票薪酬回转11585M，FY2024年再次回转6901M。这种与母公司主营业务无关的投资估值波动，被用来\"调整\"利润数字，实际上是混淆了核心盈利能力与投资组合表现。管理层可以选择何时\"确认\"这种调整来操纵利润数字。",
+          "资本配置历史上充斥着失败案例：371亿元收购Sun Art（大卖场业态正在被电商和社区团购颠覆）、持续亏损的Youku（长视频赛道被抖音快手降维打击）、无底洞的国际业务（每个季度都在烧钱却看不到盈利路径）。管理层用\"战略投资\"和\"生态布局\"的说辞掩盖了资本配置失误的实质。股东为这些失败承担成本，而做出错误决策的管理层几乎毫发无损。",
+          "高管个人持股极低但薪酬极高：全体董事和高管仅持股1.8%，与CEO Eddie Wu没有任何显著增持记录形成鲜明对比。低持股意味着管理层与股东利益严重脱节——他们可以享受高薪酬但不必承担股价下跌的主要损失。CEO上任后未见显著持股增持，说明管理层对公司的长期价值创造缺乏信心，或者薪酬结构本身就不鼓励长期持股。"
+        ],
+        "what_would_make_this_uninvestable": [
+          "VIE结构被PRC政府认定不合规——任何程度的VIE风险暴露都意味着这笔投资应该归零。你实际上不拥有任何东西，你持有的是一份在开曼群岛注册公司的股票，这家公司通过无法在法院执行的合同\"控制\"中国运营实体。这不是现代公司治理意义上的所有权，这是法律灰色地带的赌博。",
+          "核心电商业务收入连续2年以上负增长——当客户管理收入进入持续下滑通道，意味着流量护城河已经崩塌，平台商业模式的基础已经动摇。届时任何\"多元化\"和\"AI转型\"的叙事都无法掩盖核心业务的衰退。",
+          "管理层开始大规模减持或出现明显的隧道挖掘行为——当内部人开始出售股票，这永远是一个领先指标。结合阿里合伙人制度的不可撼动性，外部股东几乎没有\"用脚投票\"的真正能力。一旦管理层利益与股东利益进一步背离，继续持有这个标的毫无意义。",
+          "PB跌至1.0倍以下——这意味着市场开始质疑资产的真实价值。考虑到商誉减值的 历史（三年385亿）和持续的战略投资失败，当前净资产质量可能远低于报表数字。账面价值可能是一个幻象。",
+          "任何超过100亿美元的一次性罚款或监管处罚——结合当前竞争格局，这可能直接导致现金流断裂，债务评级下调，融资成本上升，形成负反馈螺旋。"
+        ]
+      }
+    },
+    "committee": {
+      "meta": {
+        "agent_name": "committee",
+        "timestamp": "2026-03-28T17:23:18.987039+00:00",
+        "model_used": "MiniMax-M2.7-highspeed",
+        "token_usage": 2482
+      },
+      "output": {
+        "stop_signal": null,
+        "final_label": "TOO_HARD",
+        "thesis": "阿里巴巴核心电商业务仍是中国最大生态系统之一，FY2025净利润同比增长77%至1260亿元，运营杠杆正在兑现，财务质量极高（CFO/NI比率2.64倍、净现金状态、Capex强度仅2.8%）。当前PE约22倍处于历史估值低端，FY2025净利润暴增77%与低迷股价形成背离，市场情绪过于悲观。港股双重主要上市已完成，降低了部分退市风险。",
+        "anti_thesis": "VIE架构是整个投资命题的\"致命缺陷\"——从未被法律明确化，PRC政府可随时认定其不合规将使投资归零。核心电商护城河正在被抖音/快手短视频电商侵蚀，淘宝正从\"购物搜索入口\"沦为\"比价工具\"，网络效应崩塌风险是自我加速的。管理层合伙人制度使外部股东无法制衡，SoftBank持续减持，治理问题将持续侵蚀长期价值。FY2025利润增长约40-50%来自周期性反弹而非结构性改善，持续性存疑。",
+        "largest_unknowns": [
+          "VIE架构监管走向：PRC政府对VIE合宪性的最终立场是最大不可量化风险，这是整个投资命题的基础性威胁",
+          "短视频电商对核心电商护城河的侵蚀速度和程度：抖音电商GMV增速、市场份额转移、竞价广告价格压力的量化数据缺失",
+          "分部盈利能力：云业务和国际业务的长期盈利路径和时间表不清晰，亏损业务可能持续侵蚀核心利润",
+          "股份稀释程度和回购计划：历史数据显示股份持续扩张（FY2021→FY2023 +7.7%），每股价值被持续侵蚀",
+          "地缘政治恶化速度：中美关系恶化程度、芯片禁令实际执行范围、退市情景概率分布"
+        ],
+        "expected_return_summary": "估值代理输出：摩擦调整后期望年化回报熊市4%、基准6.5%、牛市9.5%。当前10年期美债收益率约4.4%，门槛约8.8%（2×无风险利率）。基准情况下预期回报（6.5%）未达到投资门槛，仅在乐观情景（9.5%）才勉强接近。关键风险调整因素：VIE架构强制重组概率约10-15%（基于中国监管历史），在此情景下永久损失几乎100%；短视频电商侵蚀可能使核心利润以年均5-10%速度下降。预期风险调整后回报分布：45%概率年化4-6%，30%概率年化6-8%，25%概率出现重大负回报（含永久损失）。",
+        "why_now_or_why_not_now": "不是行动好时机的理由：(1) VIE风险是已知的根本性缺陷而非已度过的危机，公司从未在VIE真实崩塌情景下测试过，这种风险不是可通过估值补偿的普通经营风险；(2) 短视频电商对护城河的侵蚀速度和影响程度无法量化，是持续性威胁而非周期性扰动；(3) 管理层治理问题（合伙人制度、SoftBank减持）将在中长期持续侵蚀价值但短期无催化剂；(4) 信息质量不足（分部数据缺失、单位不匹配、股份变化不确定）限制了准确估值能力。现在可能是好时机的理由：估值已至历史低位，FY2025基本面显著改善，港股双重上市已完成降低退市风险。但这些改善不足以弥补根本性风险的不可量化性。",
+        "next_action": "标记为TOO_HARD，建议加入观察清单定期跟踪而非主动建仓。下次评估应关注：(1) 竞争格局的量化数据——关注下季度客户管理收入增速和淘宝天猫EBITA margin趋势，若继续下滑则护城河侵蚀加速确认；(2) VIE监管信号——关注中国监管层对VIE架构的任何表态或立法动向；(3) 股东回报机制——若公司宣布有意义的回购计划，将改善资本配置评估；(4) 国际业务亏损收窄路径——Lazada/AliExpress的EBITA改善是减少价值侵蚀的关键。在获得上述任何一个催化剂前，维持观望。"
+      }
+    }
+  }
+}
