@@ -22,7 +22,19 @@ _PROVIDER_DEFAULTS: dict[str, dict[str, str | None]] = {
 class Settings:
     """Project-wide configuration, overridable via environment variables."""
 
-    hurdle_rate: float = 0.10
+    hurdle_rate: float = 0.10  # fallback; actual hurdle = 2× risk-free rate per currency
+
+    # Risk-free rates by currency (approximate, updated periodically)
+    risk_free_rates: dict[str, float] = {
+        "CNY": 0.022,   # 中国10年期国债 ~2.2%
+        "HKD": 0.038,   # 香港10年期政府债券 ~3.8%
+        "USD": 0.042,   # 美国10年期国债 ~4.2%
+    }
+
+    def get_hurdle_rate(self, currency: str = "USD") -> float:
+        """Return 2× risk-free rate for the given currency."""
+        rfr = self.risk_free_rates.get(currency, 0.04)
+        return round(rfr * 2, 4)
     net_cash_watch_threshold: float = 0.5
     net_cash_priority_threshold: float = 1.0
     net_cash_high_priority_threshold: float = 1.5

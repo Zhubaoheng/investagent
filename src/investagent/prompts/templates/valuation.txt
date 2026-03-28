@@ -5,7 +5,12 @@
 - 股票代码：{{ ticker }}
 - 公司名称：{{ name }}
 - 交易所：{{ exchange }}
-- 是否有财报结构化数据：{{ has_filing_data }}
+- 报告货币：{{ currency }}
+
+## 门槛收益率
+
+- 无风险利率（{{ currency }}）：{{ risk_free_rate_pct }}
+- **门槛收益率 = 2× 无风险利率 = {{ hurdle_rate_pct }}**
 
 {% if has_filing_data %}
 ## 财务数据（来自 Filing 结构化）
@@ -55,9 +60,9 @@
 
 ### 4. 是否达到门槛收益率
 
-`meets_hurdle_rate`：Base 情境的摩擦调整后回报率是否 ≥ 10%（默认门槛收益率）
+`meets_hurdle_rate`：Base 情境的摩擦调整后回报率是否 ≥ **{{ hurdle_rate_pct }}**（= 2× {{ currency }} 无风险利率 {{ risk_free_rate_pct }}）
 
-- 如果 Base 情境摩擦调整后回报率 ≥ 10%，则为 true
+- 如果 Base 情境摩擦调整后回报率 ≥ {{ hurdle_rate_pct }}，则为 true
 - 否则为 false
 
 ### 5. 分析备注
@@ -78,5 +83,5 @@
 - `valuation_method`：使用的估值方法列表
 - `expected_lookthrough_return`：三种情境的穿透回报率（百分比，如 0.12 表示 12%）
 - `friction_adjusted_return`：三种情境的摩擦调整后回报率（百分比）
-- `meets_hurdle_rate`：Base 情境是否达到 10% 门槛
+- `meets_hurdle_rate`：Base 情境是否达到 {{ hurdle_rate_pct }} 门槛
 - `notes`：分析备注列表，每条须包含具体依据
