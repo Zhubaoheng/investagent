@@ -37,13 +37,10 @@ class SystemsAgent(BaseAgent):
             "exchange": input_data.exchange,
         }
         if ctx is not None:
-            from investagent.agents.context_helpers import (
-                format_filing_json,
-                serialize_filing_for_prompt,
-            )
-            filing_data = serialize_filing_for_prompt(ctx)
-            result["has_filing_data"] = filing_data.get("has_filing", False)
-            result["filing_json"] = format_filing_json(filing_data)
+            from investagent.agents.context_helpers import data_for_systems, format_json
+            data = data_for_systems(ctx)
+            result["has_filing_data"] = data.get("has_filing", False)
+            result["filing_json"] = format_json(data)
         else:
             result["has_filing_data"] = False
             result["filing_json"] = ""

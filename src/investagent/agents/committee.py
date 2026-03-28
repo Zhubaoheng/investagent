@@ -39,13 +39,10 @@ class CommitteeAgent(BaseAgent):
             "exchange": input_data.exchange,
         }
         if ctx is not None:
-            from investagent.agents.context_helpers import (
-                format_filing_json,
-                serialize_upstream_for_committee,
-            )
-            upstream = serialize_upstream_for_committee(ctx)
+            from investagent.agents.context_helpers import data_for_committee, format_json
+            upstream = data_for_committee(ctx)
             result["has_filing_data"] = bool(upstream)
-            result["upstream_json"] = format_filing_json(upstream)
+            result["upstream_json"] = format_json(upstream)
         else:
             result["has_filing_data"] = False
             result["upstream_json"] = ""

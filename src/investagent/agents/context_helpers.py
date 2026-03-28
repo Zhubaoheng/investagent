@@ -1,7 +1,7 @@
-"""Shared helpers for serializing upstream agent outputs into prompt context.
+"""Per-agent data selectors — each agent gets only what it needs.
 
-Each downstream agent needs different slices of the upstream data.
-These helpers extract and format the relevant fields, controlling token usage.
+All extracted data is stored in PipelineContext. These helpers build
+tailored data packages for each agent, avoiding token waste.
 """
 
 from __future__ import annotations
@@ -11,114 +11,224 @@ from typing import Any
 
 
 def _safe_get(ctx: Any, name: str) -> Any:
-    """Get a result from context, return None if missing."""
     try:
         return ctx.get_result(name)
     except (KeyError, AttributeError):
         return None
 
 
-def serialize_filing_for_prompt(ctx: Any) -> dict[str, Any]:
-    """Serialize FilingOutput into a compact dict for downstream agent prompts."""
-    filing = _safe_get(ctx, "filing")
-    if filing is None:
-        return {"has_filing": False}
-
-    # Guard against non-FilingOutput objects (e.g., mocks in tests)
-    if not hasattr(filing, "filing_meta"):
-        return {"has_filing": False}
-
-    result: dict[str, Any] = {"has_filing": True}
-
-    # MD&A raw text (preserved verbatim from each year's filing)
+def _safe_data(ctx: Any, key: str) -> Any:
     try:
-        mda_by_year = ctx.get_data("mda_by_year")
-        if mda_by_year:
-            result["mda"] = mda_by_year
+        return ctx.get_data(key)
     except (KeyError, AttributeError):
-        pass
+        return None
 
-    # Market snapshot (price, market_cap, PE, PB — needed by multiple agents)
+
+def _get_filing(ctx: Any) -> Any:
+    filing = _safe_get(ctx, "filing")
+    if filing is None or not hasattr(filing, "filing_meta"):
+        return None
+    return filing
+
+
+def _get_market_snapshot(ctx: Any) -> dict[str, Any] | None:
     info = _safe_get(ctx, "info_capture")
-    if info is not None and hasattr(info, "market_snapshot"):
-        ms = info.market_snapshot
-        result["market_snapshot"] = {
-            "price": ms.price,
-            "market_cap": ms.market_cap,
-            "enterprise_value": ms.enterprise_value,
-            "pe_ratio": ms.pe_ratio,
-            "pb_ratio": ms.pb_ratio,
-            "dividend_yield": ms.dividend_yield,
-            "currency": ms.currency,
-        }
-
-    # Meta
-    m = filing.filing_meta
-    result["filing_meta"] = {
-        "market": m.market,
-        "accounting_standard": m.accounting_standard,
-        "years_covered": m.fiscal_years_covered,
-        "currency": m.currency,
-        "market_currency": m.market_currency,
+    if info is None or not hasattr(info, "market_snapshot"):
+        return None
+    ms = info.market_snapshot
+    return {
+        "price": ms.price,
+        "market_cap": ms.market_cap,
+        "enterprise_value": ms.enterprise_value,
+        "pe_ratio": ms.pe_ratio,
+        "pb_ratio": ms.pb_ratio,
+        "dividend_yield": ms.dividend_yield,
+        "currency": ms.currency,
     }
 
-    # Income statement (compact: one dict per year)
-    result["income_statement"] = [
-        {k: v for k, v in row.model_dump().items() if v is not None}
-        for row in filing.income_statement
-    ]
 
-    # Balance sheet (compact)
-    result["balance_sheet"] = [
-        {k: v for k, v in row.model_dump().items() if v is not None}
-        for row in filing.balance_sheet
-    ]
+def _compact_rows(rows: list) -> list[dict]:
+    """Strip None values from row dicts to save tokens."""
+    return [{k: v for k, v in r.model_dump().items() if v is not None} for r in rows]
 
-    # Cash flow (compact)
-    result["cash_flow"] = [
-        {k: v for k, v in row.model_dump().items() if v is not None}
-        for row in filing.cash_flow
-    ]
 
-    # Segments
-    result["segments"] = [
-        {k: v for k, v in row.model_dump().items() if v is not None}
-        for row in filing.segments
-    ]
+def _get_mda(ctx: Any) -> dict[str, str]:
+    return _safe_data(ctx, "mda_by_year") or {}
 
-    # Accounting policies (preserve raw_text for accounting_risk)
-    result["accounting_policies"] = [
-        p.model_dump() for p in filing.accounting_policies
-    ]
 
-    # Debt
-    result["debt_schedule"] = [d.model_dump() for d in filing.debt_schedule]
+def format_json(data: Any) -> str:
+    return json.dumps(data, ensure_ascii=False, indent=2, default=str)
 
-    # Special items
-    result["special_items"] = [s.model_dump() for s in filing.special_items]
 
-    # Concentration
-    result["concentration"] = filing.concentration.model_dump() if filing.concentration else None
+# ---------------------------------------------------------------------------
+# Per-agent data builders
+# ---------------------------------------------------------------------------
 
-    # Capital allocation
-    result["buyback_history"] = [b.model_dump() for b in filing.buyback_history]
-    result["acquisition_history"] = [a.model_dump() for a in filing.acquisition_history]
-    result["dividend_per_share_history"] = filing.dividend_per_share_history
+def data_for_accounting_risk(ctx: Any) -> dict[str, Any]:
+    """Accounting policies + footnotes + special items + MD&A."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "filing_meta": {"accounting_standard": filing.filing_meta.accounting_standard,
+                        "currency": filing.filing_meta.currency,
+                        "years_covered": filing.filing_meta.fiscal_years_covered},
+        "accounting_policies": [p.model_dump() for p in filing.accounting_policies],
+        "footnote_extracts": [f.model_dump() for f in filing.footnote_extracts],
+        "special_items": [s.model_dump() for s in filing.special_items],
+        "income_statement": _compact_rows(filing.income_statement),
+        "mda": _get_mda(ctx),
+    }
 
-    # Footnotes (preserve raw_text)
-    result["footnote_extracts"] = [f.model_dump() for f in filing.footnote_extracts]
 
-    # Risk factors
-    result["risk_factors"] = [r.model_dump() for r in filing.risk_factors]
+def data_for_financial_quality(ctx: Any) -> dict[str, Any]:
+    """Three statements + segments + market snapshot."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "filing_meta": {"currency": filing.filing_meta.currency,
+                        "market_currency": filing.filing_meta.market_currency,
+                        "years_covered": filing.filing_meta.fiscal_years_covered},
+        "income_statement": _compact_rows(filing.income_statement),
+        "balance_sheet": _compact_rows(filing.balance_sheet),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "segments": _compact_rows(filing.segments),
+        "buyback_history": [b.model_dump() for b in filing.buyback_history],
+        "dividend_per_share_history": filing.dividend_per_share_history,
+        "market_snapshot": _get_market_snapshot(ctx),
+    }
 
-    return result
 
+def data_for_net_cash(ctx: Any) -> dict[str, Any]:
+    """Balance sheet + debt + cash flow + market snapshot."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "filing_meta": {"currency": filing.filing_meta.currency,
+                        "market_currency": filing.filing_meta.market_currency},
+        "balance_sheet": _compact_rows(filing.balance_sheet),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "debt_schedule": [d.model_dump() for d in filing.debt_schedule],
+        "buyback_history": [b.model_dump() for b in filing.buyback_history],
+        "dividend_per_share_history": filing.dividend_per_share_history,
+        "footnote_extracts": [f.model_dump() for f in filing.footnote_extracts
+                              if f.topic in ("debt", "pledged_assets", "related_party")],
+        "market_snapshot": _get_market_snapshot(ctx),
+    }
+
+
+def data_for_valuation(ctx: Any) -> dict[str, Any]:
+    """Income + cash flow + market snapshot."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "filing_meta": {"currency": filing.filing_meta.currency,
+                        "market_currency": filing.filing_meta.market_currency,
+                        "years_covered": filing.filing_meta.fiscal_years_covered},
+        "income_statement": _compact_rows(filing.income_statement),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "balance_sheet": _compact_rows(filing.balance_sheet),
+        "segments": _compact_rows(filing.segments),
+        "market_snapshot": _get_market_snapshot(ctx),
+    }
+
+
+def data_for_moat(ctx: Any) -> dict[str, Any]:
+    """Segments + income trends + concentration + MD&A."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "income_statement": _compact_rows(filing.income_statement),
+        "segments": _compact_rows(filing.segments),
+        "concentration": filing.concentration.model_dump() if filing.concentration else None,
+        "risk_factors": [r.model_dump() for r in filing.risk_factors],
+        "mda": _get_mda(ctx),
+    }
+
+
+def data_for_compounding(ctx: Any) -> dict[str, Any]:
+    """Three statements + segments for ROIC/reinvestment analysis."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "income_statement": _compact_rows(filing.income_statement),
+        "balance_sheet": _compact_rows(filing.balance_sheet),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "segments": _compact_rows(filing.segments),
+        "buyback_history": [b.model_dump() for b in filing.buyback_history],
+        "dividend_per_share_history": filing.dividend_per_share_history,
+        "mda": _get_mda(ctx),
+    }
+
+
+def data_for_psychology(ctx: Any) -> dict[str, Any]:
+    """MD&A + income trends + buyback/dividend (management behavior signals)."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "income_statement": _compact_rows(filing.income_statement),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "buyback_history": [b.model_dump() for b in filing.buyback_history],
+        "acquisition_history": [a.model_dump() for a in filing.acquisition_history],
+        "special_items": [s.model_dump() for s in filing.special_items],
+        "mda": _get_mda(ctx),
+        "market_snapshot": _get_market_snapshot(ctx),
+    }
+
+
+def data_for_systems(ctx: Any) -> dict[str, Any]:
+    """Concentration + debt + balance sheet + risk factors."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "balance_sheet": _compact_rows(filing.balance_sheet),
+        "cash_flow": _compact_rows(filing.cash_flow),
+        "debt_schedule": [d.model_dump() for d in filing.debt_schedule],
+        "concentration": filing.concentration.model_dump() if filing.concentration else None,
+        "segments": _compact_rows(filing.segments),
+        "risk_factors": [r.model_dump() for r in filing.risk_factors],
+        "footnote_extracts": [f.model_dump() for f in filing.footnote_extracts],
+        "mda": _get_mda(ctx),
+    }
+
+
+def data_for_ecology(ctx: Any) -> dict[str, Any]:
+    """Income trends + segments + risk factors + MD&A."""
+    filing = _get_filing(ctx)
+    if not filing:
+        return {"has_filing": False}
+    return {
+        "has_filing": True,
+        "income_statement": _compact_rows(filing.income_statement),
+        "segments": _compact_rows(filing.segments),
+        "risk_factors": [r.model_dump() for r in filing.risk_factors],
+        "mda": _get_mda(ctx),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Critic / Committee — need everything
+# ---------------------------------------------------------------------------
 
 def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
-    """Serialize all upstream agent outputs for Critic/Committee agents."""
+    """All upstream agent outputs for Critic/Committee synthesis."""
     result: dict[str, Any] = {}
 
-    # Triage
     triage = _safe_get(ctx, "triage")
     if triage:
         result["triage"] = {
@@ -127,13 +237,11 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "fatal_unknowns": triage.fatal_unknowns,
         }
 
-    # Filing summary (compact)
-    filing = _safe_get(ctx, "filing")
+    filing = _get_filing(ctx)
     if filing:
         result["filing_years"] = filing.filing_meta.fiscal_years_covered
         result["filing_standard"] = filing.filing_meta.accounting_standard
 
-    # Accounting risk
     acct = _safe_get(ctx, "accounting_risk")
     if acct:
         result["accounting_risk"] = {
@@ -142,7 +250,6 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "credibility": acct.credibility_concern,
         }
 
-    # Financial quality
     fq = _safe_get(ctx, "financial_quality")
     if fq:
         result["financial_quality"] = {
@@ -152,7 +259,6 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "failures": fq.key_failures,
         }
 
-    # Net cash
     nc = _safe_get(ctx, "net_cash")
     if nc:
         result["net_cash"] = {
@@ -162,7 +268,6 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "cash_quality": nc.cash_quality_notes,
         }
 
-    # Valuation
     val = _safe_get(ctx, "valuation")
     if val:
         result["valuation"] = {
@@ -172,13 +277,11 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "meets_hurdle": val.meets_hurdle_rate,
         }
 
-    # Mental models
     for name in ("moat", "compounding", "psychology", "systems", "ecology"):
         mm = _safe_get(ctx, name)
         if mm:
             result[name] = mm.model_dump(exclude={"meta", "stop_signal"}, mode="json")
 
-    # Critic
     critic = _safe_get(ctx, "critic")
     if critic:
         result["critic"] = {
@@ -188,18 +291,40 @@ def serialize_upstream_for_committee(ctx: Any) -> dict[str, Any]:
             "management_failures": critic.management_failure_modes,
         }
 
-    # Market snapshot from info_capture
     info = _safe_get(ctx, "info_capture")
     if info:
-        result["market_snapshot"] = info.market_snapshot.model_dump()
+        result["market_snapshot"] = _get_market_snapshot(ctx)
         result["company_profile"] = info.company_profile
+
+    # MD&A for critic/committee too
+    mda = _get_mda(ctx)
+    if mda:
+        result["mda"] = mda
 
     return result
 
 
-def format_filing_json(data: dict[str, Any], max_chars: int = 0) -> str:
-    """Format filing data as JSON string. No truncation by default (200K context)."""
-    text = json.dumps(data, ensure_ascii=False, indent=2, default=str)
-    if max_chars > 0 and len(text) > max_chars:
-        text = text[:max_chars] + "\n... (截断)"
-    return text
+def data_for_critic(ctx: Any) -> dict[str, Any]:
+    """Filing data + all upstream agent conclusions + MD&A."""
+    filing = _get_filing(ctx)
+    filing_data: dict[str, Any] = {"has_filing": False}
+    if filing:
+        filing_data = {
+            "has_filing": True,
+            "income_statement": _compact_rows(filing.income_statement),
+            "balance_sheet": _compact_rows(filing.balance_sheet),
+            "cash_flow": _compact_rows(filing.cash_flow),
+            "segments": _compact_rows(filing.segments),
+            "risk_factors": [r.model_dump() for r in filing.risk_factors],
+            "special_items": [s.model_dump() for s in filing.special_items],
+            "concentration": filing.concentration.model_dump() if filing.concentration else None,
+        }
+    return {
+        "filing": filing_data,
+        "upstream": serialize_upstream_for_committee(ctx),
+    }
+
+
+def data_for_committee(ctx: Any) -> dict[str, Any]:
+    """All upstream agent outputs synthesized."""
+    return serialize_upstream_for_committee(ctx)
