@@ -52,7 +52,7 @@ def _compact_rows(rows: list) -> list[dict]:
     return [{k: v for k, v in r.model_dump().items() if v is not None} for r in rows]
 
 
-def _get_mda(ctx: Any, max_full_years: int = 2, max_chars_per_old: int = 3000) -> dict[str, str]:
+def _get_mda(ctx: Any, max_full_years: int = 2, max_chars_per_old: int = 8000) -> dict[str, str]:
     """Get MD&A text, with older years truncated to save context.
 
     Latest max_full_years get full text. Older years are truncated to
@@ -140,7 +140,7 @@ def data_for_financial_quality(ctx: Any) -> dict[str, Any]:
     }
 
 
-def _get_notes(ctx: Any, note_keys: list[str], max_full_years: int = 2, max_chars_per_old: int = 3000) -> dict[str, str]:
+def _get_notes(ctx: Any, note_keys: list[str], max_full_years: int = 2, max_chars_per_old: int = 8000) -> dict[str, str]:
     """Extract specific notes from raw sections.
 
     Latest max_full_years get full text. Older years truncated.
