@@ -102,7 +102,7 @@ class AccountingPolicyEntry(BaseModel, frozen=True):
     fiscal_year: str
     method: str
     raw_text: str
-    changed_from_prior: bool
+    changed_from_prior: bool = False
     change_description: str | None = None
 
 
