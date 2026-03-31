@@ -46,8 +46,10 @@ from investagent.agents.portfolio import (
     PortfolioInput,
 )
 
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "overnight"
-CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
+_BASE_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "overnight"
+# Will be set in main() based on --as-of-date
+OUTPUT_DIR = _BASE_OUTPUT_DIR
+CHECKPOINT_DIR = _BASE_OUTPUT_DIR / "checkpoints"
 
 _EXCHANGE_MAP = {
     "6": "SSE", "9": "SSE",
@@ -267,15 +269,23 @@ def build_top_universe(top_n: int) -> list[dict[str, Any]]:
 
 async def compute_all_ratios(
     stocks: list[dict], concurrency: int = 5,
+    as_of_date: date | None = None,
 ) -> list[dict]:
-    """Compute financial ratios for all stocks via AkShare."""
+    """Compute financial ratios for all stocks via AkShare.
+
+    When as_of_date is set, filters financial data to fiscal years
+    available at that date (year <= as_of_date.year - 1).
+    """
     sem = asyncio.Semaphore(concurrency)
     total = len(stocks)
     done = [0]
     start = time.time()
+    max_fy = str(as_of_date.year - 1) if as_of_date else None
     cached_count = _count_checkpoints("ratios")
     if cached_count:
         logger.info("Ratios: %d already cached", cached_count)
+    if max_fy:
+        logger.info("Ratios: backtest mode, fiscal_year <= %s", max_fy)
 
     async def _compute(stock: dict) -> dict:
         ticker = stock["ticker"]
@@ -288,9 +298,19 @@ async def compute_all_ratios(
         async with sem:
             try:
                 financials = await asyncio.to_thread(fetch_a_share_financials, ticker)
-                income = [IncomeStatementRow(**r) for r in financials.get("income_statement", [])]
-                balance = [BalanceSheetRow(**r) for r in financials.get("balance_sheet", [])]
-                cash_flow = [CashFlowRow(**r) for r in financials.get("cash_flow", [])]
+                is_data = financials.get("income_statement", [])
+                bs_data = financials.get("balance_sheet", [])
+                cf_data = financials.get("cash_flow", [])
+
+                # Backtest: filter to fiscal years available at as_of_date
+                if max_fy:
+                    is_data = [r for r in is_data if r.get("fiscal_year", "") <= max_fy]
+                    bs_data = [r for r in bs_data if r.get("fiscal_year", "") <= max_fy]
+                    cf_data = [r for r in cf_data if r.get("fiscal_year", "") <= max_fy]
+
+                income = [IncomeStatementRow(**r) for r in is_data]
+                balance = [BalanceSheetRow(**r) for r in bs_data]
+                cash_flow = [CashFlowRow(**r) for r in cf_data]
                 ratios = compute_ratios(income, balance, cash_flow)
                 stock["ratios"] = ratios
                 _save_checkpoint("ratios", ticker, {"ratios": ratios})
@@ -436,6 +456,7 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
 
 async def pipeline_all(
     stocks: list[dict], llm: LLMClient, concurrency: int = 5,
+    as_of_date: date | None = None,
 ) -> list[dict]:
     """Run full pipeline on all stocks with progress tracking."""
     sem = asyncio.Semaphore(concurrency)
@@ -465,6 +486,7 @@ async def pipeline_all(
                 name=stock.get("name", ticker),
                 exchange=exchange,
                 sector=stock.get("industry"),
+                as_of_date=as_of_date,
             )
             try:
                 ctx = await run_pipeline(intake, llm=llm)
@@ -564,7 +586,14 @@ async def main(
     pipeline_concurrency: int = 5,
     screening_concurrency: int = 20,
     ratio_concurrency: int = 5,
+    as_of_date: date | None = None,
 ) -> None:
+    global OUTPUT_DIR, CHECKPOINT_DIR
+    if as_of_date:
+        OUTPUT_DIR = _BASE_OUTPUT_DIR / f"bt_{as_of_date.isoformat()}"
+    else:
+        OUTPUT_DIR = _BASE_OUTPUT_DIR
+    CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Logging: file gets everything, console gets overnight + warnings
@@ -592,7 +621,8 @@ async def main(
     logger.info("OVERNIGHT A-SHARE EVALUATION")
     logger.info("  Top %d by market cap", top_n)
     logger.info("  Pipeline concurrency: %d", pipeline_concurrency)
-    logger.info("  Screening concurrency: %d", screening_concurrency)
+    if as_of_date:
+        logger.info("  BACKTEST MODE: as_of_date=%s", as_of_date)
     logger.info("  Output: %s", OUTPUT_DIR)
     logger.info("=" * 60)
 
@@ -618,7 +648,7 @@ async def main(
     # ---- Phase 2: Ratios ----
     logger.info("Phase 2: Computing ratios for %d stocks...", len(universe))
     t0 = time.time()
-    universe = await compute_all_ratios(universe, concurrency=ratio_concurrency)
+    universe = await compute_all_ratios(universe, concurrency=ratio_concurrency, as_of_date=as_of_date)
     has_ratios = sum(1 for s in universe if s.get("ratios"))
     logger.info("Phase 2 done: %d/%d have ratios (%.1fs)", has_ratios, len(universe), time.time() - t0)
 
@@ -659,7 +689,7 @@ async def main(
     logger.info("Phase 4: Running full pipeline on %d stocks (concurrency=%d)...",
                 len(proceed), pipeline_concurrency)
     t0 = time.time()
-    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency)
+    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency, as_of_date=as_of_date)
     phase4_elapsed = time.time() - t0
     logger.info("Phase 4 done: %d analyzed (%.1fh)", len(pipeline_results), phase4_elapsed / 3600)
 
@@ -687,6 +717,7 @@ async def main(
 
     summary = {
         "run_date": date.today().isoformat(),
+        "as_of_date": as_of_date.isoformat() if as_of_date else None,
         "config": {
             "top_n": top_n,
             "pipeline_concurrency": pipeline_concurrency,
@@ -781,10 +812,18 @@ if __name__ == "__main__":
                         help="Concurrent screening calls (default: 20)")
     parser.add_argument("--ratio-concurrency", type=int, default=5,
                         help="Concurrent AkShare ratio fetches (default: 5)")
+    parser.add_argument("--as-of-date", type=str, default=None,
+                        help="Backtest mode: use data as of this date (YYYY-MM-DD)")
     args = parser.parse_args()
+
+    backtest_date = None
+    if args.as_of_date:
+        backtest_date = date.fromisoformat(args.as_of_date)
+
     asyncio.run(main(
         top_n=args.top,
         pipeline_concurrency=args.pipeline_concurrency,
         screening_concurrency=args.screening_concurrency,
         ratio_concurrency=args.ratio_concurrency,
+        as_of_date=backtest_date,
     ))
