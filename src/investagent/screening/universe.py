@@ -41,37 +41,16 @@ def _fetch_a_share_list() -> list[dict[str, Any]]:
 
 
 def _build_industry_map_bulk() -> dict[str, str]:
-    """Build ticker->industry map in bulk. Fallback chain:
+    """Build ticker->industry map in bulk. Shenwan first (stable), EM as fallback.
 
-    1. stock_board_industry_cons_em (东财板块, push2.eastmoney.com)
-    2. sw_index_third_cons (申万一级, legulegu.com)
+    1. sw_index_third_cons (申万一级, legulegu.com) — 31 industries, stable
+    2. stock_board_industry_cons_em (东财板块, push2.eastmoney.com) — 500 boards, unstable
     """
     import akshare as ak
 
-    # Try eastmoney boards first
+    # Shenwan first (stable, 31 API calls)
     try:
         industry_map: dict[str, str] = {}
-        boards = ak.stock_board_industry_name_em()
-        for _, row in boards.iterrows():
-            board_name = str(row.get("板块名称", ""))
-            try:
-                cons = ak.stock_board_industry_cons_em(symbol=board_name)
-                for _, cr in cons.iterrows():
-                    ticker = str(cr["代码"])
-                    if ticker not in industry_map:
-                        industry_map[ticker] = board_name
-            except Exception:
-                pass
-        if len(industry_map) > 1000:
-            logger.info("Industry map (EM boards): %d tickers", len(industry_map))
-            return industry_map
-    except Exception:
-        pass
-    logger.warning("EM industry map failed or incomplete, trying Shenwan...")
-
-    # Fallback: Shenwan L1
-    try:
-        industry_map = {}
         ind = ak.sw_index_first_info()
         for _, row in ind.iterrows():
             code = str(row["行业代码"])
@@ -84,7 +63,28 @@ def _build_industry_map_bulk() -> dict[str, str]:
                         industry_map[ticker] = name
             except Exception:
                 pass
-        logger.info("Industry map (Shenwan): %d tickers", len(industry_map))
+        if len(industry_map) > 1000:
+            logger.info("Industry map (Shenwan): %d tickers", len(industry_map))
+            return industry_map
+    except Exception:
+        pass
+    logger.warning("Shenwan industry map failed or incomplete, trying EM...")
+
+    # Fallback: eastmoney boards (500 API calls, unstable)
+    try:
+        industry_map = {}
+        boards = ak.stock_board_industry_name_em()
+        for _, row in boards.iterrows():
+            board_name = str(row.get("板块名称", ""))
+            try:
+                cons = ak.stock_board_industry_cons_em(symbol=board_name)
+                for _, cr in cons.iterrows():
+                    ticker = str(cr["代码"])
+                    if ticker not in industry_map:
+                        industry_map[ticker] = board_name
+            except Exception:
+                pass
+        logger.info("Industry map (EM boards): %d tickers", len(industry_map))
         return industry_map
     except Exception:
         logger.warning("All industry map sources failed")

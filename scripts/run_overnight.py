@@ -133,19 +133,19 @@ def _build_industry_map_sw(ak: Any) -> dict[str, str]:
 
 
 def _build_industry_map() -> dict[str, str]:
-    """Build ticker -> industry mapping. Try EM first, fallback to Shenwan."""
+    """Build ticker -> industry mapping. Shenwan first (stable), EM as fallback."""
     import akshare as ak
     try:
-        m = _build_industry_map_em(ak)
-        if len(m) > 1000:
-            logger.info("Industry map (EM): %d tickers", len(m))
-            return m
-        logger.warning("EM industry map too small (%d), trying Shenwan...", len(m))
-    except Exception:
-        logger.warning("EM industry map failed, trying Shenwan...")
-    try:
         m = _build_industry_map_sw(ak)
-        logger.info("Industry map (Shenwan): %d tickers", len(m))
+        if len(m) > 1000:
+            logger.info("Industry map (Shenwan): %d tickers", len(m))
+            return m
+        logger.warning("Shenwan industry map too small (%d), trying EM...", len(m))
+    except Exception:
+        logger.warning("Shenwan industry map failed, trying EM...")
+    try:
+        m = _build_industry_map_em(ak)
+        logger.info("Industry map (EM): %d tickers", len(m))
         return m
     except Exception:
         logger.warning("All industry map sources failed")
