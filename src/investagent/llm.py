@@ -24,6 +24,7 @@ class LLMClient:
         api_key: str | None = None,
         client: anthropic.AsyncAnthropic | None = None,
         extra_body: dict[str, Any] | None = None,
+        temperature: float = 0.0,
     ) -> None:
         if client:
             self._client = client
@@ -40,6 +41,7 @@ class LLMClient:
             self._client = anthropic.AsyncAnthropic(**kwargs)
         self.model = model
         self._extra_body = extra_body or {}
+        self._temperature = temperature
 
     async def create_message(
         self,
@@ -56,6 +58,7 @@ class LLMClient:
             "messages": messages,
             "tools": tools,
             "max_tokens": max_tokens,
+            "temperature": self._temperature,
         }
         # Force specific tool if exactly one tool is provided
         if len(tools) == 1:

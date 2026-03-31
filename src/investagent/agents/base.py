@@ -28,13 +28,24 @@ def _repair_json_strings(obj: Any) -> Any:
     parses any string that is valid JSON into its native Python type.
     """
     if isinstance(obj, str):
-        # Try to parse any string that could be JSON
         stripped = obj.strip()
         if stripped and stripped[0] in ("{", "[", '"'):
+            # Try as-is first
             try:
                 parsed = json.loads(stripped)
-                # Only accept if it produced a different type (dict/list)
-                # Don't convert "hello" -> "hello" (string to string)
+                if not isinstance(parsed, str):
+                    return _repair_json_strings(parsed)
+            except (json.JSONDecodeError, ValueError):
+                pass
+            # Fallback: escape unescaped control characters
+            import re
+            cleaned = re.sub(
+                r'(?<!\\)([\n\r\t])',
+                lambda m: {"\n": "\\n", "\r": "\\r", "\t": "\\t"}[m.group(1)],
+                stripped,
+            )
+            try:
+                parsed = json.loads(cleaned)
                 if not isinstance(parsed, str):
                     return _repair_json_strings(parsed)
             except (json.JSONDecodeError, ValueError):
@@ -82,8 +93,21 @@ def _coerce_strings_to_lists(obj: Any, schema: dict[str, Any]) -> Any:
         if isinstance(value, str) and prop_type == "array":
             stripped = value.strip()
             if stripped.startswith("["):
-                # Replace literal newlines/tabs that break JSON parsing
-                cleaned = stripped.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+                # Try parsing as-is first
+                try:
+                    parsed = json.loads(stripped)
+                    if isinstance(parsed, list):
+                        obj[key] = parsed
+                        continue
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                # Fallback: escape unescaped control characters
+                import re
+                cleaned = re.sub(
+                    r'(?<!\\)([\n\r\t])',
+                    lambda m: {"\n": "\\n", "\r": "\\r", "\t": "\\t"}[m.group(1)],
+                    stripped,
+                )
                 try:
                     parsed = json.loads(cleaned)
                     if isinstance(parsed, list):

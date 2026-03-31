@@ -466,30 +466,12 @@ class FilingAgent(BaseAgent):
         ak_bs = [BalanceSheetRow(**row) for row in data.get("balance_sheet", [])]
         ak_cf = [CashFlowRow(**row) for row in data.get("cash_flow", [])]
 
-        # AkShare overrides LLM for same fiscal_year (field-by-field merge)
-        def _merge_rows(ak_rows: list, llm_rows: list, key_fn) -> list:
-            by_key: dict = {}
-            for row in llm_rows:
-                by_key[key_fn(row)] = row
-            for ak_row in ak_rows:
-                k = key_fn(ak_row)
-                if k in by_key:
-                    # Merge: AkShare non-null fields override LLM, keep LLM for nulls
-                    llm_row = by_key[k]
-                    updates: dict[str, Any] = {}
-                    for field_name in type(ak_row).model_fields:
-                        ak_val = getattr(ak_row, field_name, None)
-                        if ak_val is not None:
-                            updates[field_name] = ak_val
-                    by_key[k] = llm_row.model_copy(update=updates)
-                else:
-                    by_key[k] = ak_row
-            return list(by_key.values())
-
-        _fy_fp = lambda r: f"{r.fiscal_year}_{getattr(r, 'fiscal_period', 'FY')}"
-        new_is = _merge_rows(ak_is, list(output.income_statement), _fy_fp)
-        new_bs = _merge_rows(ak_bs, list(output.balance_sheet), _fy_fp)
-        new_cf = _merge_rows(ak_cf, list(output.cash_flow), _fy_fp)
+        # AkShare is source of truth — REPLACE, don't merge.
+        # LLM extraction is non-deterministic (different runs produce
+        # different years/values). AkShare is deterministic and authoritative.
+        new_is = ak_is if ak_is else list(output.income_statement)
+        new_bs = ak_bs if ak_bs else list(output.balance_sheet)
+        new_cf = ak_cf if ak_cf else list(output.cash_flow)
 
         all_years = sorted(set(r.fiscal_year for r in new_is) | set(r.fiscal_year for r in new_bs))
 
