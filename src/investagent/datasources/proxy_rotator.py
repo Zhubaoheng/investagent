@@ -29,6 +29,15 @@ _DEFAULT_GROUP = "龙猫云 - TotoroCloud"
 # Skip info nodes (not real proxies)
 _SKIP_KEYWORDS = ("网址", "流量", "到期", "重置", "自动选择", "故障转移")
 
+# Only route these domains through proxy (AkShare data sources)
+_PROXY_DOMAINS = (
+    "eastmoney.com",
+    "10jqka.com.cn",    # 同花顺
+    "sina.com.cn",      # 新浪
+    "legulegu.com",     # 乐股 (Shenwan)
+    "csindex.com.cn",   # 中证指数
+)
+
 
 class _UnixHTTPConnection(http.client.HTTPConnection):
     def __init__(self, socket_path: str) -> None:
@@ -100,7 +109,12 @@ class ClashRotator:
         return node
 
     def patch_requests(self) -> None:
-        """Monkey-patch requests.Session to route through Clash proxy."""
+        """Monkey-patch requests.Session.send to selectively proxy AkShare domains.
+
+        Only routes requests to financial data domains (eastmoney, 同花顺, sina, etc.)
+        through the Clash proxy. All other requests (MiniMax API, yfinance, etc.)
+        go direct — no added latency or dependency on Clash.
+        """
         if self._patched:
             return
         if not self.available:
@@ -108,28 +122,24 @@ class ClashRotator:
             return
 
         import requests
+        from urllib.parse import urlparse
 
-        _original_init = requests.Session.__init__
-
+        _original_send = requests.Session.send
         proxy_url = self._proxy_url
 
-        def _patched_init(self_session: Any, *args: Any, **kwargs: Any) -> None:
-            _original_init(self_session, *args, **kwargs)
-            self_session.proxies = {
-                "http": proxy_url,
-                "https": proxy_url,
-            }
-            # Trust the proxy's SSL (Clash handles TLS)
-            self_session.verify = True
+        def _patched_send(self_session: Any, request: Any, **kwargs: Any) -> Any:
+            # Check if this request should go through proxy
+            host = urlparse(request.url).hostname or ""
+            if any(domain in host for domain in _PROXY_DOMAINS):
+                kwargs.setdefault("proxies", {
+                    "http": proxy_url,
+                    "https": proxy_url,
+                })
+            return _original_send(self_session, request, **kwargs)
 
-        requests.Session.__init__ = _patched_init  # type: ignore[assignment]
+        requests.Session.send = _patched_send  # type: ignore[assignment]
         self._patched = True
-        logger.info("Patched requests.Session to use Clash proxy (%s)", self._proxy_url)
-
-    def unpatch_requests(self) -> None:
-        """Remove the monkey-patch."""
-        if not self._patched:
-            return
-        import requests
-        # Can't easily un-monkey-patch, just clear proxies for new sessions
-        self._patched = False
+        logger.info(
+            "Patched requests.Session.send for selective proxy (%s) — domains: %s",
+            self._proxy_url, ", ".join(_PROXY_DOMAINS),
+        )
