@@ -270,6 +270,7 @@ def build_top_universe(top_n: int) -> list[dict[str, Any]]:
 async def compute_all_ratios(
     stocks: list[dict], concurrency: int = 5,
     as_of_date: date | None = None,
+    rotator: Any = None,
 ) -> list[dict]:
     """Compute financial ratios for all stocks via AkShare.
 
@@ -318,6 +319,9 @@ async def compute_all_ratios(
                 stock["ratios"] = {}
 
             done[0] += 1
+            # Rotate proxy every 20 stocks to distribute rate limits
+            if rotator and done[0] % 20 == 0:
+                rotator.rotate()
             if done[0] % 100 == 0 or done[0] == total:
                 elapsed = time.time() - start
                 rate = done[0] / elapsed if elapsed > 0 else 1
@@ -631,6 +635,20 @@ async def main(
         "effort": "high",
     })
 
+    # ---- Proxy rotation (bypass AkShare rate limits) ----
+    try:
+        from investagent.datasources.proxy_rotator import ClashRotator
+        rotator = ClashRotator()
+        if rotator.available:
+            rotator.patch_requests()
+            rotator.rotate()
+            logger.info("Clash proxy rotation enabled (%d nodes)", len(rotator._nodes))
+        else:
+            rotator = None
+    except Exception:
+        logger.info("Clash proxy not available, using direct connection")
+        rotator = None
+
     # ---- Phase 1: Universe ----
     logger.info("Phase 1: Building universe...")
     t0 = time.time()
@@ -648,7 +666,7 @@ async def main(
     # ---- Phase 2: Ratios ----
     logger.info("Phase 2: Computing ratios for %d stocks...", len(universe))
     t0 = time.time()
-    universe = await compute_all_ratios(universe, concurrency=ratio_concurrency, as_of_date=as_of_date)
+    universe = await compute_all_ratios(universe, concurrency=ratio_concurrency, as_of_date=as_of_date, rotator=rotator)
     has_ratios = sum(1 for s in universe if s.get("ratios"))
     logger.info("Phase 2 done: %d/%d have ratios (%.1fs)", has_ratios, len(universe), time.time() - t0)
 
