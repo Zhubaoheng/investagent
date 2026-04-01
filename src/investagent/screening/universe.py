@@ -58,7 +58,8 @@ def _build_industry_map_bulk() -> dict[str, str]:
             try:
                 cons = ak.sw_index_third_cons(symbol=code)
                 for _, cr in cons.iterrows():
-                    ticker = str(cr["股票代码"]).zfill(6)
+                    # Shenwan returns "601009.SH" — strip suffix to get "601009"
+                    ticker = str(cr["股票代码"]).split(".")[0].zfill(6)
                     if ticker not in industry_map:
                         industry_map[ticker] = name
             except Exception:
