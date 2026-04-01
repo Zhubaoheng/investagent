@@ -9,3 +9,4 @@ build/
 .env
 output/
 .history/
+deploy/mihomo-config.yaml
