@@ -72,15 +72,22 @@ class LLMClient:
         # Provider-specific parameters (e.g., MiniMax context_window, effort)
         if self._extra_body:
             kwargs["extra_body"] = self._extra_body
-        # Retry with backoff on rate limit (429)
-        max_attempts = 5
-        for attempt in range(max_attempts):
+        # Retry with backoff on rate limit (429) and overload (529)
+        # Short waits for transient limits, long waits for quota exhaustion
+        _BACKOFF = [10, 30, 60, 300, 1800]  # 10s, 30s, 1m, 5m, 30m
+        for attempt, wait in enumerate(_BACKOFF):
             try:
                 return await self._client.messages.create(**kwargs)
-            except anthropic.RateLimitError:
-                if attempt == max_attempts - 1:
+            except (anthropic.RateLimitError, anthropic.APIStatusError) as e:
+                is_last = attempt == len(_BACKOFF) - 1
+                if isinstance(e, anthropic.APIStatusError) and e.status_code not in (429, 529):
+                    raise  # Not a rate limit error
+                if is_last:
                     raise
-                wait = 10 * (attempt + 1)  # 10s, 20s, 30s, 40s
-                logger.warning("Rate limit 429, waiting %ds (attempt %d/%d)", wait, attempt + 1, max_attempts)
+                logger.warning(
+                    "Rate limit %s, waiting %ds (attempt %d/%d)",
+                    e.status_code if hasattr(e, "status_code") else 429,
+                    wait, attempt + 1, len(_BACKOFF),
+                )
                 await asyncio.sleep(wait)
         raise RuntimeError("Unreachable")

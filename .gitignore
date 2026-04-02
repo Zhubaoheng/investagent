@@ -10,3 +10,4 @@ build/
 output/
 .history/
 deploy/mihomo-config.yaml
+data/
