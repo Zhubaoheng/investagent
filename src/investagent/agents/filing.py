@@ -179,6 +179,19 @@ class FilingAgent(BaseAgent):
             logger.warning("Failed to process %s %s", doc.filing_type, doc.fiscal_year, exc_info=True)
             return {}
 
+    async def _get_raw_markdown(self, doc: FilingDocument) -> str:
+        """Get raw markdown text from a filing (for fallback when section matching fails)."""
+        try:
+            if doc.text_content:
+                return doc.text_content
+            elif doc.raw_content and doc.content_type == "pdf":
+                return extract_pdf_markdown(doc.raw_content)
+            elif doc.raw_content:
+                return doc.raw_content.decode("utf-8", errors="replace")
+        except Exception:
+            pass
+        return ""
+
     async def _extract_from_single_filing(
         self,
         sections: dict[str, str],
@@ -734,8 +747,18 @@ class FilingAgent(BaseAgent):
 
         sections = await self._download_one(doc)
         if not sections:
-            logger.warning("No sections extracted from %s %s", doc.filing_type, doc.fiscal_year)
-            return None, {}
+            # Fallback: use raw PDF markdown (first 60K chars) when section
+            # matching fails (e.g., unusual header formats, scanned pages)
+            raw_md = await self._get_raw_markdown(doc)
+            if raw_md and len(raw_md) > 500:
+                sections = {"_raw_fallback": raw_md[:60000]}
+                logger.info(
+                    "No sections matched for %s %s, using raw fallback (%d chars)",
+                    doc.filing_type, doc.fiscal_year, len(sections["_raw_fallback"]),
+                )
+            else:
+                logger.warning("No sections extracted from %s %s", doc.filing_type, doc.fiscal_year)
+                return None, {}
 
         # Separate: sections that go to LLM for structuring vs raw preservation
         _LLM_SECTIONS = {
@@ -843,7 +866,7 @@ class FilingAgent(BaseAgent):
                 akshare_data = await fetch_structured_financials(
                     input_data.ticker, self._market,
                 )
-                if akshare_data and any(
+                if akshare_data and all(
                     akshare_data.get(k) for k in ("income_statement", "balance_sheet", "cash_flow")
                 ):
                     skip_numbers = True

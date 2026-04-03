@@ -1,15 +1,119 @@
-"""Investment Committee Agent — final verdict."""
+"""Investment Committee Agent — final verdict with deterministic post-processing.
+
+LLM produces thesis/anti-thesis/unknowns/reasoning. Python post-processing
+enforces hard label and confidence rules that LLM consistently fails to follow.
+"""
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from pydantic import BaseModel
 
 from investagent.agents.base import BaseAgent
 from investagent.schemas.common import BaseAgentOutput
+from investagent.schemas.committee import CommitteeOutput, FinalLabel
 from investagent.schemas.company import CompanyIntake
-from investagent.schemas.committee import CommitteeOutput
+
+logger = logging.getLogger(__name__)
+
+# Label priority for "at least X" upgrades
+_LABEL_RANK = {
+    FinalLabel.REJECT: 0,
+    FinalLabel.TOO_HARD: 1,
+    FinalLabel.WATCHLIST: 2,
+    FinalLabel.DEEP_DIVE: 3,
+    FinalLabel.SPECIAL_SITUATION: 4,
+    FinalLabel.INVESTABLE: 5,
+}
+
+
+def _post_process_committee(
+    output: CommitteeOutput,
+    ctx: Any,
+) -> CommitteeOutput:
+    """Deterministic label and confidence correction.
+
+    LLM consistently defaults to WATCHLIST regardless of upstream signals.
+    These rules enforce what the prompt asks but LLM doesn't deliver.
+    """
+    # Extract upstream signals
+    quality = ""
+    mos = None
+    hurdle = None
+    pvv = ""
+    kill_shots: list[str] = []
+
+    try:
+        fq = ctx.get_result("financial_quality")
+        quality = getattr(fq, "enterprise_quality", "")
+    except (KeyError, AttributeError):
+        pass
+
+    try:
+        val = ctx.get_result("valuation")
+        mos = getattr(val, "margin_of_safety_pct", None)
+        hurdle = getattr(val, "meets_hurdle_rate", None)
+        pvv = getattr(val, "price_vs_value", "")
+    except (KeyError, AttributeError):
+        pass
+
+    try:
+        critic = ctx.get_result("critic")
+        kill_shots = getattr(critic, "kill_shots", []) or []
+    except (KeyError, AttributeError):
+        pass
+
+    label = output.final_label
+    confidence = output.confidence
+    original_label = label
+
+    # --- Hard REJECT rules ---
+    if quality == "POOR":
+        label = FinalLabel.REJECT
+    elif mos is not None and mos < -50 and quality in ("AVERAGE", "POOR", ""):
+        label = FinalLabel.REJECT
+    elif quality == "AVERAGE" and hurdle is False:
+        label = FinalLabel.REJECT
+
+    # --- Upgrade rules (only if not forced REJECT above) ---
+    if label != FinalLabel.REJECT:
+        min_label = None
+        if quality == "GREAT" and pvv == "CHEAP" and hurdle is True:
+            min_label = FinalLabel.DEEP_DIVE
+        elif quality == "GREAT" and pvv == "FAIR" and hurdle is True:
+            min_label = FinalLabel.DEEP_DIVE
+        elif quality == "AVERAGE" and pvv == "CHEAP" and hurdle is True:
+            min_label = FinalLabel.DEEP_DIVE
+
+        if min_label and _LABEL_RANK.get(label, 0) < _LABEL_RANK[min_label]:
+            label = min_label
+
+    # --- Confidence rules ---
+    if quality == "GREAT" and pvv == "CHEAP" and (mos or 0) > 30 and len(kill_shots) == 0:
+        confidence = "HIGH"
+    else:
+        # Check for data incompleteness
+        try:
+            filing = ctx.get_result("filing")
+            if not filing or not getattr(filing, "income_statement", None):
+                confidence = "LOW"
+        except (KeyError, AttributeError):
+            confidence = "LOW"
+
+    if label != original_label:
+        logger.info(
+            "Committee post-process: %s → %s (quality=%s pvv=%s mos=%s hurdle=%s)",
+            original_label.value, label.value, quality, pvv, mos, hurdle,
+        )
+
+    if label != output.final_label or confidence != output.confidence:
+        return output.model_copy(update={
+            "final_label": label,
+            "confidence": confidence,
+        })
+    return output
 
 
 class CommitteeAgent(BaseAgent):
@@ -33,6 +137,7 @@ class CommitteeAgent(BaseAgent):
 
     def _build_user_context(self, input_data: BaseModel, ctx: Any = None) -> dict[str, Any]:
         assert isinstance(input_data, CompanyIntake)
+        self._pipeline_ctx = ctx  # Store for post-processing
         result: dict[str, Any] = {
             "ticker": input_data.ticker,
             "name": input_data.name,
@@ -47,3 +152,13 @@ class CommitteeAgent(BaseAgent):
             result["has_filing_data"] = False
             result["upstream_json"] = ""
         return result
+
+    async def run(
+        self, input_data: BaseModel, ctx: Any = None, *, max_retries: int = 2,
+    ) -> CommitteeOutput:
+        """Run LLM committee, then deterministic post-processing."""
+        output: CommitteeOutput = await super().run(input_data, ctx, max_retries=max_retries)  # type: ignore[assignment]
+        pipeline_ctx = getattr(self, "_pipeline_ctx", None)
+        if pipeline_ctx is not None:
+            return _post_process_committee(output, pipeline_ctx)
+        return output

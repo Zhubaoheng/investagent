@@ -24,11 +24,13 @@ logger = logging.getLogger(__name__)
 def _post_process_valuation(
     output: ValuationOutput,
     price: float | None,
+    hurdle_rate: float | None = None,
 ) -> ValuationOutput:
-    """Deterministic post-processing: median IV → MoS → price_vs_value.
+    """Deterministic post-processing: median IV → MoS → meets_hurdle → price_vs_value.
 
     Replaces LLM's blended IV with the median of per-method estimates.
-    This eliminates the random weighting problem across runs.
+    Also recomputes meets_hurdle_rate from friction_adjusted_return to
+    prevent contradictions (e.g., MoS=-86% but hurdle=True).
     """
     estimates = output.per_method_estimates
     ivs = [e.iv_per_share for e in estimates if e.iv_per_share is not None and e.iv_per_share > 0]
@@ -41,8 +43,19 @@ def _post_process_valuation(
     bull_iv = round(median_iv * 1.30)
     mos = round((median_iv - price) / median_iv * 100, 1)
 
-    # Deterministic price_vs_value
+    # Recompute meets_hurdle from friction-adjusted return (not LLM judgment)
     meets = output.meets_hurdle_rate
+    base_return = None
+    if output.friction_adjusted_return:
+        base_return = output.friction_adjusted_return.base
+    if base_return is not None and hurdle_rate is not None:
+        meets = base_return >= hurdle_rate
+    # Failsafe: extreme overvaluation cannot meet hurdle
+    if mos < -50 and meets:
+        meets = False
+        logger.info("Valuation post-process: MoS=%.1f%% override meets_hurdle to False", mos)
+
+    # Deterministic price_vs_value
     if not meets:
         pvv = "EXPENSIVE"
     elif mos > 20:
@@ -51,8 +64,8 @@ def _post_process_valuation(
         pvv = "FAIR"
 
     logger.info(
-        "Valuation post-process: %d methods, IVs=%s, median=%.0f, price=%.0f, MoS=%.1f%%, %s",
-        len(ivs), [round(v) for v in ivs], median_iv, price, mos, pvv,
+        "Valuation post-process: %d methods, IVs=%s, median=%.0f, price=%.0f, MoS=%.1f%%, hurdle=%s, %s",
+        len(ivs), [round(v) for v in ivs], median_iv, price, mos, meets, pvv,
     )
 
     currency = ""
@@ -64,6 +77,7 @@ def _post_process_valuation(
             bear=bear_iv, base=round(median_iv), bull=bull_iv, currency=currency,
         ),
         "margin_of_safety_pct": mos,
+        "meets_hurdle_rate": meets,
         "price_vs_value": pvv,
     })
 
@@ -118,12 +132,14 @@ class ValuationAgent(BaseAgent):
             result["has_filing_data"] = data.get("has_filing", False)
             result["filing_json"] = format_json(data)
             result["market_snapshot"] = data.get("market_snapshot")
-            # Store price for post-processing
+            # Store price + hurdle for post-processing
             self._current_price = data.get("market_snapshot", {}).get("price") if data.get("market_snapshot") else None
+            self._current_hurdle_rate = hurdle
         else:
             result["has_filing_data"] = False
             result["filing_json"] = ""
             self._current_price = None
+            self._current_hurdle_rate = None
         return result
 
     async def run(
@@ -132,4 +148,5 @@ class ValuationAgent(BaseAgent):
         """Run LLM valuation, then deterministic post-processing."""
         output: ValuationOutput = await super().run(input_data, ctx, max_retries=max_retries)  # type: ignore[assignment]
         price = getattr(self, "_current_price", None)
-        return _post_process_valuation(output, price)
+        hurdle = getattr(self, "_current_hurdle_rate", None)
+        return _post_process_valuation(output, price, hurdle)
