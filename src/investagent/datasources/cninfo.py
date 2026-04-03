@@ -201,6 +201,12 @@ class CninfoFetcher(FilingFetcher):
                         if not adjunct_url:
                             continue
 
+                        # Skip summaries and English versions — we need full Chinese reports
+                        if "摘要" in title:
+                            continue
+                        if "英文" in title or "英文版" in title:
+                            continue
+
                         # Parse date (cninfo uses millisecond timestamp)
                         if isinstance(ann_date, (int, float)):
                             fd = datetime.fromtimestamp(ann_date / 1000).date()
