@@ -102,7 +102,11 @@ def _parse_cn_number(val: Any) -> float | None:
 
 
 def fetch_a_share_financials(symbol: str, years: int = 7) -> dict[str, Any]:
-    """Fetch A-share financial statements from AkShare (同花顺 source).
+    """Fetch A-share financial statements from AkShare (Sina source).
+
+    Uses stock_financial_report_sina (新浪财经) instead of THS (同花顺).
+    Sina uses pure requests+BeautifulSoup — NO V8/py_mini_racer dependency,
+    so this function is thread-safe and can run concurrently without Semaphore.
 
     Args:
         symbol: Stock code without prefix (e.g., "600519")
@@ -112,95 +116,107 @@ def fetch_a_share_financials(symbol: str, years: int = 7) -> dict[str, Any]:
     each containing a list of row dicts ready for FilingOutput schema.
     """
     import akshare as ak
+    import math
 
     code = re.sub(r"[^\d]", "", symbol.split(".")[0])
+    prefix = "sh" if code.startswith(("6", "9")) else "sz"
+    sina_code = f"{prefix}{code}"
+
+    def _val(row: Any, col: str) -> float | None:
+        v = row.get(col)
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return None
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return None
+
     result: dict[str, Any] = {
         "income_statement": [],
         "balance_sheet": [],
         "cash_flow": [],
-        "source": "akshare_ths",
+        "source": "akshare_sina",
     }
 
     # --- Income Statement ---
     try:
         df = _akshare_call_with_retry(
-            ak.stock_financial_benefit_ths, code, "按报告期",
+            ak.stock_financial_report_sina, sina_code, "利润表",
             label=f"A-share IS {code}",
         )
-        # Filter to annual reports only
-        annual = df[df["报告期"].str.endswith("12-31")].head(years)
+        annual = df[df["报告日"].str.endswith("1231")].head(years)
 
         for _, row in annual.iterrows():
-            fiscal_year = str(row["报告期"])[:4]
+            fiscal_year = str(row["报告日"])[:4]
             result["income_statement"].append({
                 "fiscal_year": fiscal_year,
                 "fiscal_period": "FY",
-                "revenue": _parse_cn_number(row.get("其中：营业收入") or row.get("*营业总收入")),
-                "cost_of_revenue": _parse_cn_number(row.get("其中：营业成本")),
-                "gross_profit": None,  # will be computed in post-processing
-                "rd_expense": _parse_cn_number(row.get("研发费用")),
-                "sga_expense": _parse_cn_number(row.get("销售费用")),
+                "revenue": _val(row, "营业收入"),
+                "cost_of_revenue": _val(row, "营业成本"),
+                "gross_profit": None,
+                "rd_expense": _val(row, "研发费用"),
+                "sga_expense": _val(row, "销售费用"),
                 "depreciation_amortization": None,
-                "operating_income": _parse_cn_number(row.get("三、营业利润")),
-                "interest_expense": _parse_cn_number(row.get("其中：利息费用")),
-                "tax_provision": _parse_cn_number(row.get("减：所得税费用")),
-                "net_income": _parse_cn_number(row.get("*净利润") or row.get("五、净利润")),
-                "net_income_to_parent": _parse_cn_number(row.get("*归属于母公司所有者的净利润") or row.get("归属于母公司所有者的净利润")),
-                "eps_basic": _parse_cn_number(row.get("（一）基本每股收益")),
-                "eps_diluted": _parse_cn_number(row.get("（二）稀释每股收益")),
-                "shares_basic": None,  # derived from net_income / eps
+                "operating_income": _val(row, "营业利润"),
+                "interest_expense": _val(row, "利息支出"),
+                "tax_provision": _val(row, "所得税费用"),
+                "net_income": _val(row, "净利润"),
+                "net_income_to_parent": _val(row, "归属于母公司所有者的净利润"),
+                "eps_basic": _val(row, "基本每股收益"),
+                "eps_diluted": _val(row, "稀释每股收益"),
+                "shares_basic": None,
                 "shares_diluted": None,
             })
-        logger.info("AkShare A-share IS: %d rows for %s", len(result["income_statement"]), code)
+        logger.info("AkShare A-share IS (Sina): %d rows for %s", len(result["income_statement"]), code)
     except Exception:
-        logger.warning("AkShare A-share IS failed for %s (after %d retries)", code, _MAX_RETRIES, exc_info=True)
+        logger.warning("AkShare A-share IS failed for %s", code, exc_info=True)
 
     # --- Balance Sheet ---
     try:
         df = _akshare_call_with_retry(
-            ak.stock_financial_debt_ths, code, "按报告期",
+            ak.stock_financial_report_sina, sina_code, "资产负债表",
             label=f"A-share BS {code}",
         )
-        annual = df[df["报告期"].str.endswith("12-31")].head(years)
+        annual = df[df["报告日"].str.endswith("1231")].head(years)
 
         for _, row in annual.iterrows():
-            fiscal_year = str(row["报告期"])[:4]
+            fiscal_year = str(row["报告日"])[:4]
             result["balance_sheet"].append({
                 "fiscal_year": fiscal_year,
-                "cash_and_equivalents": _parse_cn_number(row.get("货币资金") or row.get("总现金")),
-                "short_term_investments": _parse_cn_number(row.get("交易性金融资产")),
-                "accounts_receivable": _parse_cn_number(row.get("应收账款")),
-                "inventory": _parse_cn_number(row.get("存货")),
-                "total_current_assets": _parse_cn_number(row.get("流动资产合计")),
-                "ppe_net": _parse_cn_number(row.get("固定资产合计") or row.get("固定资产")),
-                "goodwill": _parse_cn_number(row.get("商誉")),
-                "intangible_assets": _parse_cn_number(row.get("无形资产")),
-                "total_assets": _parse_cn_number(row.get("*资产合计") or row.get("资产合计")),
-                "accounts_payable": _parse_cn_number(row.get("应付账款")),
-                "short_term_debt": _parse_cn_number(row.get("短期借款")),
-                "total_current_liabilities": _parse_cn_number(row.get("流动负债合计")),
-                "long_term_debt": _parse_cn_number(row.get("长期借款")),
-                "total_liabilities": _parse_cn_number(row.get("*负债合计") or row.get("负债合计")),
-                "shareholders_equity": _parse_cn_number(row.get("*归属于母公司所有者权益合计") or row.get("归属于母公司的股东权益")),
-                "minority_interest": _parse_cn_number(row.get("少数股东权益")),
+                "cash_and_equivalents": _val(row, "货币资金"),
+                "short_term_investments": _val(row, "交易性金融资产"),
+                "accounts_receivable": _val(row, "应收账款"),
+                "inventory": _val(row, "存货"),
+                "total_current_assets": _val(row, "流动资产合计"),
+                "ppe_net": _val(row, "固定资产及清理合计") or _val(row, "固定资产净额"),
+                "goodwill": _val(row, "商誉"),
+                "intangible_assets": _val(row, "无形资产"),
+                "total_assets": _val(row, "资产总计"),
+                "accounts_payable": _val(row, "应付账款"),
+                "short_term_debt": _val(row, "短期借款"),
+                "total_current_liabilities": _val(row, "流动负债合计"),
+                "long_term_debt": _val(row, "长期借款"),
+                "total_liabilities": _val(row, "负债合计"),
+                "shareholders_equity": _val(row, "归属于母公司股东权益合计"),
+                "minority_interest": _val(row, "少数股东权益"),
             })
-        logger.info("AkShare A-share BS: %d rows for %s", len(result["balance_sheet"]), code)
+        logger.info("AkShare A-share BS (Sina): %d rows for %s", len(result["balance_sheet"]), code)
     except Exception:
-        logger.warning("AkShare A-share BS failed for %s (after %d retries)", code, _MAX_RETRIES, exc_info=True)
+        logger.warning("AkShare A-share BS failed for %s", code, exc_info=True)
 
     # --- Cash Flow ---
     try:
         df = _akshare_call_with_retry(
-            ak.stock_financial_cash_ths, code, "按报告期",
+            ak.stock_financial_report_sina, sina_code, "现金流量表",
             label=f"A-share CF {code}",
         )
-        annual = df[df["报告期"].str.endswith("12-31")].head(years)
+        annual = df[df["报告日"].str.endswith("1231")].head(years)
 
         for _, row in annual.iterrows():
-            fiscal_year = str(row["报告期"])[:4]
-            ocf = _parse_cn_number(row.get("经营活动产生的现金流量净额"))
-            capex = _parse_cn_number(row.get("购建固定资产、无形资产和其他长期资产支付的现金"))
-            div = _parse_cn_number(row.get("分配股利、利润或偿付利息支付的现金"))
+            fiscal_year = str(row["报告日"])[:4]
+            ocf = _val(row, "经营活动产生的现金流量净额")
+            capex = _val(row, "购建固定资产、无形资产和其他长期资产所支付的现金")
+            div = _val(row, "分配股利、利润或偿付利息所支付的现金")
 
             result["cash_flow"].append({
                 "fiscal_year": fiscal_year,
@@ -208,14 +224,14 @@ def fetch_a_share_financials(symbol: str, years: int = 7) -> dict[str, Any]:
                 "capex": abs(capex) if capex else None,
                 "free_cash_flow": (ocf - abs(capex)) if ocf is not None and capex is not None else None,
                 "dividends_paid": div,
-                "buyback_amount": _parse_cn_number(row.get("回购股票")),
-                "debt_issued": _parse_cn_number(row.get("取得借款收到的现金")),
-                "debt_repaid": _parse_cn_number(row.get("偿还债务支付的现金")),
+                "buyback_amount": None,
+                "debt_issued": _val(row, "取得借款收到的现金"),
+                "debt_repaid": _val(row, "偿还债务支付的现金"),
                 "acquisitions": None,
             })
-        logger.info("AkShare A-share CF: %d rows for %s", len(result["cash_flow"]), code)
+        logger.info("AkShare A-share CF (Sina): %d rows for %s", len(result["cash_flow"]), code)
     except Exception:
-        logger.warning("AkShare A-share CF failed for %s (after %d retries)", code, _MAX_RETRIES, exc_info=True)
+        logger.warning("AkShare A-share CF failed for %s", code, exc_info=True)
 
     return result
 
@@ -429,13 +445,15 @@ async def fetch_structured_financials(
         _CONSECUTIVE_FAILURES = 0
         _CIRCUIT_COOLDOWN_UNTIL = 0.0
 
-    async with _AKSHARE_LOCK:
-        if market == "A_SHARE":
-            result = await asyncio.to_thread(fetch_a_share_financials, ticker, years)
-        elif market == "HK":
+    # A-share: Sina source (no V8, thread-safe, no lock needed)
+    # HK: eastmoney datacenter (still uses V8, needs lock)
+    if market == "A_SHARE":
+        result = await asyncio.to_thread(fetch_a_share_financials, ticker, years)
+    elif market == "HK":
+        async with _AKSHARE_LOCK:
             result = await asyncio.to_thread(fetch_hk_financials, ticker, years)
-        else:
-            return {}
+    else:
+        return {}
 
     # Circuit breaker: track consecutive failures
     has_data = any(result.get(k) for k in ("income_statement", "balance_sheet", "cash_flow"))
