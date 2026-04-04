@@ -48,30 +48,11 @@ _CIRCUIT_COOLDOWN_UNTIL = 0.0  # timestamp; skip calls until this time
 _CIRCUIT_COOLDOWN_SECS = 300  # 5 minutes cooldown, then retry
 
 
-_ROTATOR_CACHE: Any = None  # lazily populated ClashRotator singleton
-
-
-def _try_rotate_proxy():
-    """Rotate Clash proxy node if rotator is available. Best-effort."""
-    global _ROTATOR_CACHE
-    try:
-        if _ROTATOR_CACHE is None:
-            from investagent.datasources.proxy_rotator import ClashRotator
-            r = ClashRotator()
-            _ROTATOR_CACHE = r if r.available else False
-        if _ROTATOR_CACHE:
-            node = _ROTATOR_CACHE.rotate()
-            if node:
-                logger.info("Rotated proxy to %s after transient error", node)
-    except Exception:
-        _ROTATOR_CACHE = False  # don't retry on import/init error
-
-
 def _akshare_call_with_retry(func, *args, label: str = ""):
     """Call an AkShare API function with exponential backoff retry on transient errors.
 
-    On proxy/connection errors, also rotates the Clash proxy node before retrying
-    so we don't keep hitting a dead node.
+    Proxy decisions are handled by ClashRotator.patch_requests() — direct-first,
+    proxy only after consecutive failures. We just retry here, no proxy manipulation.
     """
     last_exc = None
     for attempt in range(_MAX_RETRIES):
@@ -84,8 +65,6 @@ def _akshare_call_with_retry(func, *args, label: str = ""):
                 "AkShare %s transient error (attempt %d/%d), retrying in %ds: %s",
                 label, attempt + 1, _MAX_RETRIES, delay, type(exc).__name__,
             )
-            # Rotate proxy node so retry uses a different exit IP
-            _try_rotate_proxy()
             time.sleep(delay)
         except Exception:
             raise  # non-retryable (e.g., KeyError, ValueError) — propagate immediately
