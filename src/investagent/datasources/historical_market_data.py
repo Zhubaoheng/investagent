@@ -1,8 +1,8 @@
 """Historical market data fetcher for backtesting.
 
-Primary: baostock (own server, no rate limit, 0.2s/stock)
-Fallback: AkShare Sina source
-Ensures no future data leakage: only prices on or before as_of_date.
+Primary: baostock (own server, no rate limit, 0.2s/stock, includes PE/PB)
+Fallback: AkShare Sina source (price only)
+No AkShare/同花顺 dependency for A-shares — avoids Semaphore(1) bottleneck.
 """
 
 from __future__ import annotations
@@ -17,7 +17,6 @@ from investagent.datasources.resolver import _YFINANCE_SUFFIX
 
 logger = logging.getLogger(__name__)
 
-# Reusable baostock login session (login once, query many)
 _BS_LOGGED_IN = False
 
 
@@ -29,39 +28,41 @@ def _ensure_baostock_login() -> None:
         _BS_LOGGED_IN = True
 
 
-def _fetch_price_baostock(ticker: str, exchange: str, as_of_date: date) -> float | None:
-    """Get close price from baostock. Returns None on failure."""
+def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[str, Any] | None:
+    """Get close + PE + PB from baostock in one call. No AkShare dependency."""
     import baostock as bs
 
     _ensure_baostock_login()
 
-    # Convert ticker to baostock format: sh.600519 or sz.000858
     code = ticker.split(".")[0].zfill(6)
     prefix = "sh" if code.startswith(("6", "9")) else "sz"
     bs_code = f"{prefix}.{code}"
 
-    # Look back 10 trading days for holidays
     start = (as_of_date - timedelta(days=15)).strftime("%Y-%m-%d")
     end = as_of_date.strftime("%Y-%m-%d")
 
     try:
         rs = bs.query_history_k_data_plus(
-            bs_code, "date,close",
+            bs_code, "date,close,peTTM,pbMRQ",
             start_date=start, end_date=end,
-            frequency="d", adjustflag="2",  # 前复权
+            frequency="d", adjustflag="2",
         )
         rows = []
         while rs.error_code == "0" and rs.next():
             rows.append(rs.get_row_data())
         if rows:
-            return float(rows[-1][1])
+            last = rows[-1]
+            close = float(last[1]) if last[1] else None
+            pe = float(last[2]) if last[2] else None
+            pb = float(last[3]) if last[3] else None
+            return {"close": close, "pe": pe, "pb": pb}
     except Exception:
         logger.debug("baostock failed for %s", ticker, exc_info=True)
     return None
 
 
 def _fetch_price_sina(ticker: str, exchange: str, as_of_date: date) -> float | None:
-    """Fallback: AkShare Sina source for close price."""
+    """Fallback: AkShare Sina source for close price only."""
     try:
         import akshare as ak
         from investagent.datasources.akshare_source import _akshare_call_with_retry
@@ -88,53 +89,39 @@ def _fetch_historical_quote_sync(
     exchange: str,
     as_of_date: date,
 ) -> MarketQuote:
-    """Fetch historical close price and compute market cap as of a specific date.
+    """Fetch historical quote as of a specific date.
 
-    Primary: baostock (own server, 0.2s/stock, no rate limit)
-    Fallback: AkShare Sina
+    A-shares: baostock gives close + PE(TTM) + PB in ONE call (0.2s).
+    No 同花顺/AkShare calls needed — no Semaphore bottleneck.
     """
     import re
     code = re.sub(r"[^\d]", "", ticker.split(".")[0]).zfill(6)
 
-    # Determine currency
     currency_map = {"SSE": "CNY", "SZSE": "CNY", "BSE": "CNY",
                     "上交所": "CNY", "深交所": "CNY", "北交所": "CNY",
                     "HKEX": "HKD", "港交所": "HKD"}
     currency = currency_map.get(exchange, "USD")
 
     price = None
+    pe_ratio = None
+    pb_ratio = None
     market_cap = None
     shares = None
 
     if currency == "CNY":
-        # Primary: baostock
-        price = _fetch_price_baostock(ticker, exchange, as_of_date)
-        if price is not None:
-            logger.debug("Historical price (baostock) for %s: %.2f", code, price)
-        else:
-            # Fallback: Sina
-            price = _fetch_price_sina(ticker, exchange, as_of_date)
-            if price is not None:
-                logger.debug("Historical price (Sina) for %s: %.2f", code, price)
+        # Primary: baostock (price + PE + PB, no AkShare dependency)
+        quote = _fetch_quote_baostock(ticker, exchange, as_of_date)
+        if quote and quote.get("close"):
+            price = quote["close"]
+            pe_ratio = quote.get("pe")
+            pb_ratio = quote.get("pb")
 
-        # Compute market cap from EPS + net_income
-        if price is not None:
-            try:
-                from investagent.datasources.akshare_source import fetch_a_share_financials
-                financials = fetch_a_share_financials(code, years=2)
-                for row in financials.get("income_statement", []):
-                    fy = int(row.get("fiscal_year", "0"))
-                    if fy <= as_of_date.year:
-                        eps = row.get("eps_basic")
-                        ni = row.get("net_income")
-                        if eps and eps > 0 and ni:
-                            shares = ni / eps
-                            market_cap = price * shares
-                        break
-            except Exception:
-                pass
+        # Fallback: Sina (price only)
+        if price is None:
+            price = _fetch_price_sina(ticker, exchange, as_of_date)
+
     else:
-        # HK/US: use yfinance historical
+        # HK/US: yfinance
         try:
             import yfinance as yf
             suffix = _YFINANCE_SUFFIX.get(exchange, "")
@@ -148,24 +135,10 @@ def _fetch_historical_quote_sync(
                 shares = info.get("sharesOutstanding")
                 if shares and price:
                     market_cap = price * shares
+                pe_ratio = info.get("trailingPE")
+                pb_ratio = info.get("priceToBook")
         except Exception:
             logger.warning("yfinance historical failed for %s", ticker, exc_info=True)
-
-    # Compute PE
-    pe_ratio = None
-    if price and currency == "CNY":
-        try:
-            from investagent.datasources.akshare_source import fetch_a_share_financials
-            financials = fetch_a_share_financials(code, years=2)
-            for row in financials.get("income_statement", []):
-                fy = int(row.get("fiscal_year", "0"))
-                if fy <= as_of_date.year:
-                    eps = row.get("eps_basic")
-                    if eps and eps > 0:
-                        pe_ratio = price / eps
-                    break
-        except Exception:
-            pass
 
     return MarketQuote(
         ticker=ticker,
@@ -174,6 +147,7 @@ def _fetch_historical_quote_sync(
         price=price,
         market_cap=market_cap,
         pe_ratio=pe_ratio,
+        pb_ratio=pb_ratio,
         shares_outstanding=shares,
     )
 
@@ -181,7 +155,7 @@ def _fetch_historical_quote_sync(
 class HistoricalMarketDataFetcher(MarketDataFetcher):
     """Fetch historical market data as of a specific date.
 
-    Guarantees no future data leakage: only uses prices <= as_of_date.
+    baostock does NOT use AkShare — no Semaphore(1) contention.
     """
 
     def __init__(self, as_of_date: date, exchange: str = "SSE") -> None:
@@ -189,11 +163,10 @@ class HistoricalMarketDataFetcher(MarketDataFetcher):
         self._exchange = exchange
 
     async def get_quote(self, ticker: str) -> MarketQuote:
-        from investagent.datasources.akshare_source import _AKSHARE_LOCK
-        async with _AKSHARE_LOCK:
-            return await asyncio.to_thread(
-                _fetch_historical_quote_sync, ticker, self._exchange, self._as_of_date,
-            )
+        # baostock is thread-safe (TCP socket, not V8) — no AkShare lock needed
+        return await asyncio.to_thread(
+            _fetch_historical_quote_sync, ticker, self._exchange, self._as_of_date,
+        )
 
     async def get_quotes(self, tickers: list[str]) -> list[MarketQuote]:
         tasks = [self.get_quote(t) for t in tickers]

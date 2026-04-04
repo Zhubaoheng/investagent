@@ -363,7 +363,7 @@ def detect_price_triggers(
 
     Returns list of (trigger_date, ticker) tuples.
     """
-    import akshare as ak
+    from scripts.backtest.data_feeds import fetch_daily_prices
 
     triggers: list[tuple[date, str]] = []
 
@@ -373,17 +373,10 @@ def detect_price_triggers(
         entry_price = entry_prices[ticker]
 
         try:
-            code = ticker.zfill(6)
-            df = ak.stock_zh_a_hist(
-                symbol=code,
-                period="daily",
-                start_date=scan_start.strftime("%Y%m%d"),
-                end_date=scan_end.strftime("%Y%m%d"),
-                adjust="qfq",
-            )
+            df = fetch_daily_prices(ticker, scan_start, scan_end)
             for _, row in df.iterrows():
-                close = row.get("收盘")
-                dt = row.get("日期")
+                close = row.get("close")
+                dt = row.get("date")
                 if close is None or dt is None:
                     continue
                 change = (close - entry_price) / entry_price

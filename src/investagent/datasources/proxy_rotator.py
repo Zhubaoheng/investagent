@@ -42,10 +42,9 @@ _DEFAULT_NODE_PATTERNS = os.getenv(
 ).split(",")
 
 # Domains eligible for proxy fallback (direct-first, proxy on failure).
+# eastmoney push2 removed — replaced by baostock (own server, no rate limit).
 _PROXY_DOMAINS = (
-    "push2his.eastmoney.com",  # 东财历史行情 (直连不通，需代理)
-    "push2.eastmoney.com",     # 东财实时行情 (直连不通，需代理)
-    "10jqka.com.cn",           # 同花顺
+    "10jqka.com.cn",           # 同花顺 (AkShare A-share financials)
     "sina.com.cn",             # 新浪
     "legulegu.com",            # 乐股 (Shenwan)
     "csindex.com.cn",          # 中证指数
