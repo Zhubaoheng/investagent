@@ -44,6 +44,7 @@ class EcologyOutput(BaseAgentOutput):
     ecological_niche: str
     adaptability_trend: str
     cyclical_vs_structural: str
+    cycle_position: str = ""  # PEAK / NEUTRAL / TROUGH — where in cycle are current earnings
     long_term_survival_probability: str
 
 

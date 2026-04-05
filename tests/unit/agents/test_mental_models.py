@@ -170,6 +170,26 @@ async def test_ecology_output():
 
 
 @pytest.mark.asyncio
+async def test_ecology_with_cycle_position():
+    llm = _mock_llm()
+    tool_input = _ecology_tool_input()
+    tool_input["cycle_position"] = "PEAK"
+    llm.create_message = AsyncMock(return_value=_mock_response(tool_input))
+    agent = EcologyAgent(llm)
+    result = await agent.run(_intake())
+    assert result.cycle_position == "PEAK"
+
+
+@pytest.mark.asyncio
+async def test_ecology_cycle_position_defaults_empty():
+    llm = _mock_llm()
+    llm.create_message = AsyncMock(return_value=_mock_response(_ecology_tool_input()))
+    agent = EcologyAgent(llm)
+    result = await agent.run(_intake())
+    assert result.cycle_position == ""
+
+
+@pytest.mark.asyncio
 async def test_ecology_malformed_raises():
     llm = _mock_llm()
     llm.create_message = AsyncMock(

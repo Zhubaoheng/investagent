@@ -196,7 +196,7 @@ class TestFinancialQualityGate:
         assert proceed is True
 
     def test_poor_stops(self):
-        """Only POOR enterprises are stopped by the financial quality gate."""
+        """POOR enterprises are stopped by the financial quality gate."""
         ctx = _make_ctx()
         ctx.set_result(
             "financial_quality",
@@ -213,6 +213,43 @@ class TestFinancialQualityGate:
         proceed, reason = check_financial_quality_gate(ctx)
         assert proceed is False
         assert "POOR" in reason
+
+    def test_below_average_stops(self):
+        """BELOW_AVERAGE enterprises are also stopped by the gate."""
+        ctx = _make_ctx()
+        ctx.set_result(
+            "financial_quality",
+            FinancialQualityOutput(
+                meta=_meta("financial_quality"),
+                pass_minimum_standard=False,
+                enterprise_quality="BELOW_AVERAGE",
+                scores=self._quality_scores(),
+                key_strengths=[],
+                key_failures=["Low ROIC", "Weak margins"],
+                should_continue="No",
+            ),
+        )
+        proceed, reason = check_financial_quality_gate(ctx)
+        assert proceed is False
+        assert "BELOW_AVERAGE" in reason
+
+    def test_good_continues(self):
+        """GOOD enterprises pass the gate."""
+        ctx = _make_ctx()
+        ctx.set_result(
+            "financial_quality",
+            FinancialQualityOutput(
+                meta=_meta("financial_quality"),
+                pass_minimum_standard=True,
+                enterprise_quality="GOOD",
+                scores=self._quality_scores(),
+                key_strengths=["Solid ROIC"],
+                key_failures=[],
+                should_continue="Yes",
+            ),
+        )
+        proceed, _ = check_financial_quality_gate(ctx)
+        assert proceed is True
 
     def test_poor_with_wide_moat_continues(self):
         """POOR financials + WIDE moat = qualitative override, pipeline continues."""

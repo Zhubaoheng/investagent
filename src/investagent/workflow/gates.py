@@ -32,10 +32,10 @@ def check_financial_quality_gate(ctx: PipelineContext) -> tuple[bool, str]:
     where poor current financials don't represent the true quality of the business.
     """
     result: FinancialQualityOutput = ctx.get_result("financial_quality")  # type: ignore[assignment]
-    if result.enterprise_quality != "POOR":
+    if result.enterprise_quality not in ("POOR", "BELOW_AVERAGE"):
         return True, ""
 
-    # POOR financials — check if qualitative signals override
+    # POOR / BELOW_AVERAGE financials — check if qualitative signals override
     qualitative_override = False
     override_reasons: list[str] = []
 
@@ -59,9 +59,9 @@ def check_financial_quality_gate(ctx: PipelineContext) -> tuple[bool, str]:
         import logging
 
         logging.getLogger(__name__).info(
-            "Financial quality POOR but qualitative override: %s — continuing pipeline",
-            ", ".join(override_reasons),
+            "Financial quality %s but qualitative override: %s — continuing pipeline",
+            result.enterprise_quality, ", ".join(override_reasons),
         )
         return True, ""
 
-    return False, f"Enterprise quality POOR: {', '.join(result.key_failures)}"
+    return False, f"Enterprise quality {result.enterprise_quality}: {', '.join(result.key_failures)}"

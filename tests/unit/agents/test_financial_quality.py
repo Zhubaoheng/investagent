@@ -7,9 +7,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from investagent.agents.base import AgentOutputError
-from investagent.agents.financial_quality import FinancialQualityAgent
+from investagent.agents.financial_quality import FinancialQualityAgent, compute_enterprise_quality
 from investagent.llm import LLMClient
 from investagent.schemas.company import CompanyIntake
+from investagent.schemas.financial_quality import FinancialQualityScores
 
 
 def _intake() -> CompanyIntake:
@@ -174,3 +175,95 @@ async def test_financial_quality_malformed_output_raises():
     agent = FinancialQualityAgent(llm)
     with pytest.raises(AgentOutputError, match="failed to validate"):
         await agent.run(_intake())
+
+
+# --- compute_enterprise_quality deterministic tests ---
+
+
+class TestComputeEnterpriseQuality:
+    def test_great_maotai_like(self):
+        """Maotai-like scores: all high → GREAT."""
+        scores = FinancialQualityScores(
+            per_share_growth=8, return_on_capital=10, cash_conversion=8,
+            leverage_safety=10, capital_allocation=9, moat_financial_trace=10,
+        )
+        assert compute_enterprise_quality(scores) == "GREAT"
+
+    def test_good_solid_company(self):
+        """Solid company with decent scores → GOOD."""
+        scores = FinancialQualityScores(
+            per_share_growth=6, return_on_capital=7, cash_conversion=6,
+            leverage_safety=7, capital_allocation=6, moat_financial_trace=7,
+        )
+        assert compute_enterprise_quality(scores) == "GOOD"
+
+    def test_average_mediocre(self):
+        """Mediocre company with mid-range scores → AVERAGE."""
+        scores = FinancialQualityScores(
+            per_share_growth=5, return_on_capital=5, cash_conversion=5,
+            leverage_safety=6, capital_allocation=5, moat_financial_trace=5,
+        )
+        assert compute_enterprise_quality(scores) == "AVERAGE"
+
+    def test_below_average_weak(self):
+        """Weak company with low scores → BELOW_AVERAGE."""
+        scores = FinancialQualityScores(
+            per_share_growth=3, return_on_capital=4, cash_conversion=2,
+            leverage_safety=4, capital_allocation=4, moat_financial_trace=3,
+        )
+        assert compute_enterprise_quality(scores) == "BELOW_AVERAGE"
+
+    def test_poor_value_destroyer(self):
+        """Value-destroying company → POOR."""
+        scores = FinancialQualityScores(
+            per_share_growth=2, return_on_capital=2, cash_conversion=1,
+            leverage_safety=3, capital_allocation=2, moat_financial_trace=2,
+        )
+        assert compute_enterprise_quality(scores) == "POOR"
+
+    def test_poor_single_dimension_1(self):
+        """Any dimension scoring 1 → POOR regardless of others."""
+        scores = FinancialQualityScores(
+            per_share_growth=7, return_on_capital=8, cash_conversion=1,
+            leverage_safety=8, capital_allocation=7, moat_financial_trace=8,
+        )
+        assert compute_enterprise_quality(scores) == "POOR"
+
+    def test_great_boundary(self):
+        """Exactly at GREAT boundary: avg=7.5, min=5, 4 dims ≥7."""
+        scores = FinancialQualityScores(
+            per_share_growth=7, return_on_capital=8, cash_conversion=5,
+            leverage_safety=8, capital_allocation=8, moat_financial_trace=9,
+        )
+        assert compute_enterprise_quality(scores) == "GREAT"
+
+    def test_good_not_great(self):
+        """High avg but only 3 dims ≥7 → GOOD, not GREAT."""
+        scores = FinancialQualityScores(
+            per_share_growth=6, return_on_capital=8, cash_conversion=6,
+            leverage_safety=8, capital_allocation=6, moat_financial_trace=8,
+        )
+        assert compute_enterprise_quality(scores) == "GOOD"
+
+    def test_byd_like_investment_phase(self):
+        """BYD-like: low growth/cash scores due to investment → AVERAGE."""
+        scores = FinancialQualityScores(
+            per_share_growth=2, return_on_capital=5, cash_conversion=4,
+            leverage_safety=5, capital_allocation=5, moat_financial_trace=7,
+        )
+        # min=2 < 3 → BELOW_AVERAGE
+        assert compute_enterprise_quality(scores) == "BELOW_AVERAGE"
+
+    @pytest.mark.asyncio
+    async def test_agent_overrides_llm_quality(self):
+        """Agent should override LLM's enterprise_quality with computed value."""
+        tool_input = _quality_tool_input(True)
+        # LLM says AVERAGE, but scores say GREAT
+        tool_input["enterprise_quality"] = "AVERAGE"
+        llm = _mock_llm()
+        llm.create_message = AsyncMock(
+            return_value=_mock_response(tool_input)
+        )
+        agent = FinancialQualityAgent(llm)
+        result = await agent.run(_intake())
+        assert result.enterprise_quality == "GREAT"

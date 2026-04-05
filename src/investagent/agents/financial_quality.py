@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from pydantic import BaseModel
@@ -9,7 +10,40 @@ from pydantic import BaseModel
 from investagent.agents.base import BaseAgent
 from investagent.schemas.common import BaseAgentOutput
 from investagent.schemas.company import CompanyIntake
-from investagent.schemas.financial_quality import FinancialQualityOutput
+from investagent.schemas.financial_quality import FinancialQualityOutput, FinancialQualityScores
+
+logger = logging.getLogger(__name__)
+
+
+def compute_enterprise_quality(scores: FinancialQualityScores) -> str:
+    """Deterministic enterprise quality from six dimension scores.
+
+    LLM tends to default to AVERAGE. This function computes quality
+    objectively from the scores the LLM already assigned (which are
+    more granular and reliable than the quality string).
+    """
+    vals = [
+        scores.per_share_growth,
+        scores.return_on_capital,
+        scores.cash_conversion,
+        scores.leverage_safety,
+        scores.capital_allocation,
+        scores.moat_financial_trace,
+    ]
+    avg = sum(vals) / len(vals)
+    min_s = min(vals)
+    count_ge7 = sum(1 for v in vals if v >= 7)
+    count_ge6 = sum(1 for v in vals if v >= 6)
+
+    if avg < 3.0 or min_s <= 1:
+        return "POOR"
+    if avg < 4.5 or min_s < 3:
+        return "BELOW_AVERAGE"
+    if avg >= 7.5 and min_s >= 5 and count_ge7 >= 4:
+        return "GREAT"
+    if avg >= 6.0 and min_s >= 4 and count_ge6 >= 3:
+        return "GOOD"
+    return "AVERAGE"
 
 
 class FinancialQualityAgent(BaseAgent):
@@ -50,3 +84,17 @@ class FinancialQualityAgent(BaseAgent):
             result["has_filing_data"] = False
             result["filing_json"] = ""
         return result
+
+    async def run(
+        self, input_data: BaseModel, ctx: Any = None, *, max_retries: int = 2,
+    ) -> FinancialQualityOutput:
+        """Run LLM scoring, then override enterprise_quality deterministically."""
+        output: FinancialQualityOutput = await super().run(input_data, ctx, max_retries=max_retries)  # type: ignore[assignment]
+        computed = compute_enterprise_quality(output.scores)
+        if computed != output.enterprise_quality:
+            logger.info(
+                "Financial quality post-process: %s → %s (scores=%s)",
+                output.enterprise_quality, computed, output.scores.model_dump(),
+            )
+            return output.model_copy(update={"enterprise_quality": computed})
+        return output

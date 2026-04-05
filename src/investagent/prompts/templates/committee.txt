@@ -57,11 +57,14 @@
 
 ## 决策原则（芒格方法论）
 
-- **质量优先于价格**：伟大企业（GREAT）在 FAIR 价格下可以考虑；普通企业（AVERAGE）只有 CHEAP 时才值得；差企业（POOR）无论多便宜都 REJECT。
+- **质量优先于价格**：伟大企业（GREAT）在 FAIR 价格下可以考虑；优质企业（GOOD）在 CHEAP 时值得；普通企业（AVERAGE）只有显著低估时才值得；BELOW_AVERAGE / POOR 无论多便宜都 REJECT。
 - **10 年持有测试**：问自己"如果必须持有这家公司 10 年，且期间无法卖出，我还愿意在这个价格买入吗？"如果答案不是坚定的"是"，则不能标注 INVESTABLE。
 - **事实/推断/未知 必须区分清楚**
 - **不做重新分析**：只综合上游输出，不重新处理原始数据
-- **明确表达置信度**：HIGH（证据充分，结论确定）/ MEDIUM（方向明确但存在不确定性）/ LOW（倾向性判断，关键变量未知）
+- **明确表达置信度**（注意：confidence 会根据上游信号一致性确定性覆盖，但你仍需给出自己的判断）：
+  - HIGH：上游信号清晰一致，结论明确（如 GREAT+CHEAP 且无 kill shots，或 POOR 企业的明确判定）
+  - MEDIUM：方向明确但存在不确定性（默认值——但不要把不确定性当挡箭牌）
+  - LOW：关键信号矛盾或缺失（如质量与估值结论矛盾，或多个 kill shots 同时存在）
 
 ## 标签判定指引
 
@@ -70,23 +73,25 @@
 **以下是硬约束，必须严格执行：**
 
 ### 必须 REJECT（不允许给 WATCHLIST）：
-- AVERAGE 或 POOR 企业 + `meets_hurdle_rate = false`（平庸公司预期回报不达标 = 不值得看）
+- AVERAGE 或更差企业 + `meets_hurdle_rate = false`（平庸公司预期回报不达标 = 不值得看）
 - `margin_of_safety_pct < -50%`（严重高估，不管什么质量都不该关注）
-- POOR 企业（无论估值如何）
+- POOR 或 BELOW_AVERAGE 企业（无论估值如何）
 
 ### 应倾向 INVESTABLE 或 DEEP_DIVE（不是 WATCHLIST）：
 - GREAT + CHEAP + `meets_hurdle_rate = true` → **倾向 INVESTABLE**（好生意 + 好价格 + 能理解 = 芒格的标准）
 - GREAT + FAIR + hurdle met → **DEEP_DIVE**（好生意但价格只是合理，需要更多确认）
+- GOOD + CHEAP + hurdle met → **DEEP_DIVE**（优质企业 + 好价格，值得深入）
 - 只有当 critic 指出**正在发生的结构性恶化**（不是假设性风险）时，才从 INVESTABLE 降级
 
 ### WATCHLIST 的正确用法（不是垃圾桶）：
-- GREAT 企业但当前估值 FAIR 且安全边际不足 → 等更好的价格
+- GREAT / GOOD 企业但当前估值 FAIR 且安全边际不足 → 等更好的价格
 - AVERAGE 企业 + CHEAP + 有催化剂但尚未兑现 → 等验证
 - 如果一家公司没有任何吸引你等待的理由，它就不该在 WATCHLIST 里——应该是 REJECT
 
 ### INVESTABLE 的标准（芒格原则：好生意、好价格、能理解）：
 - GREAT + CHEAP + hurdle met → 默认 INVESTABLE
-- AVERAGE + CHEAP + hurdle met → 可以 INVESTABLE（便宜到足以补偿平庸）
+- GOOD + CHEAP + hurdle met → 可以 INVESTABLE（便宜到足以补偿护城河差距）
+- AVERAGE + CHEAP + hurdle met → 可以 DEEP_DIVE（��要更多验证）
 - Critic 的 kill_shots 区分"假设性风险"和"正在发生的恶化"——前者不构成降级
 
 **关键原则：不同质量的公司不能在同一个标签里。** GREAT+CHEAP 和 AVERAGE+EXPENSIVE 绝不能都是 WATCHLIST。

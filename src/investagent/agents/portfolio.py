@@ -27,7 +27,7 @@ class CandidateInfo(BaseModel, frozen=True):
     ticker: str
     name: str = ""
     industry: str = ""
-    enterprise_quality: str = ""  # "GREAT" | "AVERAGE" | "POOR"
+    enterprise_quality: str = ""  # "GREAT" | "GOOD" | "AVERAGE" | "BELOW_AVERAGE" | "POOR"
     price_vs_value: str = ""  # "CHEAP" | "FAIR" | "EXPENSIVE"
     margin_of_safety_pct: float | None = None
     meets_hurdle_rate: bool = False

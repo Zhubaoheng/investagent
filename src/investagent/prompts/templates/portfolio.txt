@@ -39,9 +39,9 @@
 ## 选股优先级
 
 1. **GREAT 企业 + FAIR 或更好估值** — 最高优先级
-2. **GREAT 企业 + CHEAP 估值** — 次高优先级
-3. **AVERAGE 企业 + CHEAP 估值** — 仅在 GREAT 标的不足时考虑
-4. **POOR 企业** — 无论估值多低，一律不投
+2. **GOOD 企业 + CHEAP 估值** — 次高优先级（有竞争力，价格补偿护城河差距）
+3. **AVERAGE 企业 + CHEAP 估值** — 仅在 GREAT/GOOD 标的不足时考虑
+4. **BELOW_AVERAGE / POOR 企业** — 无论估值多低，一律不投
 
 ## 仓位约束
 

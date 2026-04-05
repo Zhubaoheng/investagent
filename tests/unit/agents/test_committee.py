@@ -6,10 +6,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 from investagent.agents.base import AgentOutputError
-from investagent.agents.committee import CommitteeAgent
+from investagent.agents.committee import CommitteeAgent, _post_process_committee
 from investagent.llm import LLMClient
-from investagent.schemas.committee import FinalLabel
+from investagent.schemas.committee import CommitteeOutput, FinalLabel
+from investagent.schemas.common import AgentMeta
 from investagent.schemas.company import CompanyIntake
 
 
@@ -138,3 +142,185 @@ async def test_committee_malformed_output_raises():
     agent = CommitteeAgent(llm)
     with pytest.raises(AgentOutputError, match="failed to validate"):
         await agent.run(_intake())
+
+
+# --- Post-processing deterministic tests ---
+
+
+def _meta() -> AgentMeta:
+    return AgentMeta(
+        agent_name="committee",
+        timestamp=datetime.now(tz=timezone.utc),
+        model_used="test",
+        token_usage=0,
+    )
+
+
+def _make_output(label: str = "WATCHLIST", confidence: str = "MEDIUM") -> CommitteeOutput:
+    return CommitteeOutput(
+        meta=_meta(),
+        final_label=FinalLabel(label),
+        confidence=confidence,
+        thesis="Good company",
+        anti_thesis="Some risks",
+        largest_unknowns=["Unknown 1"],
+        expected_return_summary="10% base case",
+        why_now_or_why_not_now="Not urgent",
+        next_action="Monitor",
+    )
+
+
+def _make_ctx(quality="AVERAGE", mos=10.0, hurdle=True, pvv="FAIR", kill_shots=None, cycle_position=""):
+    """Build a mock pipeline context with upstream signals."""
+    ctx = MagicMock()
+
+    fq = MagicMock()
+    fq.enterprise_quality = quality
+
+    val = MagicMock()
+    val.margin_of_safety_pct = mos
+    val.meets_hurdle_rate = hurdle
+    val.price_vs_value = pvv
+
+    critic = MagicMock()
+    critic.kill_shots = kill_shots or []
+
+    ecology = MagicMock()
+    ecology.cycle_position = cycle_position
+
+    def get_result(name):
+        return {
+            "financial_quality": fq, "valuation": val,
+            "critic": critic, "ecology": ecology,
+        }[name]
+
+    ctx.get_result = get_result
+    return ctx
+
+
+class TestPostProcessConfidence:
+    def test_great_cheap_no_kills_is_high(self):
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        ctx = _make_ctx(quality="GREAT", pvv="CHEAP", hurdle=True, kill_shots=[])
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_great_fair_no_kills_is_high(self):
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        ctx = _make_ctx(quality="GREAT", pvv="FAIR", hurdle=True, kill_shots=[])
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_poor_is_high(self):
+        output = _make_output("REJECT", "MEDIUM")
+        ctx = _make_ctx(quality="POOR", pvv="CHEAP")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_below_average_is_high(self):
+        output = _make_output("REJECT", "MEDIUM")
+        ctx = _make_ctx(quality="BELOW_AVERAGE", pvv="FAIR")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_extreme_mos_positive_is_high(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", mos=45.0)
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_extreme_mos_negative_is_high(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", mos=-45.0)
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_multiple_kill_shots_is_low(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", kill_shots=["kill1", "kill2"])
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "LOW"
+
+    def test_quality_missing_is_low(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "LOW"
+
+    def test_average_fair_stays_medium(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", pvv="FAIR", mos=10.0, kill_shots=[])
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "MEDIUM"
+
+
+class TestPostProcessLabel:
+    def test_poor_forces_reject(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="POOR")
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.REJECT
+
+    def test_below_average_forces_reject(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="BELOW_AVERAGE")
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.REJECT
+
+    def test_average_no_hurdle_forces_reject(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", hurdle=False)
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.REJECT
+
+    def test_good_keeps_llm_label(self):
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        ctx = _make_ctx(quality="GOOD", pvv="CHEAP", hurdle=True)
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.DEEP_DIVE
+
+    def test_extreme_negative_mos_forces_reject(self):
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", mos=-55.0)
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.REJECT
+
+
+class TestPostProcessCyclical:
+    def test_peak_downgrades_high_to_medium(self):
+        """At cycle peak, HIGH confidence should be downgraded — numbers are inflated."""
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        # GREAT + CHEAP + hurdle + no kills → would be HIGH, but PEAK overrides
+        ctx = _make_ctx(quality="GREAT", pvv="CHEAP", hurdle=True, kill_shots=[], cycle_position="PEAK")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "MEDIUM"
+
+    def test_peak_keeps_medium(self):
+        """At cycle peak, MEDIUM confidence stays MEDIUM."""
+        output = _make_output("WATCHLIST", "MEDIUM")
+        ctx = _make_ctx(quality="AVERAGE", pvv="FAIR", cycle_position="PEAK")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "MEDIUM"
+
+    def test_neutral_allows_high(self):
+        """NEUTRAL cycle position does not interfere with HIGH confidence."""
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        ctx = _make_ctx(quality="GREAT", pvv="CHEAP", hurdle=True, kill_shots=[], cycle_position="NEUTRAL")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
+
+    def test_trough_reject_downgrades_high(self):
+        """At cycle trough, a REJECT with HIGH confidence should be softened."""
+        output = _make_output("WATCHLIST", "MEDIUM")
+        # BELOW_AVERAGE → REJECT + HIGH, but TROUGH should soften to MEDIUM
+        ctx = _make_ctx(quality="BELOW_AVERAGE", cycle_position="TROUGH")
+        result = _post_process_committee(output, ctx)
+        assert result.final_label == FinalLabel.REJECT
+        assert result.confidence == "MEDIUM"
+
+    def test_empty_cycle_position_no_effect(self):
+        """Empty cycle_position (LLM didn't fill it) has no effect."""
+        output = _make_output("DEEP_DIVE", "MEDIUM")
+        ctx = _make_ctx(quality="GREAT", pvv="CHEAP", hurdle=True, kill_shots=[], cycle_position="")
+        result = _post_process_committee(output, ctx)
+        assert result.confidence == "HIGH"
