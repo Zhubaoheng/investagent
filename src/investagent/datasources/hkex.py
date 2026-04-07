@@ -290,9 +290,13 @@ class HKEXFetcher(FilingFetcher):
         start_year: int | None = None,
         end_year: int | None = None,
     ) -> list[FilingDocument]:
-        return await asyncio.to_thread(
-            self._search_sync, ticker, filing_types, start_year, end_year,
+        from investagent.executors import io_pool
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            io_pool(), self._search_sync, ticker, filing_types, start_year, end_year,
         )
 
     async def download_filing(self, filing: FilingDocument) -> FilingDocument:
-        return await asyncio.to_thread(self._download_sync, filing)
+        from investagent.executors import io_pool
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(io_pool(), self._download_sync, filing)

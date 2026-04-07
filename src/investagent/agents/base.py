@@ -12,7 +12,7 @@ from jinja2 import Template
 from pydantic import BaseModel
 
 from investagent.llm import LLMClient
-from investagent.prompts.soul import SOUL_PROMPT
+from investagent.prompts.soul import SOUL_PROMPT, build_soul_prompt
 from investagent.schemas.common import AgentMeta, BaseAgentOutput
 
 
@@ -131,8 +131,9 @@ class BaseAgent(ABC):
 
     name: str = "base"
 
-    def __init__(self, llm: LLMClient) -> None:
+    def __init__(self, llm: LLMClient, as_of_date: str | None = None) -> None:
         self._llm = llm
+        self._as_of_date = as_of_date
 
     # ------------------------------------------------------------------
     # Abstract hooks
@@ -160,7 +161,8 @@ class BaseAgent(ABC):
     # ------------------------------------------------------------------
 
     def _render_system_prompt(self) -> str:
-        return f"{SOUL_PROMPT}\n\n{self._agent_role_description()}"
+        soul = build_soul_prompt(self._as_of_date)
+        return f"{soul}\n\n{self._agent_role_description()}"
 
     def _load_template(self) -> Template:
         templates = importlib.resources.files("investagent.prompts.templates")

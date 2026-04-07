@@ -447,11 +447,17 @@ async def fetch_structured_financials(
 
     # A-share: Sina source (no V8, thread-safe, no lock needed)
     # HK: eastmoney datacenter (still uses V8, needs lock)
+    from investagent.executors import io_pool
+    loop = asyncio.get_running_loop()
     if market == "A_SHARE":
-        result = await asyncio.to_thread(fetch_a_share_financials, ticker, years)
+        result = await loop.run_in_executor(
+            io_pool(), fetch_a_share_financials, ticker, years,
+        )
     elif market == "HK":
         async with _AKSHARE_LOCK:
-            result = await asyncio.to_thread(fetch_hk_financials, ticker, years)
+            result = await loop.run_in_executor(
+                io_pool(), fetch_hk_financials, ticker, years,
+            )
     else:
         return {}
 

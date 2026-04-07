@@ -205,7 +205,7 @@ async def apply_llm_exclusions(
     stocks: list[dict[str, Any]],
     llm: Any,
     *,
-    batch_size: int = 10,
+    batch_size: int = 5,
 ) -> list[dict[str, Any]]:
     """Apply LLM-based contextual exclusions.
 
@@ -227,7 +227,7 @@ async def apply_llm_exclusions(
                 system=_EXCLUSION_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": prompt}],
                 tools=[_EXCLUSION_TOOL],
-                max_tokens=256,
+                max_tokens=1024,
             )
             for block in response.content:
                 if block.type == "tool_use":

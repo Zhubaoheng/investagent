@@ -38,10 +38,20 @@ def _post_process_valuation(
     if not ivs or price is None or price <= 0:
         return output
 
-    median_iv = statistics.median(ivs)
+    # Filter out wildly implausible IV estimates (likely LLM errors)
+    sane_ivs = [v for v in ivs if price * 0.05 <= v <= price * 20]
+    if not sane_ivs:
+        logger.warning(
+            "All IV estimates look implausible vs price=%.2f: %s — using raw median",
+            price, [round(v, 1) for v in ivs],
+        )
+        sane_ivs = ivs  # fall back to raw if all filtered out
+
+    median_iv = statistics.median(sane_ivs)
     bear_iv = round(median_iv * 0.75)
     bull_iv = round(median_iv * 1.30)
     mos = round((median_iv - price) / median_iv * 100, 1)
+    mos = max(-100.0, min(100.0, mos))  # clamp to [-100%, 100%]
 
     # Recompute meets_hurdle from friction-adjusted return (not LLM judgment)
     meets = output.meets_hurdle_rate

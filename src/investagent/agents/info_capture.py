@@ -77,8 +77,9 @@ class InfoCaptureAgent(BaseAgent):
         llm: LLMClient,
         filing_fetcher: FilingFetcher | None = None,
         market_fetcher: MarketDataFetcher | None = None,
+        as_of_date: str | None = None,
     ) -> None:
-        super().__init__(llm)
+        super().__init__(llm, as_of_date=as_of_date)
         self._filing_fetcher = filing_fetcher
         self._market_fetcher = market_fetcher
 
@@ -195,9 +196,18 @@ class InfoCaptureAgent(BaseAgent):
     ) -> InfoCaptureOutput:
         assert isinstance(input_data, CompanyIntake)
 
-        # Phase 1: Gather real data from APIs
-        filing_docs, quote = await self._fetch_filings(input_data), None
-        quote = await self._fetch_market_data(input_data)
+        # Phase 1: Gather real data from APIs (parallel)
+        import asyncio as _aio
+        import time as _time
+        _t0 = _time.time()
+        filing_docs, quote = await _aio.gather(
+            self._fetch_filings(input_data),
+            self._fetch_market_data(input_data),
+        )
+        logger.info(
+            "[%s] info_capture Phase 1 (filings+market) took %.1fs",
+            input_data.ticker, _time.time() - _t0,
+        )
 
         # Convert to schema types
         filing_refs = [_filing_to_ref(d) for d in filing_docs]

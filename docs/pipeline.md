@@ -15,8 +15,8 @@ InvestAgent 是一个芒格式价值投资多 Agent 系统，通过 10 个阶段
 
 | 市场 | 交易所 | 报告类型 | 会计准则 | 数据源 |
 |------|--------|---------|---------|--------|
-| A 股 | SSE / SZSE / BSE | 年报、半年报 | CAS | cninfo.com.cn (Scrapling) |
-| 港股 | HKEX | Annual Report、Interim Report | IFRS / HKFRS | hkexnews.hk (Scrapling) |
+| A 股 | SSE / SZSE / BSE | 年报、半年报 | CAS | cninfo.com.cn (requests) |
+| 港股 | HKEX | Annual Report、Interim Report | IFRS / HKFRS | hkexnews.hk (requests) |
 | 美股中概 | NYSE / NASDAQ | 20-F、6-K | US GAAP / IFRS | SEC EDGAR (edgartools) |
 
 ---
@@ -50,36 +50,28 @@ CompanyIntake ──┐
     └────────┬────────────┘──── PASS ────→ 继续
              │
              ▼
-    ┌─────────────────────┐
-    │  Stage 4: Accounting│──── RED ────→ 🛑 停止
-    │  会计风险             │──── YELLOW ─→ 继续（警告）
-    └────────┬────────────┘──── GREEN ──→ 继续
-             │
-             ▼
-    ┌─────────────────────┐
-    │  Stage 5: Financial │──── FAIL ───→ 🛑 停止
-    │  财务质量             │──── PASS ───→ 继续
-    └────────┬────────────┘
-             │
-             ▼
-    ┌─────────────────────┐
-    │  Stage 6: Net Cash  │
-    │  净现金               │
-    └────────┬────────────┘
-             │
-             ▼
-    ┌─────────────────────┐
-    │  Stage 7: Valuation │
-    │  估值                 │
-    └────────┬────────────┘
-             │
-             ▼
+    ┌───────────────────────────────────────────────────────┐
+    │           Stage 4-8: 并行分析（asyncio.gather × 9）      │
+    │                                                       │
+    │  ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐  │
+    │  │Accounting│ │Financial │ │Net Cash │ │Valuation │  │
+    │  │  Risk    │ │ Quality  │ │         │ │          │  │
+    │  └──────────┘ └──────────┘ └─────────┘ └──────────┘  │
+    │                                                       │
+    │  ┌───────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐      │
+    │  │ Moat  │ │Compnd│ │Psych │ │System│ │ Ecol │      │
+    │  │ 护城河 │ │ 复利  │ │ 心理  │ │ 系统  │ │ 生态  │      │
+    │  └───────┘ └──────┘ └──────┘ └──────┘ └──────┘      │
+    └────────────────────┬──────────────────────────────────┘
+                         │
+                         ▼
     ┌─────────────────────────────────────────────┐
-    │          Stage 8: Mental Models (并行 × 5)    │
-    │  ┌───────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌────┐│
-    │  │ Moat  │ │Compnd│ │Psych │ │System│ │Ecol││
-    │  │ 护城河 │ │ 复利  │ │ 心理  │ │ 系统  │ │生态 ││
-    │  └───────┘ └──────┘ └──────┘ └──────┘ └────┘│
+    │         并行后 Gate 检查（顺序执行）              │
+    │                                             │
+    │  1. Accounting Risk: RED → 🛑 停止           │
+    │  2. Financial Quality: POOR → 🛑 停止        │
+    │     （例外：moat=WIDE 或 compounding=STRONG   │
+    │      可以覆盖 POOR，允许继续）                  │
     └────────────────────┬────────────────────────┘
                          │
                          ▼
@@ -135,6 +127,12 @@ CompanyIntake ──┐
 | 输出 | `FilingOutput`（最复杂的 schema，230+ 行） |
 | 门控 | 无 |
 
+**并行架构**：
+- 6 份年报/半年报通过 `asyncio.gather` 并行处理
+- PDF 提取（pymupdf4llm）在 `ProcessPoolExecutor` 中运行，绕过 GIL，最多 4 个 worker 真正并行
+- 每份 PDF 提取 ~58 秒，6 份并行 ≈ ~90 秒（vs 串行 ~350 秒）
+- A 股/港股财务数字由 AkShare API 提供（零幻觉），LLM 仅提取定性段落（会计政策、风险因素等）
+
 **章节提取**（pymupdf4llm → 关键词匹配）：
 
 | 类别 | 提取内容 |
@@ -178,27 +176,29 @@ CompanyIntake ──┐
 
 ---
 
-### Stage 4: Accounting Risk Agent（会计风险）
+### Stage 4-8: 并行分析（9 Agent 同时运行）
+
+Triage 通过后，以下 9 个 Agent 通过 `asyncio.gather()` **同时运行**，互不依赖，均依赖 Filing 输出：
+
+#### Accounting Risk Agent（会计风险）
 
 | 项目 | 说明 |
 |------|------|
 | 输入 | `CompanyIntake` + `FilingOutput`（完整 JSON 注入 prompt） |
 | 输出 | `AccountingRiskOutput` |
-| 门控 | RED → 停止 pipeline |
+| 门控 | RED → 并行完成后停止 pipeline |
 
 **10 项检查**：收入确认变更、合并范围变更、分部披露变更、折旧政策变更、存货计价变更、坏账计提变更、一次性项目正常化、Non-GAAP 激进度、审计意见变化、财务重述
 
 **风险等级**：GREEN / YELLOW / RED
 
----
-
-### Stage 5: Financial Quality Agent（财务质量）
+#### Financial Quality Agent（财务质量）
 
 | 项目 | 说明 |
 |------|------|
 | 输入 | `CompanyIntake` + `FilingOutput` |
 | 输出 | `FinancialQualityOutput` |
-| 门控 | FAIL → 停止 pipeline |
+| 门控 | POOR → 并行完成后停止（但 moat=WIDE 或 compounding=STRONG 可覆盖） |
 
 **六维评分**（1-10 分）：
 
@@ -213,9 +213,7 @@ CompanyIntake ──┐
 
 **通过标准**：均分 ≥ 5 且无单项 ≤ 2
 
----
-
-### Stage 6: Net Cash Agent（净现金）
+#### Net Cash Agent（净现金）
 
 | 项目 | 说明 |
 |------|------|
@@ -226,22 +224,20 @@ CompanyIntake ──┐
 
 **关注级别**：NORMAL (≤ 0.5x) / WATCH (0.5-1.0x) / PRIORITY (1.0-1.5x) / HIGH_PRIORITY (> 1.5x)
 
----
-
-### Stage 7: Valuation Agent（估值）
+#### Valuation Agent（估值）
 
 | 项目 | 说明 |
 |------|------|
 | 输入 | `CompanyIntake` + `FilingOutput` + `MarketSnapshot` |
 | 输出 | `ValuationOutput` |
 
-**三情景**：Bear / Base / Bull → 穿透回报 → 摩擦调整后回报 → 对比 10% 门槛
+**三情景**：Bear / Base / Bull → 穿透回报 → 摩擦调整后回报 → 对比门槛利率
 
----
+**确定性后处理**：LLM 输出 per-method IV 估计 → Python 取中位数 → 计算 MoS/price_vs_value → 异常 IV 过滤（排除 < 5% 或 > 20x 当前价格的估计） → MoS 限制在 [-100%, 100%]
 
-### Stage 8: Mental Models（心智模型，并行 × 5）
+#### Mental Models（心智模型 × 5）
 
-五个 Agent **同时运行**，每个都接收完整 `FilingOutput` JSON：
+五个 Agent 与上述四个 Agent **同时运行**，每个都接收完整 `FilingOutput` JSON：
 
 | Agent | 核心问题 | 关键输出 |
 |-------|---------|---------|
@@ -302,33 +298,38 @@ CompanyIntake ──┐
 CompanyIntake
     │
     ├─→ [1] InfoCapture ─┬──→ company_profile, filing_manifest, market_snapshot
-    │                    └──→ ctx.data["filing_documents"] (原始 PDF/HTML)
+    │    (串行)           └──→ ctx.data["filing_documents"] (原始 PDF/HTML)
     │
     ├─→ [2] Filing ──────────→ income_statement, balance_sheet, cash_flow,
-    │    (PDF下载+提取+LLM)     segments, accounting_policies, debt_schedule,
+    │    (串行, PDF下载+提取)    segments, accounting_policies, debt_schedule,
     │                          special_items, concentration, footnotes, risks
     │
     ├─→ [3] Triage ──────────→ decision, scores, fatal_unknowns
+    │    (串行, REJECT 则停止)
     │
-    ├─→ [4] AccountingRisk ──→ risk_level, major_changes, credibility
-    │    (接收 FilingOutput JSON)
-    │
-    ├─→ [5] FinancialQuality → 6 scores, pass/fail, strengths/failures
-    ├─→ [6] NetCash ─────────→ net_cash, ratio, attention_level, cash_quality
-    ├─→ [7] Valuation ───────→ scenario_returns, friction_adjusted, meets_hurdle
-    │
-    ├─→ [8] Moat ────────────→ industry_structure, moat_type, pricing_power
-    ├─→ [8] Compounding ─────→ engine, incremental_roic, sustainability
-    ├─→ [8] Psychology ──────→ incentive_distortion, sentiment, narrative_gap
-    ├─→ [8] Systems ─────────→ single_points, fragility, resilience
-    ├─→ [8] Ecology ─────────→ niche, adaptability, survival_probability
-    │    (以上 5 个并行，每个接收 FilingOutput JSON)
-    │
+    │    ┌─ asyncio.gather ──────────────────────────────────────────────┐
+    │    │                                                              │
+    ├─→  │ [4] AccountingRisk ──→ risk_level, major_changes, credibility│
+    ├─→  │ [5] FinancialQuality → 6 scores, pass/fail, quality         │
+    ├─→  │ [6] NetCash ─────────→ net_cash, ratio, attention_level     │
+    ├─→  │ [7] Valuation ───────→ scenario_returns, meets_hurdle       │
+    ├─→  │ [8] Moat ────────────→ industry_structure, moat_type        │
+    ├─→  │ [8] Compounding ─────→ engine, incremental_roic             │
+    ├─→  │ [8] Psychology ──────→ incentive_distortion, sentiment      │
+    ├─→  │ [8] Systems ─────────→ single_points, fragility, resilience │
+    ├─→  │ [8] Ecology ─────────→ niche, adaptability, survival_prob   │
+    │    │    (以上 9 个并行，均依赖 FilingOutput JSON，互不依赖)          │
+    │    └──────────────────────────────────────────────────────────────┘
+    │         │
+    │         ├── Gate: AccountingRisk RED → 🛑 停止
+    │         ├── Gate: FinancialQuality POOR → 🛑 停止
+    │         │    （覆盖条件：moat=WIDE 或 compounding=STRONG → 继续）
+    │         ▼
     ├─→ [9] Critic ──────────→ kill_shots, permanent_loss, moat_destruction
-    │    (接收 FilingOutput + 全部上游 Agent 输出 JSON)
+    │    (串行, 接收全部上游 Agent 输出 JSON)
     │
     └─→ [10] Committee ──────→ final_label, thesis, anti_thesis, next_action
-         (接收全部 13 个上游 Agent 输出 JSON)
+         (串行, 接收全部 13 个上游 Agent 输出 JSON)
 ```
 
 ---
@@ -348,11 +349,11 @@ CompanyIntake
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| Soul Prompt | ✅ | 所有 Agent 共享 |
+| Soul Prompt | ✅ | 所有 Agent 共享，回测模式注入截止日期约束（禁用未来信息） |
 | 14 个 Agent | ✅ | 全部接入真实数据，带 retry + JSON 修复 |
 | 数据源层 | ✅ | EDGAR / cninfo / HKEX / yfinance，7 年回溯 |
 | InfoCapture 混合 Agent | ✅ | 真实 fetcher + LLM，数据覆盖 LLM 输出 |
-| Filing 混合 Agent | ✅ | PDF 下载 → pymupdf4llm → 章节提取 → LLM 结构化 |
+| Filing 混合 Agent | ✅ | PDF 下载 → pymupdf4llm（多进程并行） → 章节提取 → LLM 结构化 |
 | Triage 后置 | ✅ | 基于真实 Filing 数据评估可解释性 |
 | 下游 context 注入 | ✅ | 全部 11 个下游 Agent 注入 FilingOutput JSON |
 | Critic/Committee 综合 | ✅ | 接收全部上游 Agent 输出汇总 |
@@ -360,3 +361,6 @@ CompanyIntake
 | 报告生成 | ✅ | Markdown + JSON debug log |
 | 212 tests | ✅ | 全部通过 |
 | 端到端验证 | ✅ | 福寿园 1448.HK：14 Agent，157K tokens，907s → REJECT |
+| Valuation 后处理 | ✅ | 确定性 MoS 计算 + 异常 IV 过滤 + clamp [-100%, 100%] |
+| 回测模式 | ✅ | `as_of_date` 截止日期约束，禁止使用未来信息/联网搜索/训练数据泄露 |
+| PDF 多进程提取 | ✅ | `ProcessPoolExecutor` 绕过 GIL，6 份 PDF 真正并行 |

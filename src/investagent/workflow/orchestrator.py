@@ -69,6 +69,7 @@ async def run_pipeline(
             extra_body=extra_body,
         )
     ctx = PipelineContext(intake)
+    cutoff = str(intake.as_of_date) if intake.as_of_date else None
 
     # Backtest mode: use historical data when as_of_date is set
     if intake.as_of_date and market_fetcher is None:
@@ -83,19 +84,20 @@ async def run_pipeline(
         llm,
         filing_fetcher=filing_fetcher,
         market_fetcher=market_fetcher,
+        as_of_date=cutoff,
     )
     await run_agent(info_agent, intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 2: Filing Structuring (with real content extraction)
-    filing_agent = FilingAgent(llm, filing_fetcher=filing_fetcher)
+    filing_agent = FilingAgent(llm, filing_fetcher=filing_fetcher, as_of_date=cutoff)
     await run_agent(filing_agent, intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 3: Triage (with real data from InfoCapture + Filing)
-    await run_agent(TriageAgent(llm), intake, ctx)
+    await run_agent(TriageAgent(llm, as_of_date=cutoff), intake, ctx)
     if ctx.is_stopped():
         return ctx
     proceed, reason = check_triage_gate(ctx)
@@ -107,15 +109,15 @@ async def run_pipeline(
     # AccountingRisk + FinancialQuality + NetCash + Valuation + 5 Mental Models
     # = 9 agents running simultaneously
     await asyncio.gather(
-        run_agent(AccountingRiskAgent(llm), intake, ctx),
-        run_agent(FinancialQualityAgent(llm), intake, ctx),
-        run_agent(NetCashAgent(llm), intake, ctx),
-        run_agent(ValuationAgent(llm), intake, ctx),
-        run_agent(MoatAgent(llm), intake, ctx),
-        run_agent(CompoundingAgent(llm), intake, ctx),
-        run_agent(PsychologyAgent(llm), intake, ctx),
-        run_agent(SystemsAgent(llm), intake, ctx),
-        run_agent(EcologyAgent(llm), intake, ctx),
+        run_agent(AccountingRiskAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(FinancialQualityAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(NetCashAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(ValuationAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(MoatAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(CompoundingAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(PsychologyAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(SystemsAgent(llm, as_of_date=cutoff), intake, ctx),
+        run_agent(EcologyAgent(llm, as_of_date=cutoff), intake, ctx),
     )
     if ctx.is_stopped():
         return ctx
@@ -131,11 +133,11 @@ async def run_pipeline(
         return ctx
 
     # Stage 9: Critic (needs all upstream outputs)
-    await run_agent(CriticAgent(llm), intake, ctx)
+    await run_agent(CriticAgent(llm, as_of_date=cutoff), intake, ctx)
     if ctx.is_stopped():
         return ctx
 
     # Stage 10: Investment Committee
-    await run_agent(CommitteeAgent(llm), intake, ctx)
+    await run_agent(CommitteeAgent(llm, as_of_date=cutoff), intake, ctx)
 
     return ctx

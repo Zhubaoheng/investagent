@@ -450,32 +450,32 @@ def extract_pdf_markdown(raw_content: bytes, max_workers: int = 4) -> str:
         import pymupdf4llm
 
         doc = pymupdf.open(stream=raw_content, filetype="pdf")
-        # First try: text-only extraction (fastest, no OCR)
+        # Text-only extraction (fastest, no OCR).
+        # Cache result so we never run it twice.
+        text_md = ""
         try:
-            md = pymupdf4llm.to_markdown(doc, force_text=True, use_ocr=False)
-            if md and len(md.strip()) > 200:
-                doc.close()
-                return md
+            text_md = pymupdf4llm.to_markdown(
+                doc, force_text=True, use_ocr=False
+            )
         except Exception:
-            pass
+            logger.debug("Text-only extraction failed", exc_info=True)
 
-        # Second try: with RapidOCR for scanned pages
+        if text_md and len(text_md.strip()) > 200:
+            doc.close()
+            return text_md
+
+        # Scanned PDF — try RapidOCR
         try:
             from pymupdf4llm.ocr.rapidocr_api import exec_ocr
-            md = pymupdf4llm.to_markdown(doc, force_text=True, ocr_function=exec_ocr)
+            md = pymupdf4llm.to_markdown(
+                doc, force_text=True, ocr_function=exec_ocr
+            )
             doc.close()
             return md
         except Exception:
-            # RapidOCR can crash on some pages (NoneType lines bug)
-            # Fall back to text-only result
-            logger.debug("RapidOCR failed, using text-only extraction", exc_info=True)
-            try:
-                md = pymupdf4llm.to_markdown(doc, force_text=True, use_ocr=False)
-                doc.close()
-                return md
-            except Exception:
-                doc.close()
-                raise
+            logger.debug("RapidOCR failed, using text-only result", exc_info=True)
+            doc.close()
+            return text_md
 
     except Exception:
         logger.warning("PDF markdown extraction failed", exc_info=True)

@@ -47,6 +47,7 @@ logger = logging.getLogger("precompute")
 
 # Scan dates per spec
 SCAN_DATES = [
+    date(2023, 11, 6),
     date(2024, 5, 6),
     date(2024, 9, 2),
     date(2025, 5, 6),
@@ -197,8 +198,14 @@ def _extract_pipeline_result(ctx: Any) -> dict:
         result["final_label"] = committee.final_label.value if hasattr(committee.final_label, "value") else str(committee.final_label)
         result["confidence"] = getattr(committee, "confidence", "")
         result["thesis"] = getattr(committee, "thesis", "")
+        result["anti_thesis"] = getattr(committee, "anti_thesis", "")
+        result["why_now"] = getattr(committee, "why_now_or_why_not_now", "")
+        result["next_action"] = getattr(committee, "next_action", "")
+        result["largest_unknowns"] = getattr(committee, "largest_unknowns", [])
+        result["expected_return_summary"] = getattr(committee, "expected_return_summary", "")
     except KeyError:
         result["final_label"] = "STOPPED"
+        result["thesis"] = ctx.stop_reason or ""
 
     # Extract valuation output if available
     try:
@@ -225,10 +232,12 @@ async def run_full_pipeline(
     scan_dir: Path,
     checkpoint: dict[str, dict],
     concurrency: int,
+    pipeline_concurrency: int = 5,
+    scan_date: date | None = None,
 ) -> dict[str, dict]:
     """Run Stage 2 full pipeline on screened companies."""
     results: dict[str, dict] = {}
-    sem = asyncio.Semaphore(concurrency)
+    sem = asyncio.Semaphore(pipeline_concurrency)
 
     async def _run_one(stock: dict) -> tuple[str, dict]:
         ticker = stock["ticker"]
@@ -243,6 +252,7 @@ async def run_full_pipeline(
                 name=stock.get("name", ticker),
                 exchange=_ticker_to_exchange(ticker),
                 sector=stock.get("industry"),
+                as_of_date=scan_date,
             )
             try:
                 ctx = await run_pipeline(intake, llm=analysis_llm)
@@ -499,12 +509,24 @@ async def run_scan(
     logger.info("Scan %s: %d checkpointed results", scan_date, len(checkpoint))
 
     exclusion_llm = create_llm_client("minimax")
-    analysis_llm = create_llm_client("deepseek")
+    analysis_llm = create_llm_client("minimax")
 
-    # Build universe
+    # Build universe (no LLM exclusion — filter by market cap first)
     if is_cold_start:
         logger.info("Cold start: building full universe")
-        universe = await build_universe("A_SHARE", llm=exclusion_llm)
+        universe = await build_universe("A_SHARE", llm=None)
+        # Keep only top 500 by market cap, then apply LLM exclusion
+        universe.sort(key=lambda s: s.get("market_cap", 0), reverse=True)
+        universe = universe[:500]
+        logger.info("Trimmed to top 500 by market cap")
+        # Skip LLM exclusion if screening already done (checkpoint has results)
+        screening_done = sum(1 for v in checkpoint.values() if v.get("decision"))
+        if screening_done >= len(universe) * 0.9:
+            logger.info("Screening checkpoint covers %d/%d, skipping LLM exclusion", screening_done, len(universe))
+        elif exclusion_llm is not None:
+            from investagent.screening.universe import apply_llm_exclusions
+            universe = await apply_llm_exclusions(universe, exclusion_llm)
+            logger.info("After LLM exclusion: %d stocks", len(universe))
     else:
         universe = build_incremental_universe(previous_results, current_holdings)
 
@@ -527,6 +549,7 @@ async def run_scan(
     # Stage 2: Full pipeline
     pipeline_results = await run_full_pipeline(
         stocks_for_pipeline, analysis_llm, scan_dir, checkpoint, concurrency,
+        scan_date=scan_date,
     )
 
     # Merge all results
@@ -598,7 +621,7 @@ async def main(concurrency: int = 5) -> None:
                     scan_date + timedelta(days=1), next_scan - timedelta(days=1),
                 )
                 if triggers:
-                    analysis_llm = create_llm_client("deepseek")
+                    analysis_llm = create_llm_client("minimax")
                     trigger_decisions = await handle_price_triggers(
                         triggers, current_holdings, analysis_llm, previous_results,
                     )

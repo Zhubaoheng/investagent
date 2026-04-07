@@ -9,6 +9,7 @@ Processes one annual report at a time:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -102,6 +103,10 @@ def _fix_unit_scale(rows: list[Any], field: str) -> list[Any]:
     return fixed
 
 
+
+
+
+
 class FilingAgent(BaseAgent):
     name: str = "filing"
 
@@ -109,8 +114,9 @@ class FilingAgent(BaseAgent):
         self,
         llm: LLMClient,
         filing_fetcher: FilingFetcher | None = None,
+        as_of_date: str | None = None,
     ) -> None:
-        super().__init__(llm)
+        super().__init__(llm, as_of_date=as_of_date)
         self._filing_fetcher = filing_fetcher
 
     def _output_type(self) -> type[BaseAgentOutput]:
@@ -144,6 +150,7 @@ class FilingAgent(BaseAgent):
 
     async def _download_one(self, doc: FilingDocument) -> dict[str, str]:
         """Download a single filing and extract sections."""
+        import time as _time
         fetcher = self._filing_fetcher
         if fetcher is None and doc.raw_content is None and doc.text_content is None:
             market_to_exchange = {"A_SHARE": "SSE", "HK": "HKEX", "US_ADR": "NYSE"}
@@ -157,17 +164,28 @@ class FilingAgent(BaseAgent):
         try:
             if doc.raw_content is None and doc.text_content is None:
                 if fetcher is not None:
+                    _t0 = _time.time()
                     doc = await fetcher.download_filing(doc)
+                    logger.info(
+                        "  [%s %s] download took %.1fs (%s bytes)",
+                        doc.filing_type, doc.fiscal_year,
+                        _time.time() - _t0,
+                        len(doc.raw_content) if doc.raw_content else 0,
+                    )
                 else:
                     return {}
 
             if doc.text_content:
                 text = doc.text_content
             elif doc.raw_content and doc.content_type == "pdf":
-                # Run in thread pool to avoid blocking the event loop
-                # (pymupdf PDF parsing is CPU-intensive)
-                import asyncio
-                text = await asyncio.to_thread(extract_pdf_markdown, doc.raw_content)
+                from investagent.executors import subprocess_extract_pdf
+                _t0 = _time.time()
+                text = await subprocess_extract_pdf(doc.raw_content)
+                logger.info(
+                    "  [%s %s] pdf_extract took %.1fs (%d chars)",
+                    doc.filing_type, doc.fiscal_year,
+                    _time.time() - _t0, len(text) if text else 0,
+                )
             elif doc.raw_content:
                 text = doc.raw_content.decode("utf-8", errors="replace")
             else:
@@ -176,7 +194,8 @@ class FilingAgent(BaseAgent):
             if not text:
                 return {}
 
-            return await asyncio.to_thread(extract_sections, text, self._market)
+            from investagent.executors import subprocess_extract_sections
+            return await subprocess_extract_sections(text, self._market)
 
         except Exception:
             logger.warning("Failed to process %s %s", doc.filing_type, doc.fiscal_year, exc_info=True)
@@ -184,12 +203,12 @@ class FilingAgent(BaseAgent):
 
     async def _get_raw_markdown(self, doc: FilingDocument) -> str:
         """Get raw markdown text from a filing (for fallback when section matching fails)."""
-        import asyncio as _aio
         try:
             if doc.text_content:
                 return doc.text_content
             elif doc.raw_content and doc.content_type == "pdf":
-                return await _aio.to_thread(extract_pdf_markdown, doc.raw_content)
+                from investagent.executors import subprocess_extract_pdf
+                return await subprocess_extract_pdf(doc.raw_content)
             elif doc.raw_content:
                 return doc.raw_content.decode("utf-8", errors="replace")
         except Exception:
