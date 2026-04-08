@@ -196,7 +196,6 @@ def _extract_pipeline_result(ctx: Any) -> dict:
     try:
         committee = ctx.get_result("committee")
         result["final_label"] = committee.final_label.value if hasattr(committee.final_label, "value") else str(committee.final_label)
-        result["confidence"] = getattr(committee, "confidence", "")
         result["thesis"] = getattr(committee, "thesis", "")
         result["anti_thesis"] = getattr(committee, "anti_thesis", "")
         result["why_now"] = getattr(committee, "why_now_or_why_not_now", "")

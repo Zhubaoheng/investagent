@@ -341,8 +341,7 @@ def generate_report(
     committee = _safe_get(ctx, "committee")
     if committee:
         label = committee.final_label.value
-        conf = f" (置信度: {committee.confidence})" if committee.confidence else ""
-        parts.append(f"## 最终结论: **{label}**{conf}\n")
+        parts.append(f"## 最终结论: **{label}**\n")
     elif ctx.is_stopped():
         parts.append(f"## Pipeline 停止: {ctx.stop_reason}\n")
 

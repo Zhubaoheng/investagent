@@ -1,7 +1,7 @@
 """Investment Committee Agent — final verdict with deterministic post-processing.
 
 LLM produces thesis/anti-thesis/unknowns/reasoning. Python post-processing
-enforces hard label and confidence rules that LLM consistently fails to follow.
+enforces hard label rules that LLM consistently fails to follow.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ def _post_process_committee(
     output: CommitteeOutput,
     ctx: Any,
 ) -> CommitteeOutput:
-    """Deterministic label and confidence correction.
+    """Deterministic label correction.
 
     LLM consistently defaults to WATCHLIST regardless of upstream signals.
     These rules enforce what the prompt asks but LLM doesn't deliver.
@@ -42,9 +42,6 @@ def _post_process_committee(
     quality = ""
     mos = None
     hurdle = None
-    pvv = ""
-    kill_shots: list[str] = []
-    cycle_position = ""
 
     try:
         fq = ctx.get_result("financial_quality")
@@ -56,31 +53,13 @@ def _post_process_committee(
         val = ctx.get_result("valuation")
         mos = getattr(val, "margin_of_safety_pct", None)
         hurdle = getattr(val, "meets_hurdle_rate", None)
-        pvv = getattr(val, "price_vs_value", "")
-    except (KeyError, AttributeError):
-        pass
-
-    try:
-        critic = ctx.get_result("critic")
-        kill_shots = getattr(critic, "kill_shots", []) or []
-    except (KeyError, AttributeError):
-        pass
-
-    try:
-        ecology = ctx.get_result("ecology")
-        cycle_position = getattr(ecology, "cycle_position", "")
     except (KeyError, AttributeError):
         pass
 
     label = output.final_label
-    confidence = output.confidence
     original_label = label
-    original_confidence = confidence
 
     # --- Hard REJECT only (防呆) ---
-    # These are objective facts that don't require judgment.
-    # Upgrade decisions (WATCHLIST→DEEP_DIVE→INVESTABLE) stay with LLM
-    # because they require weighing critic analysis, unknowns, and context.
     if quality in ("POOR", "BELOW_AVERAGE"):
         label = FinalLabel.REJECT
     elif mos is not None and mos < -50 and quality in ("AVERAGE", "POOR", "BELOW_AVERAGE", ""):
@@ -88,58 +67,12 @@ def _post_process_committee(
     elif quality == "AVERAGE" and hurdle is False:
         label = FinalLabel.REJECT
 
-    # --- Deterministic confidence (覆盖 LLM 的 MEDIUM 默认) ---
-    n_kill_shots = len(kill_shots)
-
-    # HIGH: signals are clear and consistent
-    if quality in ("POOR", "BELOW_AVERAGE"):
-        confidence = "HIGH"  # bad company is a clear conclusion
-    elif quality == "GREAT" and pvv in ("CHEAP", "FAIR") and hurdle is True and n_kill_shots == 0:
-        confidence = "HIGH"  # great + reasonably priced + no kill shots
-    elif mos is not None and (mos > 40 or mos < -40):
-        confidence = "HIGH"  # extreme valuation clarity
-
-    # LOW: signals contradict or key data missing
-    elif not quality:
-        confidence = "LOW"  # quality data missing
-    elif n_kill_shots >= 2:
-        confidence = "LOW"  # multiple kill shots = high uncertainty
-    elif (quality == "GREAT" and pvv == "EXPENSIVE") or (quality in ("POOR", "BELOW_AVERAGE") and pvv == "CHEAP"):
-        confidence = "LOW"  # quality vs price contradiction
-
-    # else: keep LLM's confidence (usually MEDIUM, which is appropriate)
-
-    # --- Cyclical override: peak earnings inflate quality/valuation signals ---
-    if cycle_position == "PEAK" and confidence == "HIGH":
-        confidence = "MEDIUM"
-        logger.info(
-            "Committee post-process: confidence HIGH → MEDIUM (cycle_position=PEAK, "
-            "financial data may overstate normal earnings)",
-        )
-    elif cycle_position == "TROUGH" and confidence == "HIGH" and label == FinalLabel.REJECT:
-        # At trough, bad numbers may not reflect true quality — reduce certainty
-        confidence = "MEDIUM"
-        logger.info(
-            "Committee post-process: confidence HIGH → MEDIUM (cycle_position=TROUGH, "
-            "financial data may understate normal earnings)",
-        )
-
     if label != original_label:
         logger.info(
-            "Committee post-process label: %s → %s (quality=%s pvv=%s mos=%s hurdle=%s)",
-            original_label.value, label.value, quality, pvv, mos, hurdle,
+            "Committee post-process: %s → %s (quality=%s mos=%s hurdle=%s)",
+            original_label.value, label.value, quality, mos, hurdle,
         )
-    if confidence != original_confidence:
-        logger.info(
-            "Committee post-process confidence: %s → %s (quality=%s pvv=%s mos=%s kills=%d)",
-            original_confidence, confidence, quality, pvv, mos, n_kill_shots,
-        )
-
-    if label != output.final_label or confidence != output.confidence:
-        return output.model_copy(update={
-            "final_label": label,
-            "confidence": confidence,
-        })
+        return output.model_copy(update={"final_label": label})
     return output
 
 

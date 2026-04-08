@@ -436,7 +436,6 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
             if hasattr(committee.final_label, "value")
             else str(committee.final_label)
         )
-        result["confidence"] = getattr(committee, "confidence", "")
         result["thesis"] = getattr(committee, "thesis", "")
         result["anti_thesis"] = getattr(committee, "anti_thesis", "")
         result["largest_unknowns"] = getattr(committee, "largest_unknowns", [])
@@ -802,7 +801,6 @@ async def main(
                 "market_cap_yi": round(r.get("market_cap", 0) / 1e8, 1),
                 "industry": r.get("industry", ""),
                 "final_label": r.get("final_label"),
-                "confidence": r.get("confidence"),
                 "enterprise_quality": r.get("enterprise_quality"),
                 "price_vs_value": r.get("price_vs_value"),
                 "margin_of_safety_pct": r.get("margin_of_safety_pct"),

@@ -154,9 +154,8 @@ async def step2_pipeline(stocks: list[dict], llm: LLMClient) -> list[dict]:
                 committee = ctx.get_result("committee")
                 label = committee.final_label.value if hasattr(committee.final_label, "value") else str(committee.final_label)
                 result_data["final_label"] = label
-                result_data["confidence"] = getattr(committee, "confidence", "")
                 result_data["thesis"] = getattr(committee, "thesis", "")
-                logger.info("  → %s (confidence: %s)", label, result_data["confidence"])
+                logger.info("  → %s", label)
             except KeyError:
                 result_data["final_label"] = "NO_COMMITTEE"
 
