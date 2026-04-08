@@ -424,17 +424,27 @@ def fetch_hk_financials(symbol: str, years: int = 7) -> dict[str, Any]:
 
 async def fetch_structured_financials(
     ticker: str, market: str, years: int = 7,
+    akshare_cache: "AkShareCache | None" = None,
 ) -> dict[str, Any]:
     """Async wrapper: fetch structured financials from AkShare.
 
     Serialized via _AKSHARE_LOCK — py_mini_racer (V8) is not thread-safe.
     Returns empty dict if market not supported or API fails.
 
+    If *akshare_cache* is provided, checks cache first and stores on miss.
+
     Circuit breaker: after N consecutive ticker failures, pauses for 5 minutes
     then retries (not permanent disable). Prevents wasting time on transient
     outages while allowing recovery.
     """
     global _CONSECUTIVE_FAILURES, _CIRCUIT_COOLDOWN_UNTIL
+
+    # Check cache first
+    if akshare_cache is not None:
+        cached = akshare_cache.get(ticker, market)
+        if cached is not None:
+            logger.info("AkShare cache hit: %s (%s)", ticker, market)
+            return cached
 
     # If in cooldown, check if it's time to retry
     if _CIRCUIT_COOLDOWN_UNTIL > 0:
@@ -465,6 +475,9 @@ async def fetch_structured_financials(
     has_data = any(result.get(k) for k in ("income_statement", "balance_sheet", "cash_flow"))
     if has_data:
         _CONSECUTIVE_FAILURES = 0
+        # Store in cache on success
+        if akshare_cache is not None:
+            akshare_cache.put(ticker, market, result)
     else:
         _CONSECUTIVE_FAILURES += 1
         if _CONSECUTIVE_FAILURES >= _CIRCUIT_BREAKER_THRESHOLD:

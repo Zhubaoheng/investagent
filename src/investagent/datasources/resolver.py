@@ -73,6 +73,17 @@ def resolve_filing_fetcher(exchange: str) -> FilingFetcher:
     raise ValueError(f"No filing fetcher for market '{market}'")
 
 
+def resolve_filing_fetcher_cached(
+    exchange: str,
+    cache: "FilingCache",
+) -> FilingFetcher:
+    """Return a cache-wrapped FilingFetcher for the given exchange."""
+    from investagent.datasources.cached_fetcher import CachedFilingFetcher
+
+    inner = resolve_filing_fetcher(exchange)
+    return CachedFilingFetcher(inner, cache)
+
+
 def resolve_market_data_fetcher() -> MarketDataFetcher:
     """Return the market data fetcher (yfinance covers all three markets)."""
     return YFinanceFetcher()

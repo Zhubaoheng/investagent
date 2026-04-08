@@ -115,9 +115,11 @@ class FilingAgent(BaseAgent):
         llm: LLMClient,
         filing_fetcher: FilingFetcher | None = None,
         as_of_date: str | None = None,
+        filing_cache: "FilingCache | None" = None,
     ) -> None:
         super().__init__(llm, as_of_date=as_of_date)
         self._filing_fetcher = filing_fetcher
+        self._filing_cache = filing_cache
 
     def _output_type(self) -> type[BaseAgentOutput]:
         return FilingOutput
@@ -175,17 +177,32 @@ class FilingAgent(BaseAgent):
                 else:
                     return {}
 
+            # Check sections cache first (most valuable — skips PDF + markdown + sections)
+            cache = self._filing_cache
+            if cache is not None:
+                cached_sections = cache.get_sections(doc)
+                if cached_sections:
+                    logger.info("  [%s %s] sections cache hit", doc.filing_type, doc.fiscal_year)
+                    return cached_sections
+
             if doc.text_content:
                 text = doc.text_content
             elif doc.raw_content and doc.content_type == "pdf":
-                from investagent.executors import subprocess_extract_pdf
-                _t0 = _time.time()
-                text = await subprocess_extract_pdf(doc.raw_content)
-                logger.info(
-                    "  [%s %s] pdf_extract took %.1fs (%d chars)",
-                    doc.filing_type, doc.fiscal_year,
-                    _time.time() - _t0, len(text) if text else 0,
-                )
+                # Check markdown cache
+                text = cache.get_markdown(doc) if cache is not None else None
+                if text:
+                    logger.info("  [%s %s] markdown cache hit", doc.filing_type, doc.fiscal_year)
+                else:
+                    from investagent.executors import subprocess_extract_pdf
+                    _t0 = _time.time()
+                    text = await subprocess_extract_pdf(doc.raw_content)
+                    logger.info(
+                        "  [%s %s] pdf_extract took %.1fs (%d chars)",
+                        doc.filing_type, doc.fiscal_year,
+                        _time.time() - _t0, len(text) if text else 0,
+                    )
+                    if text and cache is not None:
+                        cache.put_markdown(doc, text)
             elif doc.raw_content:
                 text = doc.raw_content.decode("utf-8", errors="replace")
             else:
@@ -195,7 +212,10 @@ class FilingAgent(BaseAgent):
                 return {}
 
             from investagent.executors import subprocess_extract_sections
-            return await subprocess_extract_sections(text, self._market)
+            sections = await subprocess_extract_sections(text, self._market)
+            if sections and cache is not None:
+                cache.put_sections(doc, sections)
+            return sections
 
         except Exception:
             logger.warning("Failed to process %s %s", doc.filing_type, doc.fiscal_year, exc_info=True)

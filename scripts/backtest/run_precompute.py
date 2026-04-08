@@ -36,6 +36,10 @@ from investagent.agents.portfolio import (
     PortfolioAgent,
     PortfolioInput,
 )
+from investagent.store.candidate_store import CandidateStore
+from investagent.store.run_manager import RunManager
+from investagent.datasources.cache import FilingCache, AkShareCache
+from investagent.workflow.decision_pipeline import run_decision_pipeline
 
 from temporal import TemporalValidator
 
@@ -54,7 +58,8 @@ SCAN_DATES = [
     date(2025, 9, 1),
 ]
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "backtest"
+_DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
+DATA_DIR = _DATA_ROOT / "backtest"
 
 # Exchange mapping for A-shares
 _EXCHANGE_MAP = {
@@ -554,16 +559,20 @@ async def run_scan(
     # Merge all results
     all_results = {**screen_results, **pipeline_results}
 
-    # Stage 3: Portfolio construction
-    holdings_list = [
-        {"ticker": t, "weight": w, "name": previous_results.get(t, {}).get("name", ""),
-         "industry": previous_results.get(t, {}).get("industry", "")}
-        for t, w in current_holdings.items()
-    ] if not is_cold_start else []
+    # Stage 3: Portfolio construction (Part 2 Decision Pipeline)
+    store = CandidateStore(DATA_DIR / "candidate_store.json")
+    store.ingest_scan_results(list(pipeline_results.values()), scan_date)
+    allocations = await run_decision_pipeline(store, analysis_llm, scan_date=scan_date)
 
-    allocations = await run_portfolio_construction(
-        pipeline_results, analysis_llm, holdings_list, scan_dir,
-    )
+    # Save portfolio decision for checkpoint
+    _save_result(scan_dir, "_portfolio", {
+        "allocations": allocations,
+        "cash_weight": 1.0 - sum(allocations.values()),
+        "candidates_count": sum(
+            1 for r in pipeline_results.values()
+            if r.get("final_label") == "INVESTABLE"
+        ),
+    })
 
     # Save scan summary
     _save_result(scan_dir, "_summary", {
@@ -585,6 +594,23 @@ async def main(concurrency: int = 5) -> None:
     previous_results: dict[str, dict] = {}
     current_holdings: dict[str, float] = {}
     entry_prices: dict[str, float] = {}  # ticker -> price at entry
+
+    # Run isolation via RunManager
+    rm = RunManager(_DATA_ROOT)
+    resumable = rm.find_resumable("backtest")
+    if resumable:
+        run_meta = resumable
+        logger.info("Resuming run %s", run_meta.run_id)
+    else:
+        run_meta = rm.create_run("backtest", config={"concurrency": concurrency})
+        logger.info("Created run %s", run_meta.run_id)
+
+    # Shared filing cache
+    filing_cache = FilingCache(_DATA_ROOT / "cache" / "filings")
+    akshare_cache = AkShareCache(_DATA_ROOT / "cache" / "akshare")
+
+    # CandidateStore persists across scans for incremental state management
+    store = CandidateStore(DATA_DIR / "candidate_store.json")
 
     for i, scan_date in enumerate(SCAN_DATES):
         logger.info("=" * 60)
@@ -640,6 +666,7 @@ async def main(concurrency: int = 5) -> None:
     )
     logger.info("Saved %d decision points to %s", len(all_decisions), decisions_file)
     logger.info("Pre-computation complete")
+    rm.complete_run(run_meta.run_id)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ async def run_pipeline(
     llm: LLMClient | None = None,
     filing_fetcher: FilingFetcher | None = None,
     market_fetcher: MarketDataFetcher | None = None,
+    filing_cache: "FilingCache | None" = None,
 ) -> PipelineContext:
     """Run the full 10-stage analysis pipeline.
 
@@ -91,7 +92,10 @@ async def run_pipeline(
         return ctx
 
     # Stage 2: Filing Structuring (with real content extraction)
-    filing_agent = FilingAgent(llm, filing_fetcher=filing_fetcher, as_of_date=cutoff)
+    filing_agent = FilingAgent(
+        llm, filing_fetcher=filing_fetcher, as_of_date=cutoff,
+        filing_cache=filing_cache,
+    )
     await run_agent(filing_agent, intake, ctx)
     if ctx.is_stopped():
         return ctx

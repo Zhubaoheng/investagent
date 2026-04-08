@@ -45,9 +45,15 @@ from investagent.agents.portfolio import (
     PortfolioAgent,
     PortfolioInput,
 )
+from investagent.store.candidate_store import CandidateStore
+from investagent.store.run_manager import RunManager
+from investagent.datasources.cache import FilingCache, AkShareCache
+from investagent.datasources.cached_fetcher import CachedFilingFetcher
+from investagent.workflow.decision_pipeline import run_decision_pipeline
 
-_BASE_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "overnight"
-# Will be set in main() based on --as-of-date
+_DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
+_BASE_OUTPUT_DIR = _DATA_ROOT / "overnight"
+# Will be set in main() by RunManager
 OUTPUT_DIR = _BASE_OUTPUT_DIR
 CHECKPOINT_DIR = _BASE_OUTPUT_DIR / "checkpoints"
 
@@ -465,6 +471,7 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
 async def pipeline_all(
     stocks: list[dict], llm: LLMClient, concurrency: int = 5,
     as_of_date: date | None = None,
+    filing_cache: "FilingCache | None" = None,
 ) -> list[dict]:
     """Run full pipeline on all stocks with progress tracking."""
     sem = asyncio.Semaphore(concurrency)
@@ -497,7 +504,7 @@ async def pipeline_all(
                 as_of_date=as_of_date,
             )
             try:
-                ctx = await run_pipeline(intake, llm=llm)
+                ctx = await run_pipeline(intake, llm=llm, filing_cache=filing_cache)
                 result = _extract_result(ctx, stock)
             except BaseException as e:
                 logger.error("Pipeline FAILED for %s %s: %s", ticker, stock.get("name", ""), e)
@@ -561,46 +568,31 @@ async def pipeline_all(
 # Phase 5: Portfolio
 # ---------------------------------------------------------------------------
 
-async def build_portfolio(results: list[dict], llm: LLMClient) -> dict:
-    """Build portfolio from INVESTABLE candidates."""
-    candidates = []
-    for r in results:
-        if r.get("final_label") != "INVESTABLE":
-            continue
-        candidates.append(CandidateInfo(
-            ticker=r["ticker"],
-            name=r.get("name", ""),
-            industry=r.get("industry", ""),
-            enterprise_quality=r.get("enterprise_quality", ""),
-            price_vs_value=r.get("price_vs_value", ""),
-            margin_of_safety_pct=r.get("margin_of_safety_pct"),
-            meets_hurdle_rate=r.get("meets_hurdle_rate", False),
-            thesis=r.get("thesis", ""),
-        ))
+async def build_portfolio(
+    results: list[dict], llm: LLMClient, as_of_date: date | None = None,
+) -> dict:
+    """Build portfolio via Part 2 decision pipeline (cross-comparison + strategy)."""
+    store = CandidateStore(OUTPUT_DIR / "candidate_store.json")
+    scan_date = as_of_date or date.today()
+    store.ingest_scan_results(results, scan_date)
 
-    if not candidates:
-        logger.info("No INVESTABLE candidates. Portfolio: 100%% cash.")
+    actionable = store.get_actionable_candidates()
+    if not actionable:
+        logger.info("No actionable candidates. Portfolio: 100%% cash.")
+        store.save()
         return {"allocations": [], "cash_weight": 1.0}
 
-    logger.info("Building portfolio from %d INVESTABLE candidates", len(candidates))
-    agent = PortfolioAgent(llm=llm)
-    inp = PortfolioInput(candidates=candidates, available_cash_pct=1.0)
+    logger.info("Building portfolio from %d actionable candidates", len(actionable))
 
     try:
-        result = await agent.run(inp)
+        allocations = await run_decision_pipeline(store, llm, scan_date=scan_date)
         portfolio = {
             "allocations": [
-                {"ticker": a.ticker, "name": a.name,
-                 "weight": a.target_weight, "reason": a.reason}
-                for a in result.allocations
+                {"ticker": t, "weight": w}
+                for t, w in allocations.items()
             ],
-            "cash_weight": result.cash_weight,
-            "industry_distribution": result.industry_distribution,
-            "rebalance_actions": result.rebalance_actions,
+            "cash_weight": 1.0 - sum(allocations.values()),
         }
-        for a in result.allocations:
-            logger.info("  %s %s: %.0f%% - %s",
-                        a.ticker, a.name, a.target_weight * 100, a.reason)
         return portfolio
     except Exception as e:
         logger.error("Portfolio construction failed: %s", e)
@@ -619,12 +611,29 @@ async def main(
     as_of_date: date | None = None,
 ) -> None:
     global OUTPUT_DIR, CHECKPOINT_DIR
-    if as_of_date:
-        OUTPUT_DIR = _BASE_OUTPUT_DIR / f"bt_{as_of_date.isoformat()}"
+
+    # ---- Run isolation via RunManager ----
+    rm = RunManager(_DATA_ROOT)
+    as_of_str = as_of_date.isoformat() if as_of_date else None
+    resumable = rm.find_resumable("overnight", as_of_date=as_of_str)
+    if resumable:
+        run_meta = resumable
+        run_dir = rm.get_run_dir(run_meta.run_id)
     else:
-        OUTPUT_DIR = _BASE_OUTPUT_DIR
-    CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
+        run_meta = rm.create_run(
+            "overnight",
+            config={"top_n": top_n, "pipeline_concurrency": pipeline_concurrency},
+            as_of_date=as_of_str,
+        )
+        run_dir = rm.get_run_dir(run_meta.run_id)
+
+    OUTPUT_DIR = run_dir
+    CHECKPOINT_DIR = run_dir / "checkpoints"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ---- Shared filing/AkShare cache ----
+    filing_cache = FilingCache(_DATA_ROOT / "cache" / "filings")
+    akshare_cache = AkShareCache(_DATA_ROOT / "cache" / "akshare")
 
     # Logging: file gets everything, console gets overnight + warnings
     file_handler = logging.FileHandler(
@@ -652,6 +661,7 @@ async def main(
     total_start = time.time()
     logger.info("=" * 60)
     logger.info("OVERNIGHT A-SHARE EVALUATION")
+    logger.info("  Run: %s%s", run_meta.run_id, " (resumed)" if resumable else "")
     logger.info("  Top %d by market cap", top_n)
     logger.info("  Pipeline concurrency: %d", pipeline_concurrency)
     if as_of_date:
@@ -745,13 +755,13 @@ async def main(
     logger.info("Phase 4: Running full pipeline on %d stocks (concurrency=%d)...",
                 len(proceed), pipeline_concurrency)
     t0 = time.time()
-    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency, as_of_date=as_of_date)
+    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency, as_of_date=as_of_date, filing_cache=filing_cache)
     phase4_elapsed = time.time() - t0
     logger.info("Phase 4 done: %d analyzed (%.1fh)", len(pipeline_results), phase4_elapsed / 3600)
 
-    # ---- Phase 5: Portfolio ----
-    logger.info("Phase 5: Portfolio construction...")
-    portfolio = await build_portfolio(pipeline_results, llm)
+    # ---- Phase 5: Portfolio (Part 2 Decision Pipeline) ----
+    logger.info("Phase 5: Portfolio construction (cross-comparison + strategy)...")
+    portfolio = await build_portfolio(pipeline_results, llm, as_of_date=as_of_date)
 
     # ---- Phase 6: Report ----
     total_elapsed = time.time() - total_start
@@ -855,6 +865,9 @@ async def main(
                 len(portfolio.get("allocations", [])),
                 portfolio.get("cash_weight", 1) * 100)
     logger.info("Results: %s", output_file)
+
+    # Mark run as completed
+    rm.complete_run(run_meta.run_id)
 
 
 if __name__ == "__main__":
