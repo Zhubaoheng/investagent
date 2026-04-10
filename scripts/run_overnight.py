@@ -518,7 +518,10 @@ async def pipeline_all(
                 as_of_date=as_of_date,
             )
             try:
-                ctx = await run_pipeline(intake, llm=llm, filing_cache=filing_cache)
+                from investagent.datasources.resolver import resolve_filing_fetcher
+                from investagent.datasources.cached_fetcher import CachedFilingFetcher
+                cached_fetcher = CachedFilingFetcher(resolve_filing_fetcher(exchange), filing_cache)
+                ctx = await run_pipeline(intake, llm=llm, filing_fetcher=cached_fetcher, filing_cache=filing_cache, akshare_cache=akshare_cache)
                 result = _extract_result(ctx, stock)
             except BaseException as e:
                 logger.error("Pipeline FAILED for %s %s: %s", ticker, stock.get("name", ""), e)

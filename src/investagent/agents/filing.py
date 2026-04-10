@@ -116,10 +116,12 @@ class FilingAgent(BaseAgent):
         filing_fetcher: FilingFetcher | None = None,
         as_of_date: str | None = None,
         filing_cache: "FilingCache | None" = None,
+        akshare_cache: "AkShareCache | None" = None,
     ) -> None:
         super().__init__(llm, as_of_date=as_of_date)
         self._filing_fetcher = filing_fetcher
         self._filing_cache = filing_cache
+        self._akshare_cache = akshare_cache
 
     def _output_type(self) -> type[BaseAgentOutput]:
         return FilingOutput
@@ -503,7 +505,10 @@ class FilingAgent(BaseAgent):
             data = prefetched
         else:
             try:
-                data = await fetch_structured_financials(intake.ticker, self._market)
+                data = await fetch_structured_financials(
+                    intake.ticker, self._market,
+                    akshare_cache=self._akshare_cache,
+                )
             except Exception:
                 logger.warning("AkShare fetch failed, keeping LLM data", exc_info=True)
                 return output
@@ -908,6 +913,7 @@ class FilingAgent(BaseAgent):
                 from investagent.datasources.akshare_source import fetch_structured_financials
                 akshare_data = await fetch_structured_financials(
                     input_data.ticker, self._market,
+                    akshare_cache=self._akshare_cache,
                 )
                 if akshare_data and all(
                     akshare_data.get(k) for k in ("income_statement", "balance_sheet", "cash_flow")
