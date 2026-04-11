@@ -24,7 +24,9 @@ def _ensure_baostock_login() -> None:
     global _BS_LOGGED_IN
     if not _BS_LOGGED_IN:
         import baostock as bs
-        bs.login()
+        logger.info("baostock: logging in to %s:%s...", "www.baostock.com", 10030)
+        lg = bs.login()
+        logger.info("baostock: login result: code=%s msg=%s", lg.error_code, lg.error_msg)
         _BS_LOGGED_IN = True
         # baostock uses raw TCP sockets with no timeout — socket.recv()
         # blocks forever if the server hangs. Set a 30s timeout on the
@@ -34,13 +36,17 @@ def _ensure_baostock_login() -> None:
             sock = getattr(bs_ctx, "default_socket", None)
             if sock is not None:
                 sock.settimeout(30)
+                logger.info("baostock: socket timeout set to 30s")
+            else:
+                logger.warning("baostock: no socket found after login")
         except Exception:
-            pass
+            logger.warning("baostock: failed to set socket timeout", exc_info=True)
 
 
 def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[str, Any] | None:
     """Get close + PE + PB from baostock in one call. No AkShare dependency."""
     import baostock as bs
+    import time as _time
 
     _ensure_baostock_login()
 
@@ -52,6 +58,7 @@ def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[
     end = as_of_date.strftime("%Y-%m-%d")
 
     try:
+        t0 = _time.time()
         rs = bs.query_history_k_data_plus(
             bs_code, "date,close,peTTM,pbMRQ",
             start_date=start, end_date=end,
@@ -60,14 +67,20 @@ def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[
         rows = []
         while rs.error_code == "0" and rs.next():
             rows.append(rs.get_row_data())
+        elapsed = _time.time() - t0
+        if elapsed > 5:
+            logger.warning("baostock SLOW query for %s: %.1fs", ticker, elapsed)
         if rows:
             last = rows[-1]
             close = float(last[1]) if last[1] else None
             pe = float(last[2]) if last[2] else None
             pb = float(last[3]) if last[3] else None
+            logger.debug("baostock %s: close=%s pe=%s pb=%s (%.1fs)", ticker, close, pe, pb, elapsed)
             return {"close": close, "pe": pe, "pb": pb}
+        else:
+            logger.warning("baostock %s: no data returned (error_code=%s, %.1fs)", ticker, rs.error_code, elapsed)
     except Exception:
-        logger.debug("baostock failed for %s", ticker, exc_info=True)
+        logger.warning("baostock failed for %s", ticker, exc_info=True)
     return None
 
 

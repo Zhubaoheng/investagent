@@ -508,8 +508,10 @@ async def pipeline_all(
             label_counts[label] = label_counts.get(label, 0) + 1
             return cached
 
+        logger.info("[%s] waiting for semaphore (concurrency=%d)...", ticker, sem._value)
         async with sem:
             t0 = time.time()
+            logger.info("[%s] acquired semaphore, starting pipeline", ticker)
             exchange = _EXCHANGE_MAP.get(ticker[0], "SSE")
             intake = CompanyIntake(
                 ticker=ticker,
@@ -676,9 +678,15 @@ async def main(
     )
     logging.getLogger().addHandler(file_handler)
     logging.getLogger().setLevel(logging.WARNING)
-    # Allow per-agent timing logs from runner
+    # Allow per-agent timing logs from runner + key subsystems
     logging.getLogger("investagent.workflow.runner").setLevel(logging.INFO)
     logging.getLogger("investagent.llm").setLevel(logging.INFO)
+    logging.getLogger("investagent.agents.filing").setLevel(logging.INFO)
+    logging.getLogger("investagent.datasources.historical_market_data").setLevel(logging.INFO)
+    logging.getLogger("investagent.datasources.cache").setLevel(logging.INFO)
+    logging.getLogger("investagent.datasources.cached_fetcher").setLevel(logging.INFO)
+    logging.getLogger("investagent.datasources.cninfo").setLevel(logging.INFO)
+    logging.getLogger("investagent.datasources.akshare_source").setLevel(logging.INFO)
 
     # Overnight logger: visible on console
     console = logging.StreamHandler()
