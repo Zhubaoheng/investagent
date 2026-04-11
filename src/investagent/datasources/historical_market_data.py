@@ -26,6 +26,16 @@ def _ensure_baostock_login() -> None:
         import baostock as bs
         bs.login()
         _BS_LOGGED_IN = True
+        # baostock uses raw TCP sockets with no timeout — socket.recv()
+        # blocks forever if the server hangs. Set a 30s timeout on the
+        # global socket to prevent deadlocks.
+        try:
+            import baostock.common.context as bs_ctx
+            sock = getattr(bs_ctx, "default_socket", None)
+            if sock is not None:
+                sock.settimeout(30)
+        except Exception:
+            pass
 
 
 def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[str, Any] | None:
