@@ -69,6 +69,7 @@ class PortfolioStrategyAgent(BaseAgent):
                 "weaknesses": r.get("weaknesses_vs_peers") or [],
                 "portfolio_fit_notes": r.get("portfolio_fit_notes", ""),
                 "industry": detail.get("industry", "") or "未知",
+                "final_label": detail.get("final_label", "") or "未知",
                 "enterprise_quality": detail.get("enterprise_quality", "") or "未知",
                 "price_vs_value": detail.get("price_vs_value", "") or "未知",
                 "margin_of_safety_pct": mos_str,

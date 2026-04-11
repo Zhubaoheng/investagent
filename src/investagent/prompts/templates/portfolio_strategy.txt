@@ -27,6 +27,7 @@
 
 {% for r in ranked_candidates %}
 ### 排名 #{{ r.rank }}：{{ r.ticker }} {{ r.name }}
+- **投资委员会结论：{{ r.final_label }}**
 - 确信度评分：{{ r.conviction_score }}/10
 - 行业：{{ r.industry }}
 - 企业质量：{{ r.enterprise_quality }}
@@ -40,6 +41,20 @@
 {% if ranked_candidates|length == 0 %}
 没有候选标的通过横向对比。如果当前持仓仍满足投资标准，维持不变。否则考虑减仓或清仓。
 {% endif %}
+
+## 投资委员会 Label 与仓位约束
+
+投资委员会（Committee）已对每个标的做出独立判断，label 反映了 14 个专业 agent 的综合评估。**你必须尊重这个判断，不能仅因为质量高/估值低就绕过 label 限制。**
+
+| Label | 可否建仓 | 最大单只权重 | 说明 |
+|-------|---------|-------------|------|
+| **INVESTABLE** | ✅ 可以 | 30% | 唯一可以重仓的 label |
+| **DEEP_DIVE** | ⚠️ 试探性 | 10% | 值得研究但尚未确认，仅小仓位试探 |
+| **WATCHLIST** | ❌ 原则上不建仓 | 5%（仅极特殊情况） | 仅观察，除非 GREAT+CHEAP+MoS>30% 可少量试探 |
+| **SPECIAL_SITUATION** | ⚠️ 视情况 | 10% | 需要特殊分析 |
+| **REJECT / TOO_HARD / STOPPED** | ❌ 禁止 | 0% | 绝对不建仓 |
+
+**现金约束**：如果没有 INVESTABLE 标的，现金比例不得低于 50%。芒格原则——"不够好就持现金，耐心等待真正的好球"。
 
 ## 决策类型
 
