@@ -104,11 +104,15 @@ class LLMClient:
         # 10 attempts, immediate retry (no backoff) for timeouts,
         # backoff only for rate limits (429/529).
         _MAX_ATTEMPTS = 10
+        _CALL_TIMEOUT = 300  # 5 min max per LLM call (guards against hung connections)
         for attempt in range(_MAX_ATTEMPTS):
             _stats["calls"] += 1
             t0 = time.time()
             try:
-                resp = await self._client.messages.create(**kwargs)
+                resp = await asyncio.wait_for(
+                    self._client.messages.create(**kwargs),
+                    timeout=_CALL_TIMEOUT,
+                )
                 latency = time.time() - t0
 
                 _stats["successes"] += 1
@@ -152,6 +156,21 @@ class LLMClient:
                     status, wait, attempt + 1, _MAX_ATTEMPTS,
                 )
                 await asyncio.sleep(wait)
+
+            except asyncio.TimeoutError:
+                latency = time.time() - t0
+                _stats["retries"] += 1
+                if attempt == _MAX_ATTEMPTS - 1:
+                    _stats["errors"] += 1
+                    logger.error(
+                        "LLM call timeout after %ds (attempt %d/%d) | input~%dchars",
+                        _CALL_TIMEOUT, attempt + 1, _MAX_ATTEMPTS, input_chars,
+                    )
+                    raise
+                logger.warning(
+                    "LLM call timeout after %ds, retrying (attempt %d/%d) | input~%dchars",
+                    _CALL_TIMEOUT, attempt + 1, _MAX_ATTEMPTS, input_chars,
+                )
 
             except Exception as e:
                 latency = time.time() - t0
