@@ -882,7 +882,7 @@ async def main(
             {
                 "ticker": r["ticker"],
                 "name": r.get("name", ""),
-                "market_cap_yi": round(r.get("market_cap", 0) / 1e8, 1),
+                "market_cap_yi": round((r.get("market_cap") or 0) / 1e8, 1),
                 "industry": r.get("industry", ""),
                 "final_label": r.get("final_label"),
                 "enterprise_quality": r.get("enterprise_quality"),
