@@ -63,6 +63,14 @@ class CandidateStore:
 
             label = r.get("final_label", "")
             if label in _ACTIONABLE_LABELS:
+                # Preserve HELD state — a re-evaluated holding should stay
+                # HELD so PortfolioStrategy knows it's a current position.
+                prev = self._state.candidates.get(ticker)
+                state = (
+                    CandidateState.HELD
+                    if prev is not None and prev.state == CandidateState.HELD
+                    else CandidateState.ANALYZED
+                )
                 snapshot = CandidateSnapshot(
                     ticker=ticker,
                     name=r.get("name", ""),
@@ -78,7 +86,7 @@ class CandidateStore:
                     expected_return_summary=r.get("expected_return_summary", ""),
                     why_now=r.get("why_now_or_why_not_now", r.get("why_now", "")),
                     scan_date=scan_date,
-                    state=CandidateState.ANALYZED,
+                    state=state,
                 )
                 self._state.candidates[ticker] = snapshot
             else:

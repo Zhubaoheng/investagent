@@ -160,6 +160,33 @@ class TestCandidateStore:
         # But it should still exist in candidates
         assert store.to_portfolio_decisions() == {}
 
+    def test_held_state_preserved_on_reingest(self, tmp_path: Path):
+        """HELD stocks keep HELD state when re-ingested with new analysis."""
+        store = CandidateStore(tmp_path / "store.json")
+        store.ingest_scan_results(_sample_results(), date(2024, 5, 6))
+
+        # Hold 600519 (INVESTABLE)
+        store.update_holdings([
+            PortfolioHolding(
+                ticker="600519", target_weight=0.25, entry_date=date(2024, 5, 6),
+            ),
+        ])
+        c = next(c for c in store.get_actionable_candidates() if c.ticker == "600519")
+        assert c.state == CandidateState.HELD
+
+        # Re-ingest with downgraded label (INVESTABLE → WATCHLIST)
+        store.ingest_scan_results(
+            [{"ticker": "600519", "name": "贵州茅台", "final_label": "WATCHLIST",
+              "enterprise_quality": "GREAT", "price_vs_value": "FAIR"}],
+            date(2024, 9, 2),
+        )
+
+        # State should still be HELD, but label updated
+        c = next(c for c in store.get_actionable_candidates() if c.ticker == "600519")
+        assert c.state == CandidateState.HELD
+        assert c.final_label == "WATCHLIST"
+        assert c.scan_date == date(2024, 9, 2)
+
     def test_get_candidates_for_rescan(self, tmp_path: Path):
         store = CandidateStore(tmp_path / "store.json")
         store.ingest_scan_results(_sample_results(), date(2023, 5, 6))
