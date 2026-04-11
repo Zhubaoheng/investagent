@@ -1,8 +1,8 @@
-"""Tests for investagent.llm."""
+"""Tests for poorcharlie.llm."""
 
 from unittest.mock import MagicMock, patch
 
-from investagent.llm import LLMClient
+from poorcharlie.llm import LLMClient
 
 
 def test_llm_client_default_model():
@@ -17,8 +17,8 @@ def test_llm_client_custom_model():
 
 def test_llm_client_passes_base_url_and_api_key():
     """When no client is injected, base_url and api_key reach AsyncAnthropic."""
-    with patch("investagent.llm.anthropic.AsyncAnthropic") as mock_cls:
-        with patch("investagent.llm.httpx.AsyncClient"):
+    with patch("poorcharlie.llm.anthropic.AsyncAnthropic") as mock_cls:
+        with patch("poorcharlie.llm.httpx.AsyncClient"):
             LLMClient(
                 model="MiniMax-M2.7",
                 base_url="https://api.minimaxi.com/anthropic",
@@ -32,7 +32,7 @@ def test_llm_client_passes_base_url_and_api_key():
 
 def test_llm_client_defaults_none_without_base_url():
     """Without base_url/api_key, AsyncAnthropic gets defaults."""
-    with patch("investagent.llm.anthropic.AsyncAnthropic") as mock_cls:
+    with patch("poorcharlie.llm.anthropic.AsyncAnthropic") as mock_cls:
         LLMClient(model="claude-sonnet-4-20250514")
         mock_cls.assert_called_once_with()
 

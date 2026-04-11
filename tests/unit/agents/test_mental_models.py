@@ -7,14 +7,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.mental_models.moat import MoatAgent
-from investagent.agents.mental_models.compounding import CompoundingAgent
-from investagent.agents.mental_models.psychology import PsychologyAgent
-from investagent.agents.mental_models.systems import SystemsAgent
-from investagent.agents.mental_models.ecology import EcologyAgent
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.mental_models.moat import MoatAgent
+from poorcharlie.agents.mental_models.compounding import CompoundingAgent
+from poorcharlie.agents.mental_models.psychology import PsychologyAgent
+from poorcharlie.agents.mental_models.systems import SystemsAgent
+from poorcharlie.agents.mental_models.ecology import EcologyAgent
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
 
 
 def _intake() -> CompanyIntake:

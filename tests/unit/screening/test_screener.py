@@ -1,4 +1,4 @@
-"""Tests for investagent.screening.screener."""
+"""Tests for poorcharlie.screening.screener."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from investagent.llm import LLMClient
-from investagent.screening.screener import ScreenerAgent, ScreenerInput, _fmt_ratio_list
+from poorcharlie.llm import LLMClient
+from poorcharlie.screening.screener import ScreenerAgent, ScreenerInput, _fmt_ratio_list
 
 
 # ---------------------------------------------------------------------------

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from investagent.datasources.base import FilingDocument
-from investagent.datasources.hkex import (
+from poorcharlie.datasources.base import FilingDocument
+from poorcharlie.datasources.hkex import (
     HKEXFetcher,
     _classify_filing,
     _normalize_stock_code,
@@ -101,8 +101,8 @@ def _setup_hkex_mock(mock_session_cls, mock_load_ids, annual_html=_ANNUAL_HTML, 
     return mock_session
 
 
-@patch("investagent.datasources.hkex._load_stock_ids")
-@patch("investagent.datasources.hkex.FetcherSession")
+@patch("poorcharlie.datasources.hkex._load_stock_ids")
+@patch("poorcharlie.datasources.hkex.FetcherSession")
 async def test_search_filings_annual(mock_session_cls, mock_load_ids, fetcher):
     _setup_hkex_mock(mock_session_cls, mock_load_ids)
 
@@ -115,8 +115,8 @@ async def test_search_filings_annual(mock_session_cls, mock_load_ids, fetcher):
     assert "annual.pdf" in results[0].source_url
 
 
-@patch("investagent.datasources.hkex._load_stock_ids")
-@patch("investagent.datasources.hkex.FetcherSession")
+@patch("poorcharlie.datasources.hkex._load_stock_ids")
+@patch("poorcharlie.datasources.hkex.FetcherSession")
 async def test_search_filings_all_types(mock_session_cls, mock_load_ids, fetcher):
     _setup_hkex_mock(mock_session_cls, mock_load_ids)
 
@@ -126,15 +126,15 @@ async def test_search_filings_all_types(mock_session_cls, mock_load_ids, fetcher
     assert types == {"Annual Report", "Interim Report"}
 
 
-@patch("investagent.datasources.hkex._load_stock_ids")
+@patch("poorcharlie.datasources.hkex._load_stock_ids")
 async def test_search_filings_unknown_stock(mock_load_ids, fetcher):
     mock_load_ids.return_value = {}
     results = await fetcher.search_filings("99999.HK")
     assert results == []
 
 
-@patch("investagent.datasources.hkex._load_stock_ids")
-@patch("investagent.datasources.hkex.FetcherSession")
+@patch("poorcharlie.datasources.hkex._load_stock_ids")
+@patch("poorcharlie.datasources.hkex.FetcherSession")
 async def test_search_filings_empty(mock_session_cls, mock_load_ids, fetcher):
     empty = b"<html>No results</html>"
     _setup_hkex_mock(mock_session_cls, mock_load_ids, annual_html=empty, interim_html=empty)
@@ -147,7 +147,7 @@ async def test_search_filings_empty(mock_session_cls, mock_load_ids, fetcher):
 # HKEXFetcher.download_filing
 # ---------------------------------------------------------------------------
 
-@patch("investagent.datasources.hkex.Fetcher")
+@patch("poorcharlie.datasources.hkex.Fetcher")
 async def test_download_filing_pdf(mock_fetcher_cls, fetcher):
     mock_page = MagicMock()
     mock_page.status = 200
@@ -170,7 +170,7 @@ async def test_download_filing_pdf(mock_fetcher_cls, fetcher):
     assert result.raw_content == b"%PDF-1.4 fake content"
 
 
-@patch("investagent.datasources.hkex.Fetcher")
+@patch("poorcharlie.datasources.hkex.Fetcher")
 async def test_download_filing_http_error(mock_fetcher_cls, fetcher):
     mock_page = MagicMock()
     mock_page.status = 404

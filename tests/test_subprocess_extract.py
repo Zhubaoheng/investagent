@@ -36,7 +36,7 @@ class TestWorkerProtocol:
         }).encode() + b"\n"
 
         proc = subprocess.run(
-            [sys.executable, "-m", "investagent.datasources.pdf_extract_worker"],
+            [sys.executable, "-m", "poorcharlie.datasources.pdf_extract_worker"],
             input=header + sample_pdf_bytes,
             capture_output=True,
             timeout=120,
@@ -61,7 +61,7 @@ class TestWorkerProtocol:
         }).encode() + b"\n"
 
         proc = subprocess.run(
-            [sys.executable, "-m", "investagent.datasources.pdf_extract_worker"],
+            [sys.executable, "-m", "poorcharlie.datasources.pdf_extract_worker"],
             input=header,
             capture_output=True,
             timeout=30,
@@ -78,7 +78,7 @@ class TestWorkerProtocol:
 
         header = json.dumps({"action": "bogus", "data_len": 0}).encode() + b"\n"
         proc = subprocess.run(
-            [sys.executable, "-m", "investagent.datasources.pdf_extract_worker"],
+            [sys.executable, "-m", "poorcharlie.datasources.pdf_extract_worker"],
             input=header,
             capture_output=True,
             timeout=10,
@@ -94,7 +94,7 @@ class TestAsyncExecutors:
     @pytest.mark.asyncio
     async def test_subprocess_extract_pdf(self, sample_pdf_bytes: bytes):
         """subprocess_extract_pdf returns markdown text."""
-        from investagent.executors import subprocess_extract_pdf
+        from poorcharlie.executors import subprocess_extract_pdf
 
         text = await subprocess_extract_pdf(sample_pdf_bytes)
         assert isinstance(text, str)
@@ -104,7 +104,7 @@ class TestAsyncExecutors:
     @pytest.mark.asyncio
     async def test_subprocess_extract_pdf_empty(self):
         """subprocess_extract_pdf handles empty/invalid input gracefully."""
-        from investagent.executors import subprocess_extract_pdf
+        from poorcharlie.executors import subprocess_extract_pdf
 
         text = await subprocess_extract_pdf(b"not a pdf")
         assert isinstance(text, str)
@@ -113,7 +113,7 @@ class TestAsyncExecutors:
     @pytest.mark.asyncio
     async def test_subprocess_extract_sections(self):
         """subprocess_extract_sections returns section dict."""
-        from investagent.executors import subprocess_extract_sections
+        from poorcharlie.executors import subprocess_extract_sections
 
         md = "## 合并利润表\n营业收入 100 万\n## 合并资产负债表\n总资产 200 万"
         sections = await subprocess_extract_sections(md, "A_SHARE")
@@ -122,7 +122,7 @@ class TestAsyncExecutors:
     @pytest.mark.asyncio
     async def test_parallel_pdf_extraction(self, sample_pdf_bytes: bytes):
         """Multiple PDF extractions run truly in parallel (not serialized by GIL)."""
-        from investagent.executors import subprocess_extract_pdf
+        from poorcharlie.executors import subprocess_extract_pdf
 
         n = 3
         start = time.time()
@@ -144,7 +144,7 @@ class TestAsyncExecutors:
     @pytest.mark.asyncio
     async def test_io_pool_not_blocked_by_cpu(self, sample_pdf_bytes: bytes):
         """I/O pool operations complete quickly even during PDF extraction."""
-        from investagent.executors import io_pool, subprocess_extract_pdf
+        from poorcharlie.executors import io_pool, subprocess_extract_pdf
 
         # Start a slow PDF extraction
         pdf_task = asyncio.create_task(subprocess_extract_pdf(sample_pdf_bytes))

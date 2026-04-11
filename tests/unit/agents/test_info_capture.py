@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.info_capture — hybrid agent with real fetchers."""
+"""Tests for poorcharlie.agents.info_capture — hybrid agent with real fetchers."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.info_capture import InfoCaptureAgent
-from investagent.datasources.base import FilingDocument, MarketQuote
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.info_capture import InfoCaptureAgent
+from poorcharlie.datasources.base import FilingDocument, MarketQuote
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ async def test_info_capture_fetcher_failure_graceful():
 
 async def test_info_capture_stores_filing_docs_in_context():
     """Filing documents should be stored in PipelineContext for downstream agents."""
-    from investagent.workflow.context import PipelineContext
+    from poorcharlie.workflow.context import PipelineContext
 
     llm = _mock_llm()
     llm.create_message = AsyncMock(
@@ -262,11 +262,11 @@ async def test_info_capture_no_fetchers_uses_resolver():
 
     with (
         patch(
-            "investagent.agents.info_capture.resolve_filing_fetcher",
+            "poorcharlie.agents.info_capture.resolve_filing_fetcher",
             return_value=mock_filing,
         ),
         patch(
-            "investagent.agents.info_capture.resolve_market_data_fetcher",
+            "poorcharlie.agents.info_capture.resolve_market_data_fetcher",
             return_value=mock_market,
         ),
     ):

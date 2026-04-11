@@ -7,15 +7,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.filing import FilingAgent
-from investagent.datasources.base import FilingDocument
-from investagent.llm import LLMClient
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.filing import FilingMeta, FilingOutput
-from investagent.schemas.info_capture import InfoCaptureOutput, MarketSnapshot
-from investagent.workflow.context import PipelineContext
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.filing import FilingAgent
+from poorcharlie.datasources.base import FilingDocument
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.filing import FilingMeta, FilingOutput
+from poorcharlie.schemas.info_capture import InfoCaptureOutput, MarketSnapshot
+from poorcharlie.workflow.context import PipelineContext
 
 
 # ---------------------------------------------------------------------------
@@ -100,8 +100,8 @@ def _make_ctx(docs: list[FilingDocument] | None = None) -> PipelineContext:
 # Basic tests
 # ---------------------------------------------------------------------------
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="## Income Statement\n|Revenue|2B|")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "Revenue: 2B"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="## Income Statement\n|Revenue|2B|")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "Revenue: 2B"})
 async def test_filing_single_report(mock_sections, mock_pdf):
     llm = _mock_llm()
     llm.create_message = AsyncMock(return_value=_mock_response(_filing_tool_input()))
@@ -115,8 +115,8 @@ async def test_filing_single_report(mock_sections, mock_pdf):
     assert len(result.income_statement) == 2
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_filing_multi_report_merge(mock_sections, mock_pdf):
     """3 filings → 3 LLM calls → merged output with deduplicated years."""
     llm = _mock_llm()
@@ -137,8 +137,8 @@ async def test_filing_multi_report_merge(mock_sections, mock_pdf):
     assert result.meta.token_usage == 900  # 300 * 3 calls
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_filing_dedup_prefers_newer(mock_sections, mock_pdf):
     """When same year appears in two reports, newer report's data wins."""
     older = _filing_tool_input("2023")
@@ -163,8 +163,8 @@ async def test_filing_dedup_prefers_newer(mock_sections, mock_pdf):
     assert row_2023.revenue == 2.5e9  # from newer report
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_filing_dedup_prefers_more_complete(mock_sections, mock_pdf):
     """When newer report has sparse prior-year data, older report's complete row wins."""
     # 2024 report has sparse 2023 data (only revenue, no net_income)
@@ -223,7 +223,7 @@ async def test_filing_meta_is_server_generated():
 
 def test_normalize_fiscal_keys():
     """Y2023→2023, FY2023→FY period, then re-dedup."""
-    from investagent.agents.filing import FilingAgent
+    from poorcharlie.agents.filing import FilingAgent
 
     ti = _filing_tool_input("2024")
     # Add a duplicate row with Y-prefix fiscal_year
@@ -252,8 +252,8 @@ def test_normalize_fiscal_keys():
 
 def test_fix_unit_scale():
     """Cross-year unit inconsistency: some years' revenue scaled wrong."""
-    from investagent.agents.filing import _fix_unit_scale
-    from investagent.schemas.filing import IncomeStatementRow
+    from poorcharlie.agents.filing import _fix_unit_scale
+    from poorcharlie.schemas.filing import IncomeStatementRow
 
     rows = [
         IncomeStatementRow(fiscal_year="2019", fiscal_period="FY", revenue=3768e8, net_income=802e8),
@@ -307,8 +307,8 @@ def test_validate_extraction_fail():
     assert len(problems) > 0  # should flag the nulls
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_filing_validation_triggers_retry(mock_sections, mock_pdf):
     """When >30% critical fields null, agent retries with hints."""
     bad = _filing_tool_input()
@@ -339,8 +339,8 @@ async def test_filing_validation_triggers_retry(mock_sections, mock_pdf):
 # Currency
 # ---------------------------------------------------------------------------
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_filing_market_currency_from_info_capture(mock_sections, mock_pdf):
     """market_currency populated from info_capture's market_snapshot."""
     llm = _mock_llm()
@@ -386,8 +386,8 @@ def _akshare_data() -> dict:
     }
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={
     "income_statement": "Revenue: 170B",
     "balance_sheet": "Total assets: 300B",
     "cash_flow": "OCF: 90B",
@@ -409,7 +409,7 @@ async def test_ashare_skips_number_extraction(mock_sections, mock_pdf):
     )])
 
     with patch(
-        "investagent.datasources.akshare_source.fetch_structured_financials",
+        "poorcharlie.datasources.akshare_source.fetch_structured_financials",
         new_callable=AsyncMock,
         return_value=_akshare_data(),
     ) as mock_ak:
@@ -429,8 +429,8 @@ async def test_ashare_skips_number_extraction(mock_sections, mock_pdf):
     assert any(r.total_assets == 3e11 for r in result.balance_sheet)
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={
     "income_statement": "Revenue: 170B",
     "accounting_policies": "Some policy text",
 })
@@ -449,7 +449,7 @@ async def test_ashare_akshare_fail_falls_back_to_full_llm(mock_sections, mock_pd
     )])
 
     with patch(
-        "investagent.datasources.akshare_source.fetch_structured_financials",
+        "poorcharlie.datasources.akshare_source.fetch_structured_financials",
         new_callable=AsyncMock,
         side_effect=RuntimeError("AkShare API down"),
     ):
@@ -461,8 +461,8 @@ async def test_ashare_akshare_fail_falls_back_to_full_llm(mock_sections, mock_pd
     assert len(result.income_statement) >= 1
 
 
-@patch("investagent.agents.filing.extract_pdf_markdown", return_value="text")
-@patch("investagent.agents.filing.extract_sections", return_value={"income_statement": "data"})
+@patch("poorcharlie.agents.filing.extract_pdf_markdown", return_value="text")
+@patch("poorcharlie.agents.filing.extract_sections", return_value={"income_statement": "data"})
 async def test_us_adr_does_not_skip_numbers(mock_sections, mock_pdf):
     """US ADR companies always use full LLM extraction (no AkShare pre-fetch)."""
     intake = CompanyIntake(ticker="BABA", name="阿里巴巴", exchange="NYSE")
@@ -481,7 +481,7 @@ async def test_us_adr_does_not_skip_numbers(mock_sections, mock_pdf):
     # The key assertion is that the pre-fetch branch is never entered
     # for US markets, so the mock only gets called in _override_with_structured_data.
     with patch(
-        "investagent.datasources.akshare_source.fetch_structured_financials",
+        "poorcharlie.datasources.akshare_source.fetch_structured_financials",
         new_callable=AsyncMock,
         return_value={},  # US_ADR returns empty
     ) as mock_ak:

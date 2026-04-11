@@ -2,14 +2,14 @@
 
 ## Project Goal
 
-Investagent is a Munger-style value investing multi-subagent system. It evaluates whether a company is worth researching, whether public information is sufficient to explain it, and whether it meets quality and valuation standards. It is NOT a price prediction tool.
+PoorCharlie is a Munger-style value investing multi-subagent system. It evaluates whether a company is worth researching, whether public information is sufficient to explain it, and whether it meets quality and valuation standards. It is NOT a price prediction tool.
 
 ## Repo Structure
 
 ```
 docs/architecture/   # System architecture and agent design docs
 specs/               # Component specs
-src/investagent/     # Python package (src layout, uv + Python 3.12)
+src/poorcharlie/     # Python package (src layout, uv + Python 3.12)
 tests/               # pytest tests (unit + integration)
 ```
 
@@ -42,11 +42,11 @@ A-shares, HK stocks, US-listed Chinese ADRs. Filing types vary by market:
 - Every agent must distinguish: **fact / inference / unknown**.
 - Any agent may output "stop / defer / refuse to proceed" when key unknowns are insurmountable.
 - Risk = permanent capital loss, not price volatility.
-- Shared soul prompt applies to all agents (see `docs/architecture/investagent.md` §10).
+- Shared soul prompt applies to all agents (see `docs/architecture/poorcharlie.md` §10).
 
 ## Development Workflow
 
-- Architecture doc: `docs/architecture/investagent.md` (Chinese, canonical reference)
+- Architecture doc: `docs/architecture/poorcharlie.md` (Chinese, canonical reference)
 - Agent specs go in `specs/`
 - Implementation goes in `src/`
 - Tests go in `tests/`

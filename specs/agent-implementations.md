@@ -109,24 +109,24 @@ Triage Agent 的 `_build_user_context` 不使用 `ctx`，完全向后兼容。
 ## 文件清单
 
 ### 基础设施（2 个文件修改）
-- `src/investagent/agents/base.py` — `run()` / `_build_user_context()` 加 `ctx` 参数
-- `src/investagent/workflow/runner.py` — 传 `ctx` 给 `agent.run()`
+- `src/poorcharlie/agents/base.py` — `run()` / `_build_user_context()` 加 `ctx` 参数
+- `src/poorcharlie/workflow/runner.py` — 传 `ctx` 给 `agent.run()`
 
 ### Agent 实现（11 个文件重写）
-- `src/investagent/agents/accounting_risk.py`
-- `src/investagent/agents/financial_quality.py`
-- `src/investagent/agents/net_cash.py`
-- `src/investagent/agents/valuation.py`
-- `src/investagent/agents/mental_models/moat.py`
-- `src/investagent/agents/mental_models/compounding.py`
-- `src/investagent/agents/mental_models/psychology.py`
-- `src/investagent/agents/mental_models/systems.py`
-- `src/investagent/agents/mental_models/ecology.py`
-- `src/investagent/agents/critic.py`
-- `src/investagent/agents/committee.py`
+- `src/poorcharlie/agents/accounting_risk.py`
+- `src/poorcharlie/agents/financial_quality.py`
+- `src/poorcharlie/agents/net_cash.py`
+- `src/poorcharlie/agents/valuation.py`
+- `src/poorcharlie/agents/mental_models/moat.py`
+- `src/poorcharlie/agents/mental_models/compounding.py`
+- `src/poorcharlie/agents/mental_models/psychology.py`
+- `src/poorcharlie/agents/mental_models/systems.py`
+- `src/poorcharlie/agents/mental_models/ecology.py`
+- `src/poorcharlie/agents/critic.py`
+- `src/poorcharlie/agents/committee.py`
 
 ### Prompt 模板（11 个文件重写）
-- `src/investagent/prompts/templates/{agent_name}.txt`
+- `src/poorcharlie/prompts/templates/{agent_name}.txt`
 
 ### 测试（11 个新文件）
 - `tests/unit/agents/test_{agent_name}.py`

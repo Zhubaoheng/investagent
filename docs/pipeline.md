@@ -1,8 +1,8 @@
-# InvestAgent Pipeline 文档
+# PoorCharlie Pipeline 文档
 
 ## 总览
 
-InvestAgent 是一个芒格式价值投资多 Agent 系统，通过 10 个阶段的流水线评估一家公司是否值得投资。系统不预测股价，而是判断：公司能否被理解、公开信息是否充分、是否满足质量和估值标准。
+PoorCharlie 是一个芒格式价值投资多 Agent 系统，通过 10 个阶段的流水线评估一家公司是否值得投资。系统不预测股价，而是判断：公司能否被理解、公开信息是否充分、是否满足质量和估值标准。
 
 ## 核心原则
 
@@ -357,7 +357,7 @@ CompanyIntake
 | Triage 后置 | ✅ | 基于真实 Filing 数据评估可解释性 |
 | 下游 context 注入 | ✅ | 全部 11 个下游 Agent 注入 FilingOutput JSON |
 | Critic/Committee 综合 | ✅ | 接收全部上游 Agent 输出汇总 |
-| CLI | ✅ | `investagent 1448.HK` 一行命令 |
+| CLI | ✅ | `poorcharlie 1448.HK` 一行命令 |
 | 报告生成 | ✅ | Markdown + JSON debug log |
 | 212 tests | ✅ | 全部通过 |
 | 端到端验证 | ✅ | 福寿园 1448.HK：14 Agent，157K tokens，907s → REJECT |

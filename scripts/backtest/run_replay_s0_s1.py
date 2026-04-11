@@ -34,10 +34,10 @@ _NO_PROXY = (
 os.environ.setdefault("NO_PROXY", _NO_PROXY)
 os.environ.setdefault("no_proxy", _NO_PROXY)
 
-from investagent.config import create_llm_client
-from investagent.schemas.candidate import PortfolioHolding
-from investagent.store.candidate_store import CandidateStore
-from investagent.workflow.decision_pipeline import run_decision_pipeline
+from poorcharlie.config import create_llm_client
+from poorcharlie.schemas.candidate import PortfolioHolding
+from poorcharlie.store.candidate_store import CandidateStore
+from poorcharlie.workflow.decision_pipeline import run_decision_pipeline
 
 logging.basicConfig(
     level=logging.INFO,

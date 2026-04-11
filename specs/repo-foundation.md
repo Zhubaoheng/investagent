@@ -1,11 +1,11 @@
 # Repo Foundation Spec
 
-MVP package layout for investagent. All schemas use Pydantic v2. All agents are async.
+MVP package layout for poorcharlie. All schemas use Pydantic v2. All agents are async.
 
 ## Python Package Layout
 
 ```
-investagent/
+poorcharlie/
 ├── __init__.py
 ├── schemas/                  # Pydantic models — all agent I/O contracts
 │   ├── __init__.py

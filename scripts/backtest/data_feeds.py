@@ -18,7 +18,7 @@ def _fetch_daily_baostock(code: str, start: date, end: date) -> pd.DataFrame | N
     """Fetch daily OHLCV from baostock."""
     try:
         import baostock as bs
-        from investagent.datasources.historical_market_data import _ensure_baostock_login
+        from poorcharlie.datasources.historical_market_data import _ensure_baostock_login
         _ensure_baostock_login()
 
         prefix = "sh" if code.startswith(("6", "9")) else "sz"
@@ -50,7 +50,7 @@ def _fetch_daily_sina(code: str, start: date, end: date) -> pd.DataFrame | None:
     """Fallback: AkShare Sina source."""
     try:
         import akshare as ak
-        from investagent.datasources.akshare_source import _akshare_call_with_retry
+        from poorcharlie.datasources.akshare_source import _akshare_call_with_retry
 
         prefix = "sh" if code.startswith(("6", "9")) else "sz"
         df = _akshare_call_with_retry(
@@ -107,7 +107,7 @@ def fetch_benchmark(index_code: str, start: date, end: date) -> pd.DataFrame:
     if index_code == "000300":
         try:
             import baostock as bs
-            from investagent.datasources.historical_market_data import _ensure_baostock_login
+            from poorcharlie.datasources.historical_market_data import _ensure_baostock_login
             _ensure_baostock_login()
 
             rs = bs.query_history_k_data_plus(

@@ -47,11 +47,11 @@ Mock 策略：`llm.create_message` 用 `AsyncMock(side_effect=...)` 按调用顺
 
 | 文件 | 操作 |
 |---|---|
-| `src/investagent/agents/info_capture.py` | 重写 |
-| `src/investagent/agents/filing.py` | 重写 |
-| `src/investagent/prompts/templates/info_capture.txt` | 重写 |
-| `src/investagent/prompts/templates/filing.txt` | 重写 |
-| `src/investagent/workflow/orchestrator.py` | 加 `llm` 参数 |
+| `src/poorcharlie/agents/info_capture.py` | 重写 |
+| `src/poorcharlie/agents/filing.py` | 重写 |
+| `src/poorcharlie/prompts/templates/info_capture.txt` | 重写 |
+| `src/poorcharlie/prompts/templates/filing.txt` | 重写 |
+| `src/poorcharlie/workflow/orchestrator.py` | 加 `llm` 参数 |
 | `tests/unit/agents/test_info_capture.py` | 新增 |
 | `tests/unit/agents/test_filing.py` | 新增 |
 | `tests/integration/test_pipeline_pass.py` | 重写 |

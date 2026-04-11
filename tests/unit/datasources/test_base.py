@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from investagent.datasources.base import FilingDocument, MarketQuote
+from poorcharlie.datasources.base import FilingDocument, MarketQuote
 
 
 def test_filing_document_creation():

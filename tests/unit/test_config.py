@@ -1,8 +1,8 @@
-"""Tests for investagent.config."""
+"""Tests for poorcharlie.config."""
 
 import pytest
 
-from investagent.config import Settings
+from poorcharlie.config import Settings
 
 
 def _clean_env(monkeypatch):

@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.triage — now runs after InfoCapture + Filing."""
+"""Tests for poorcharlie.agents.triage — now runs after InfoCapture + Filing."""
 
 from __future__ import annotations
 
@@ -6,18 +6,18 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.triage import TriageAgent
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.info_capture import (
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.triage import TriageAgent
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.info_capture import (
     FilingRef,
     InfoCaptureOutput,
     MarketSnapshot,
 )
-from investagent.schemas.triage import TriageDecision
-from investagent.workflow.context import PipelineContext
+from poorcharlie.schemas.triage import TriageDecision
+from poorcharlie.workflow.context import PipelineContext
 
 
 # ---------------------------------------------------------------------------

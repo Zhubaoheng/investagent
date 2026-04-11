@@ -1,12 +1,12 @@
-"""Tests for investagent.workflow.context."""
+"""Tests for poorcharlie.workflow.context."""
 
 from datetime import datetime, timezone
 
 import pytest
 
-from investagent.schemas.common import AgentMeta, BaseAgentOutput, StopSignal
-from investagent.schemas.company import CompanyIntake
-from investagent.workflow.context import PipelineContext
+from poorcharlie.schemas.common import AgentMeta, BaseAgentOutput, StopSignal
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.workflow.context import PipelineContext
 
 
 def _meta(name: str = "test") -> AgentMeta:

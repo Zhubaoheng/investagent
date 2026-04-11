@@ -1,6 +1,6 @@
 """Tests for PDF extraction and section splitting."""
 
-from investagent.datasources.pdf_extract import (
+from poorcharlie.datasources.pdf_extract import (
     _split_by_headers,
     extract_sections,
 )

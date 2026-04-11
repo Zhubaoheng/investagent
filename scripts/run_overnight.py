@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Overnight large-scale A-share pipeline evaluation.
 
-Screens top N A-share stocks by market cap through the full investagent
+Screens top N A-share stocks by market cap through the full poorcharlie
 pipeline. Designed to run overnight with checkpoint/resume support.
 
 Usage:
@@ -46,24 +46,24 @@ os.environ.setdefault("no_proxy", _NO_PROXY_DOMAINS)
 
 import pandas as pd
 
-from investagent.config import create_llm_client
-from investagent.datasources.akshare_source import fetch_a_share_financials
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
-from investagent.screening.ratio_calc import compute_ratios, should_skip_by_ratios
-from investagent.screening.screener import ScreenerAgent, ScreenerInput
-from investagent.workflow.orchestrator import run_pipeline
-from investagent.agents.portfolio import (
+from poorcharlie.config import create_llm_client
+from poorcharlie.datasources.akshare_source import fetch_a_share_financials
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
+from poorcharlie.screening.ratio_calc import compute_ratios, should_skip_by_ratios
+from poorcharlie.screening.screener import ScreenerAgent, ScreenerInput
+from poorcharlie.workflow.orchestrator import run_pipeline
+from poorcharlie.agents.portfolio import (
     CandidateInfo,
     PortfolioAgent,
     PortfolioInput,
 )
-from investagent.store.candidate_store import CandidateStore
-from investagent.store.run_manager import RunManager
-from investagent.datasources.cache import FilingCache, AkShareCache
-from investagent.datasources.cached_fetcher import CachedFilingFetcher
-from investagent.workflow.decision_pipeline import run_decision_pipeline
+from poorcharlie.store.candidate_store import CandidateStore
+from poorcharlie.store.run_manager import RunManager
+from poorcharlie.datasources.cache import FilingCache, AkShareCache
+from poorcharlie.datasources.cached_fetcher import CachedFilingFetcher
+from poorcharlie.workflow.decision_pipeline import run_decision_pipeline
 
 _DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
 _BASE_OUTPUT_DIR = _DATA_ROOT / "overnight"
@@ -177,7 +177,7 @@ def _fetch_baostock_universe(top_n: int) -> pd.DataFrame | None:
     """Primary: baostock CSI300+500 constituents (no rate limit, own server)."""
     try:
         import baostock as bs
-        from investagent.datasources.historical_market_data import _ensure_baostock_login
+        from poorcharlie.datasources.historical_market_data import _ensure_baostock_login
         _ensure_baostock_login()
 
         frames = []
@@ -521,8 +521,8 @@ async def pipeline_all(
                 as_of_date=as_of_date,
             )
             try:
-                from investagent.datasources.resolver import resolve_filing_fetcher
-                from investagent.datasources.cached_fetcher import CachedFilingFetcher
+                from poorcharlie.datasources.resolver import resolve_filing_fetcher
+                from poorcharlie.datasources.cached_fetcher import CachedFilingFetcher
                 cached_fetcher = CachedFilingFetcher(resolve_filing_fetcher(exchange), filing_cache)
                 ctx = await asyncio.wait_for(
                     run_pipeline(intake, llm=llm, filing_fetcher=cached_fetcher, filing_cache=filing_cache, akshare_cache=akshare_cache),
@@ -570,7 +570,7 @@ async def pipeline_all(
             )
             # Print LLM stats every 5 completions
             if done[0] % 5 == 0:
-                from investagent.llm import get_llm_stats
+                from poorcharlie.llm import get_llm_stats
                 s = get_llm_stats()
                 logger.info(
                     "LLM stats: %d calls (%d ok / %d err / %d retry) | "
@@ -679,14 +679,14 @@ async def main(
     logging.getLogger().addHandler(file_handler)
     logging.getLogger().setLevel(logging.WARNING)
     # Allow per-agent timing logs from runner + key subsystems
-    logging.getLogger("investagent.workflow.runner").setLevel(logging.INFO)
-    logging.getLogger("investagent.llm").setLevel(logging.INFO)
-    logging.getLogger("investagent.agents.filing").setLevel(logging.INFO)
-    logging.getLogger("investagent.datasources.historical_market_data").setLevel(logging.INFO)
-    logging.getLogger("investagent.datasources.cache").setLevel(logging.INFO)
-    logging.getLogger("investagent.datasources.cached_fetcher").setLevel(logging.INFO)
-    logging.getLogger("investagent.datasources.cninfo").setLevel(logging.INFO)
-    logging.getLogger("investagent.datasources.akshare_source").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.workflow.runner").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.llm").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.agents.filing").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.datasources.historical_market_data").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.datasources.cache").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.datasources.cached_fetcher").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.datasources.cninfo").setLevel(logging.INFO)
+    logging.getLogger("poorcharlie.datasources.akshare_source").setLevel(logging.INFO)
 
     # Overnight logger: visible on console
     console = logging.StreamHandler()
@@ -698,7 +698,7 @@ async def main(
     logger.setLevel(logging.INFO)
 
     # Match PDF extraction concurrency to pipeline concurrency
-    from investagent.executors import set_cpu_concurrency
+    from poorcharlie.executors import set_cpu_concurrency
     set_cpu_concurrency(pipeline_concurrency)
 
     total_start = time.time()
@@ -719,7 +719,7 @@ async def main(
 
     # ---- Proxy rotation (bypass AkShare rate limits) ----
     try:
-        from investagent.datasources.proxy_rotator import ClashRotator
+        from poorcharlie.datasources.proxy_rotator import ClashRotator
         rotator = ClashRotator()
         if rotator.available:
             # Health check all nodes before starting — drop dead ones

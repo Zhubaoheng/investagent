@@ -1,9 +1,9 @@
-"""Tests for investagent.schemas.company."""
+"""Tests for poorcharlie.schemas.company."""
 
 import pytest
 from pydantic import ValidationError
 
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.schemas.company import CompanyIntake
 
 
 def test_company_intake_required_fields():

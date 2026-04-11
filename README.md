@@ -1,4 +1,4 @@
-# InvestAgent
+# PoorCharlie
 
 芒格式价值投资多 Agent 分析系统。14 个专业 Agent 协作，覆盖财务质量、估值、竞争护城河、管理层心理学、系统脆弱性分析。
 
@@ -7,8 +7,8 @@
 ## 部署
 
 ```bash
-git clone https://github.com/Zhubaoheng/investagent.git
-cd investagent
+git clone https://github.com/Zhubaoheng/poorcharlie.git
+cd poorcharlie
 
 # 1. 安装 uv + Python 依赖（自动创建 Python 3.12 虚拟环境）
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -24,7 +24,7 @@ echo "MINIMAX_API_KEY=sk-xxx" > .env
 
 # 4. 验证
 uv run python -m pytest tests/ -q           # 275 tests
-uv run investagent 600519                     # 单股分析
+uv run poorcharlie 600519                     # 单股分析
 ```
 
 无需安装 Tesseract 或其他系统依赖——PDF 解析使用 pymupdf 原生文本提取（A 股/港股年报均为文本 PDF，不需要 OCR）。
@@ -35,9 +35,9 @@ uv run investagent 600519                     # 单股分析
 
 ```python
 import asyncio
-from investagent.config import create_llm_client
-from investagent.schemas.company import CompanyIntake
-from investagent.workflow.orchestrator import run_pipeline
+from poorcharlie.config import create_llm_client
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.workflow.orchestrator import run_pipeline
 
 llm = create_llm_client("minimax", extra_body={"context_window_size": 200000, "effort": "high"})
 intake = CompanyIntake(ticker="600519", name="贵州茅台", exchange="SSE", sector="食品饮料")

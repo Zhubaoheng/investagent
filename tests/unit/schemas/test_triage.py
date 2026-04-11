@@ -1,12 +1,12 @@
-"""Tests for investagent.schemas.triage."""
+"""Tests for poorcharlie.schemas.triage."""
 
 from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
 
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.triage import ExplainabilityScore, TriageDecision, TriageOutput
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.triage import ExplainabilityScore, TriageDecision, TriageOutput
 
 
 def _meta() -> AgentMeta:

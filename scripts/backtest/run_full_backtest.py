@@ -128,7 +128,7 @@ def _detect_triggers(
     all_decisions: dict,
 ) -> None:
     """Detect price + valuation triggers between scan dates."""
-    from investagent.store.candidate_store import CandidateStore
+    from poorcharlie.store.candidate_store import CandidateStore
     from run_precompute import detect_valuation_triggers
     from data_feeds import fetch_daily_prices
 

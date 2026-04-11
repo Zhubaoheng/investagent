@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.portfolio."""
+"""Tests for poorcharlie.agents.portfolio."""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.agents.portfolio import (
+from poorcharlie.agents.portfolio import (
     CandidateInfo,
     HoldingInfo,
     PortfolioAgent,
     PortfolioInput,
 )
-from investagent.llm import LLMClient
+from poorcharlie.llm import LLMClient
 
 
 def _mock_llm() -> LLMClient:

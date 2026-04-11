@@ -1,6 +1,6 @@
 # Spec: 预筛选 + 组合构建（永久功能）
 
-扩展 investagent pipeline，新增两个能力：全市场预筛选、组合级持仓管理。这些是产品的永久功能，不依赖回测。
+扩展 poorcharlie pipeline，新增两个能力：全市场预筛选、组合级持仓管理。这些是产品的永久功能，不依赖回测。
 
 ## 1. 股票池构建
 
@@ -144,7 +144,7 @@ class PortfolioOutput(BaseAgentOutput):
 
 ## 6. 实现模块
 
-以下模块放在 `src/investagent/` 下，正常写测试：
+以下模块放在 `src/poorcharlie/` 下，正常写测试：
 
 - `screening/universe.py` — 股票池构建 + 排除规则
 - `screening/ratio_calc.py` — 财务比率计算（纯 Python）

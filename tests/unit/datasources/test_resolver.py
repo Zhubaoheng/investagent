@@ -2,11 +2,11 @@
 
 import pytest
 
-from investagent.datasources.cninfo import CninfoFetcher
-from investagent.datasources.edgar import EdgarFetcher
-from investagent.datasources.hkex import HKEXFetcher
-from investagent.datasources.market_data import YFinanceFetcher
-from investagent.datasources.resolver import (
+from poorcharlie.datasources.cninfo import CninfoFetcher
+from poorcharlie.datasources.edgar import EdgarFetcher
+from poorcharlie.datasources.hkex import HKEXFetcher
+from poorcharlie.datasources.market_data import YFinanceFetcher
+from poorcharlie.datasources.resolver import (
     resolve_filing_fetcher,
     resolve_market,
     resolve_market_data_fetcher,

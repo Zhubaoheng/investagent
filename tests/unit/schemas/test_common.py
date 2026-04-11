@@ -1,8 +1,8 @@
-"""Tests for investagent.schemas.common."""
+"""Tests for poorcharlie.schemas.common."""
 
 from datetime import datetime, timezone
 
-from investagent.schemas.common import (
+from poorcharlie.schemas.common import (
     AgentMeta,
     BaseAgentOutput,
     EvidenceItem,

@@ -1,4 +1,4 @@
-# InvestAgent v2 架构：财报提取与上下文工程重构
+# PoorCharlie v2 架构：财报提取与上下文工程重构
 
 ## 核心诊断
 
@@ -115,7 +115,7 @@ v2 方案: 分层处理，按需检索
 
 ### Phase 1: AkShare 数据源接入（最高 ROI）
 
-**改动**: 新增 `src/investagent/datasources/akshare_source.py`
+**改动**: 新增 `src/poorcharlie/datasources/akshare_source.py`
 
 **原理**: AkShare 聚合新浪/东财/同花顺等 50+ 数据源，返回标准化 Pandas DataFrame。A 股和港股的三表数据直接可用，无需 PDF 解析。
 
@@ -156,7 +156,7 @@ FilingNarrativeAgent (LLM):
 
 ### Phase 3: 验证层
 
-**改动**: 新增 `src/investagent/agents/filing_validator.py`
+**改动**: 新增 `src/poorcharlie/agents/filing_validator.py`
 
 ```python
 def validate_filing(output: FilingOutput) -> ValidationReport:
@@ -181,7 +181,7 @@ def validate_filing(output: FilingOutput) -> ValidationReport:
 
 ### Phase 4: 旧年 MD&A 语义压缩
 
-**改动**: 新增 `src/investagent/agents/semantic_compress.py`
+**改动**: 新增 `src/poorcharlie/agents/semantic_compress.py`
 
 **方案 A（简单）**: 用 LLM 对旧年 MD&A 生成结构化摘要
 ```python

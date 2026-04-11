@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from investagent.datasources.base import FilingDocument
-from investagent.datasources.edgar import EdgarFetcher, _filing_to_document
+from poorcharlie.datasources.base import FilingDocument
+from poorcharlie.datasources.edgar import EdgarFetcher, _filing_to_document
 
 
 # ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ def _mock_company_with_filings(mock_filings: list) -> MagicMock:
     return company
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_search_filings_returns_documents(mock_company_cls, mock_identity, fetcher):
     mock_filings = [
@@ -98,7 +98,7 @@ async def test_search_filings_returns_documents(mock_company_cls, mock_identity,
     mock_company_cls.return_value.get_filings.assert_called_once()
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_search_filings_with_year_range(mock_company_cls, mock_identity, fetcher):
     mock_company_cls.return_value = _mock_company_with_filings([
@@ -115,7 +115,7 @@ async def test_search_filings_with_year_range(mock_company_cls, mock_identity, f
     assert "2024-12-31" in call_kwargs["filing_date"]
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_search_filings_default_types(mock_company_cls, mock_identity, fetcher):
     mock_company_cls.return_value = _mock_company_with_filings([])
@@ -126,7 +126,7 @@ async def test_search_filings_default_types(mock_company_cls, mock_identity, fet
     assert call_kwargs["form"] == ["20-F", "6-K"]
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_search_filings_skips_bad_filings(mock_company_cls, mock_identity, fetcher):
     """A filing that raises during parsing should be skipped, not crash."""
@@ -144,7 +144,7 @@ async def test_search_filings_skips_bad_filings(mock_company_cls, mock_identity,
 # EdgarFetcher.download_filing
 # ---------------------------------------------------------------------------
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_download_filing(mock_company_cls, mock_identity, fetcher):
     mock_edgar_filing = MagicMock()
@@ -173,7 +173,7 @@ async def test_download_filing(mock_company_cls, mock_identity, fetcher):
     assert result.ticker == "BABA"
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_download_filing_no_accession_raises(mock_company_cls, mock_identity, fetcher):
     filing = FilingDocument(
@@ -197,7 +197,7 @@ async def test_download_filing_no_accession_raises(mock_company_cls, mock_identi
 # EdgarFetcher.get_financials
 # ---------------------------------------------------------------------------
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_get_financials(mock_company_cls, mock_identity, fetcher):
     mock_df = MagicMock()
@@ -216,7 +216,7 @@ async def test_get_financials(mock_company_cls, mock_identity, fetcher):
     company.income_statement.assert_called_once_with(periods=3, as_dataframe=True)
 
 
-@patch("investagent.datasources.edgar._ensure_identity")
+@patch("poorcharlie.datasources.edgar._ensure_identity")
 @patch("edgar.Company")
 async def test_get_financials_handles_failure(mock_company_cls, mock_identity, fetcher):
     company = mock_company_cls.return_value

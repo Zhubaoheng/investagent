@@ -1,15 +1,15 @@
-"""Tests for investagent.screening.ratio_calc."""
+"""Tests for poorcharlie.screening.ratio_calc."""
 
 from __future__ import annotations
 
 import pytest
 
-from investagent.schemas.filing import (
+from poorcharlie.schemas.filing import (
     BalanceSheetRow,
     CashFlowRow,
     IncomeStatementRow,
 )
-from investagent.screening.ratio_calc import compute_ratios
+from poorcharlie.screening.ratio_calc import compute_ratios
 
 
 # ---------------------------------------------------------------------------

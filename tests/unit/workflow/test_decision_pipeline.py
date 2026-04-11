@@ -1,4 +1,4 @@
-"""Tests for investagent.workflow.decision_pipeline."""
+"""Tests for poorcharlie.workflow.decision_pipeline."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from investagent.llm import LLMClient
-from investagent.schemas.candidate import PortfolioHolding
-from investagent.store.candidate_store import CandidateStore
-from investagent.workflow.decision_pipeline import run_decision_pipeline
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.candidate import PortfolioHolding
+from poorcharlie.store.candidate_store import CandidateStore
+from poorcharlie.workflow.decision_pipeline import run_decision_pipeline
 
 
 def _mock_llm() -> LLMClient:
@@ -74,7 +74,7 @@ def _mock_comparison_output():
 
 def _mock_strategy_output():
     """Return a mock PortfolioStrategyOutput."""
-    from investagent.schemas.portfolio_strategy import ActionType
+    from poorcharlie.schemas.portfolio_strategy import ActionType
 
     mock = MagicMock()
     d1 = MagicMock()
@@ -117,9 +117,9 @@ class TestDecisionPipeline:
         llm = _mock_llm()
 
         with patch(
-            "investagent.workflow.decision_pipeline.CrossComparisonAgent"
+            "poorcharlie.workflow.decision_pipeline.CrossComparisonAgent"
         ) as mock_cc, patch(
-            "investagent.workflow.decision_pipeline.PortfolioStrategyAgent"
+            "poorcharlie.workflow.decision_pipeline.PortfolioStrategyAgent"
         ) as mock_ps:
             # CrossComparison should NOT be called
             mock_ps_instance = MagicMock()
@@ -138,9 +138,9 @@ class TestDecisionPipeline:
         llm = _mock_llm()
 
         with patch(
-            "investagent.workflow.decision_pipeline.CrossComparisonAgent"
+            "poorcharlie.workflow.decision_pipeline.CrossComparisonAgent"
         ) as mock_cc, patch(
-            "investagent.workflow.decision_pipeline.PortfolioStrategyAgent"
+            "poorcharlie.workflow.decision_pipeline.PortfolioStrategyAgent"
         ) as mock_ps:
             mock_cc_instance = MagicMock()
             mock_cc_instance.run = AsyncMock(return_value=_mock_comparison_output())
@@ -170,9 +170,9 @@ class TestDecisionPipeline:
         llm = _mock_llm()
 
         with patch(
-            "investagent.workflow.decision_pipeline.CrossComparisonAgent"
+            "poorcharlie.workflow.decision_pipeline.CrossComparisonAgent"
         ) as mock_cc, patch(
-            "investagent.workflow.decision_pipeline.PortfolioStrategyAgent"
+            "poorcharlie.workflow.decision_pipeline.PortfolioStrategyAgent"
         ) as mock_ps:
             # CrossComparison fails
             mock_cc_instance = MagicMock()

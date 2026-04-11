@@ -1,12 +1,12 @@
-"""Tests for investagent.schemas.filing."""
+"""Tests for poorcharlie.schemas.filing."""
 
 from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
 
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.filing import (
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.filing import (
     AccountingPolicyEntry,
     AcquisitionRecord,
     BalanceSheetRow,

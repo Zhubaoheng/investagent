@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from investagent.datasources.base import FilingDocument
-from investagent.datasources.cninfo import CninfoFetcher, _detect_column
+from poorcharlie.datasources.base import FilingDocument
+from poorcharlie.datasources.cninfo import CninfoFetcher, _detect_column
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def fetcher():
     return CninfoFetcher()
 
 
-@patch("investagent.datasources.cninfo._requests")
+@patch("poorcharlie.datasources.cninfo._requests")
 async def test_search_filings_annual(mock_req, fetcher):
     mock_req.post.side_effect = [
         _make_response(200, json_data=_org_id_json()),
@@ -103,7 +103,7 @@ async def test_search_filings_annual(mock_req, fetcher):
     assert doc.metadata["title"] == "贵州茅台酒股份有限公司2023年年报"
 
 
-@patch("investagent.datasources.cninfo._requests")
+@patch("poorcharlie.datasources.cninfo._requests")
 async def test_search_filings_multiple_types(mock_req, fetcher):
     mock_req.post.side_effect = [
         _make_response(200, json_data=_org_id_json()),
@@ -135,7 +135,7 @@ async def test_search_filings_multiple_types(mock_req, fetcher):
     assert "半年报" in types
 
 
-@patch("investagent.datasources.cninfo._requests")
+@patch("poorcharlie.datasources.cninfo._requests")
 async def test_search_filings_empty(mock_req, fetcher):
     mock_req.post.side_effect = [
         _make_response(200, json_data=_org_id_json()),
@@ -146,7 +146,7 @@ async def test_search_filings_empty(mock_req, fetcher):
     assert results == []
 
 
-@patch("investagent.datasources.cninfo._requests")
+@patch("poorcharlie.datasources.cninfo._requests")
 async def test_download_filing_pdf(mock_req, fetcher):
     mock_req.get.return_value = _make_response(200, content=b"%PDF-1.4 fake")
 

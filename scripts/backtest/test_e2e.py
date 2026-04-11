@@ -24,14 +24,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-from investagent.config import create_llm_client
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
-from investagent.screening.ratio_calc import compute_ratios
-from investagent.screening.screener import ScreenerAgent, ScreenerInput
-from investagent.workflow.orchestrator import run_pipeline
-from investagent.agents.portfolio import (
+from poorcharlie.config import create_llm_client
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
+from poorcharlie.screening.ratio_calc import compute_ratios
+from poorcharlie.screening.screener import ScreenerAgent, ScreenerInput
+from poorcharlie.workflow.orchestrator import run_pipeline
+from poorcharlie.agents.portfolio import (
     CandidateInfo,
     PortfolioAgent,
     PortfolioInput,
@@ -74,7 +74,7 @@ async def step1_screening(llm: LLMClient) -> list[dict]:
 
         # Fetch real financial data
         try:
-            from investagent.datasources.akshare_source import fetch_a_share_financials
+            from poorcharlie.datasources.akshare_source import fetch_a_share_financials
             financials = fetch_a_share_financials(ticker)
             income = [IncomeStatementRow(**r) for r in financials.get("income_statement", [])]
             balance = [BalanceSheetRow(**r) for r in financials.get("balance_sheet", [])]

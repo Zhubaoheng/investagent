@@ -1,6 +1,6 @@
 # Workflow Layer Spec
 
-Implements the 4 modules under `src/investagent/workflow/`. Pure orchestration logic — no LLM calls, no business analysis.
+Implements the 4 modules under `src/poorcharlie/workflow/`. Pure orchestration logic — no LLM calls, no business analysis.
 
 ## 1. `context.py` — PipelineContext
 

@@ -1,4 +1,4 @@
-"""Tests for investagent.workflow.runner."""
+"""Tests for poorcharlie.workflow.runner."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from investagent.agents.base import BaseAgent
-from investagent.llm import LLMClient
-from investagent.schemas.common import AgentMeta, BaseAgentOutput, StopSignal
-from investagent.schemas.company import CompanyIntake
-from investagent.workflow.context import PipelineContext
-from investagent.workflow.runner import run_agent
+from poorcharlie.agents.base import BaseAgent
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.common import AgentMeta, BaseAgentOutput, StopSignal
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.workflow.context import PipelineContext
+from poorcharlie.workflow.runner import run_agent
 
 
 def _meta(name: str = "stub") -> AgentMeta:

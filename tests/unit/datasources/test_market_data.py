@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from investagent.datasources.base import MarketQuote
-from investagent.datasources.market_data import YFinanceFetcher, _detect_currency
+from poorcharlie.datasources.base import MarketQuote
+from poorcharlie.datasources.market_data import YFinanceFetcher, _detect_currency
 
 
 # ---------------------------------------------------------------------------
@@ -39,7 +39,7 @@ def fetcher():
     return YFinanceFetcher()
 
 
-@patch("investagent.datasources.market_data.yf")
+@patch("poorcharlie.datasources.market_data.yf")
 async def test_get_quote_full(mock_yf, fetcher):
     mock_ticker = MagicMock()
     mock_ticker.info = {
@@ -65,7 +65,7 @@ async def test_get_quote_full(mock_yf, fetcher):
     assert quote.pe_ratio == 12.5
 
 
-@patch("investagent.datasources.market_data.yf")
+@patch("poorcharlie.datasources.market_data.yf")
 async def test_get_quote_fallback_fast_info(mock_yf, fetcher):
     mock_ticker = MagicMock()
     mock_ticker.info = {"regularMarketPrice": None}  # Triggers fallback
@@ -78,7 +78,7 @@ async def test_get_quote_fallback_fast_info(mock_yf, fetcher):
     assert quote.market_cap == 200_000_000_000
 
 
-@patch("investagent.datasources.market_data.yf")
+@patch("poorcharlie.datasources.market_data.yf")
 async def test_get_quote_empty_info(mock_yf, fetcher):
     mock_ticker = MagicMock()
     mock_ticker.info = {}  # Empty info triggers fallback
@@ -95,7 +95,7 @@ async def test_get_quote_empty_info(mock_yf, fetcher):
 # YFinanceFetcher.get_quotes
 # ---------------------------------------------------------------------------
 
-@patch("investagent.datasources.market_data.yf")
+@patch("poorcharlie.datasources.market_data.yf")
 async def test_get_quotes_multiple(mock_yf, fetcher):
     def make_ticker(name, price, currency):
         t = MagicMock()
@@ -120,7 +120,7 @@ async def test_get_quotes_multiple(mock_yf, fetcher):
     assert "0700.HK" in tickers
 
 
-@patch("investagent.datasources.market_data.yf")
+@patch("poorcharlie.datasources.market_data.yf")
 async def test_get_quotes_partial_failure(mock_yf, fetcher):
     good = MagicMock()
     good.info = {

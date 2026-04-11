@@ -1,6 +1,6 @@
 """Pre-compute investment decisions for all scan dates.
 
-Phase 1 of the backtest: run the investagent pipeline for each decision
+Phase 1 of the backtest: run the poorcharlie pipeline for each decision
 point (scheduled scans + price triggers), serialize results to JSON for
 Phase 2 (backtrader replay).
 
@@ -35,24 +35,24 @@ _NO_PROXY_DOMAINS = (
 os.environ.setdefault("NO_PROXY", _NO_PROXY_DOMAINS)
 os.environ.setdefault("no_proxy", _NO_PROXY_DOMAINS)
 
-from investagent.config import create_llm_client
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
-from investagent.screening.ratio_calc import compute_ratios
-from investagent.screening.screener import ScreenerAgent, ScreenerInput
-from investagent.screening.universe import build_universe
-from investagent.workflow.orchestrator import run_pipeline
-from investagent.agents.portfolio import (
+from poorcharlie.config import create_llm_client
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.filing import BalanceSheetRow, CashFlowRow, IncomeStatementRow
+from poorcharlie.screening.ratio_calc import compute_ratios
+from poorcharlie.screening.screener import ScreenerAgent, ScreenerInput
+from poorcharlie.screening.universe import build_universe
+from poorcharlie.workflow.orchestrator import run_pipeline
+from poorcharlie.agents.portfolio import (
     CandidateInfo,
     HoldingInfo,
     PortfolioAgent,
     PortfolioInput,
 )
-from investagent.store.candidate_store import CandidateStore
-from investagent.store.run_manager import RunManager
-from investagent.datasources.cache import FilingCache, AkShareCache
-from investagent.workflow.decision_pipeline import run_decision_pipeline
+from poorcharlie.store.candidate_store import CandidateStore
+from poorcharlie.store.run_manager import RunManager
+from poorcharlie.datasources.cache import FilingCache, AkShareCache
+from poorcharlie.workflow.decision_pipeline import run_decision_pipeline
 
 from temporal import TemporalValidator
 
@@ -133,7 +133,7 @@ async def _screen_one(
     """Screen a single stock. Returns result dict."""
     ticker = stock["ticker"]
     try:
-        from investagent.datasources.akshare_source import fetch_a_share_financials
+        from poorcharlie.datasources.akshare_source import fetch_a_share_financials
         financials = await asyncio.to_thread(fetch_a_share_financials, ticker)
         income = [IncomeStatementRow(**r) for r in financials.get("income_statement", [])]
         balance = [BalanceSheetRow(**r) for r in financials.get("balance_sheet", [])]
@@ -719,7 +719,7 @@ async def run_scan(
         if screening_done >= len(universe) * 0.9:
             logger.info("Screening checkpoint covers %d/%d, skipping LLM exclusion", screening_done, len(universe))
         elif exclusion_llm is not None:
-            from investagent.screening.universe import apply_llm_exclusions
+            from poorcharlie.screening.universe import apply_llm_exclusions
             universe = await apply_llm_exclusions(universe, exclusion_llm)
             logger.info("After LLM exclusion: %d stocks", len(universe))
     else:
@@ -787,7 +787,7 @@ async def main(concurrency: int = 5) -> None:
     entry_prices: dict[str, float] = {}  # ticker -> price at entry
 
     # Match PDF extraction concurrency to pipeline concurrency
-    from investagent.executors import set_cpu_concurrency
+    from poorcharlie.executors import set_cpu_concurrency
     set_cpu_concurrency(concurrency)
 
     # Run isolation via RunManager

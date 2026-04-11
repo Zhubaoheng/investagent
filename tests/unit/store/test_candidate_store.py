@@ -1,4 +1,4 @@
-"""Tests for investagent.store.candidate_store."""
+"""Tests for poorcharlie.store.candidate_store."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from investagent.schemas.candidate import (
+from poorcharlie.schemas.candidate import (
     CandidateSnapshot,
     CandidateState,
     PortfolioHolding,
 )
-from investagent.store.candidate_store import CandidateStore
+from poorcharlie.store.candidate_store import CandidateStore
 
 
 def _sample_results() -> list[dict]:

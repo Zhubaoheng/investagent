@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.committee."""
+"""Tests for poorcharlie.agents.committee."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import pytest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.committee import CommitteeAgent, _post_process_committee
-from investagent.llm import LLMClient
-from investagent.schemas.committee import CommitteeOutput, FinalLabel
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.committee import CommitteeAgent, _post_process_committee
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.committee import CommitteeOutput, FinalLabel
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.company import CompanyIntake
 
 
 def _intake() -> CompanyIntake:

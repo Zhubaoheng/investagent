@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.datasources.base import FilingDocument, MarketQuote
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
-from investagent.workflow.orchestrator import run_pipeline
+from poorcharlie.datasources.base import FilingDocument, MarketQuote
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.workflow.orchestrator import run_pipeline
 
 
 def _mock_response(tool_input: dict) -> MagicMock:

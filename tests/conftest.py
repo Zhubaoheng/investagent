@@ -1,11 +1,11 @@
-"""Shared fixtures for investagent tests."""
+"""Shared fixtures for poorcharlie tests."""
 
 import json
 from pathlib import Path
 
 import pytest
 
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.schemas.company import CompanyIntake
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 

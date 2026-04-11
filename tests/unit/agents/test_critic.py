@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.critic."""
+"""Tests for poorcharlie.agents.critic."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.agents.base import AgentOutputError
-from investagent.agents.critic import CriticAgent
-from investagent.llm import LLMClient
-from investagent.schemas.company import CompanyIntake
+from poorcharlie.agents.base import AgentOutputError
+from poorcharlie.agents.critic import CriticAgent
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.company import CompanyIntake
 
 
 def _intake() -> CompanyIntake:

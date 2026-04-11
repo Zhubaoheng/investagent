@@ -1,4 +1,4 @@
-"""Tests for investagent.store.run_manager."""
+"""Tests for poorcharlie.store.run_manager."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from investagent.store.run_manager import RunManager, RunMetadata
+from poorcharlie.store.run_manager import RunManager, RunMetadata
 
 
 class TestRunManager:

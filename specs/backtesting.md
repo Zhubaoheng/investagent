@@ -1,6 +1,6 @@
 # Spec: 回测脚本
 
-回测脚本验证 investagent pipeline 在历史数据上的选股效能。
+回测脚本验证 poorcharlie pipeline 在历史数据上的选股效能。
 
 **两套入口**：
 - `scripts/run_overnight.py` — 单次大规模评估（支持回测模式 `--as-of-date`），当前实际运行的入口

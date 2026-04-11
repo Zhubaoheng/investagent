@@ -1,4 +1,4 @@
-"""Tests for investagent.datasources.cache."""
+"""Tests for poorcharlie.datasources.cache."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from investagent.datasources.base import FilingDocument
-from investagent.datasources.cache import AkShareCache, FilingCache
+from poorcharlie.datasources.base import FilingDocument
+from poorcharlie.datasources.cache import AkShareCache, FilingCache
 
 
 def _make_doc(**overrides) -> FilingDocument:

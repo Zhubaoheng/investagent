@@ -1,4 +1,4 @@
-"""Tests for investagent.agents.base."""
+"""Tests for poorcharlie.agents.base."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel
 
-from investagent.agents.base import BaseAgent
-from investagent.llm import LLMClient
-from investagent.schemas.common import BaseAgentOutput
+from poorcharlie.agents.base import BaseAgent
+from poorcharlie.llm import LLMClient
+from poorcharlie.schemas.common import BaseAgentOutput
 
 
 def _mock_llm() -> LLMClient:

@@ -1,22 +1,22 @@
-"""Tests for investagent.workflow.gates."""
+"""Tests for poorcharlie.workflow.gates."""
 
 from datetime import datetime, timezone
 
-from investagent.schemas.accounting_risk import AccountingRiskOutput, RiskLevel
-from investagent.schemas.common import AgentMeta
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.financial_quality import (
+from poorcharlie.schemas.accounting_risk import AccountingRiskOutput, RiskLevel
+from poorcharlie.schemas.common import AgentMeta
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.financial_quality import (
     FinancialQualityOutput,
     FinancialQualityScores,
 )
-from investagent.schemas.mental_models import MoatOutput
-from investagent.schemas.triage import (
+from poorcharlie.schemas.mental_models import MoatOutput
+from poorcharlie.schemas.triage import (
     ExplainabilityScore,
     TriageDecision,
     TriageOutput,
 )
-from investagent.workflow.context import PipelineContext
-from investagent.workflow.gates import (
+from poorcharlie.workflow.context import PipelineContext
+from poorcharlie.workflow.gates import (
     check_accounting_risk_gate,
     check_financial_quality_gate,
     check_triage_gate,

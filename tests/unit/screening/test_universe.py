@@ -1,4 +1,4 @@
-"""Tests for investagent.screening.universe."""
+"""Tests for poorcharlie.screening.universe."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from investagent.screening.universe import (
+from poorcharlie.screening.universe import (
     apply_llm_exclusions,
     apply_rule_exclusions,
 )

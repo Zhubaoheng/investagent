@@ -5,20 +5,20 @@ from __future__ import annotations
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from investagent.report import generate_report
-from investagent.schemas.common import AgentMeta, StopSignal
-from investagent.schemas.company import CompanyIntake
-from investagent.schemas.info_capture import (
+from poorcharlie.report import generate_report
+from poorcharlie.schemas.common import AgentMeta, StopSignal
+from poorcharlie.schemas.company import CompanyIntake
+from poorcharlie.schemas.info_capture import (
     FilingRef,
     InfoCaptureOutput,
     MarketSnapshot,
 )
-from investagent.schemas.triage import (
+from poorcharlie.schemas.triage import (
     ExplainabilityScore,
     TriageDecision,
     TriageOutput,
 )
-from investagent.workflow.context import PipelineContext
+from poorcharlie.workflow.context import PipelineContext
 
 
 def _meta(name: str = "test") -> AgentMeta:
