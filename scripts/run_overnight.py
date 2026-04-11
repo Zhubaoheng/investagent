@@ -626,6 +626,7 @@ async def main(
     screening_concurrency: int = 20,
     ratio_concurrency: int = 5,
     as_of_date: date | None = None,
+    incremental_from: str | None = None,
 ) -> None:
     global OUTPUT_DIR, CHECKPOINT_DIR
 
@@ -715,62 +716,92 @@ async def main(
         logger.info("Clash proxy not available, using direct connection")
         rotator = None
 
-    # ---- Phase 1: Universe ----
-    cached_universe = _load_checkpoint("_meta", "universe")
-    if cached_universe and cached_universe.get("stocks"):
-        universe = cached_universe["stocks"]
-        logger.info("Phase 1: loaded %d stocks from cache", len(universe))
-    else:
-        logger.info("Phase 1: Building universe...")
-        t0 = time.time()
-        universe = await asyncio.to_thread(build_top_universe, top_n)
-        logger.info("Phase 1 done: %d stocks (%.1fs)", len(universe), time.time() - t0)
-        _save_checkpoint("_meta", "universe", {
-            "count": len(universe),
-            "stocks": [{"ticker": s["ticker"], "name": s["name"],
-                         "market_cap": s["market_cap"], "industry": s["industry"]}
-                        for s in universe],
+    # ---- Incremental mode: skip Phase 1-3, load candidates from previous run ----
+    if incremental_from:
+        prev_store_path = Path(incremental_from)
+        if not prev_store_path.exists():
+            logger.error("Incremental source not found: %s", prev_store_path)
+            rm.fail_run(run_meta.run_id, f"incremental source not found: {prev_store_path}")
+            return
+
+        prev_store = CandidateStore(prev_store_path)
+        rescan = prev_store.get_candidates_for_rescan(staleness_days=0)  # all actionable
+        # Also include all actionable candidates (INVESTABLE + DEEP_DIVE + WATCHLIST)
+        actionable = prev_store.get_actionable_candidates()
+        seen = {r["ticker"] for r in rescan}
+        for c in actionable:
+            if c.ticker not in seen:
+                rescan.append({"ticker": c.ticker, "name": c.name, "industry": c.industry})
+                seen.add(c.ticker)
+
+        proceed = rescan
+        skipped = []
+        logger.info("INCREMENTAL MODE: %d candidates from %s", len(proceed), prev_store_path)
+        logger.info("  (skipped Phase 1-3: Universe / Ratios / Screening)")
+
+        _save_checkpoint("_meta", "incremental_source", {
+            "source": str(prev_store_path),
+            "candidates": len(proceed),
+            "tickers": [s["ticker"] for s in proceed],
         })
 
-    # ---- Phase 2: Ratios ----
-    logger.info("Phase 2: Computing ratios for %d stocks...", len(universe))
-    t0 = time.time()
-    universe = await compute_all_ratios(universe, concurrency=ratio_concurrency, as_of_date=as_of_date, rotator=rotator)
-    has_ratios = sum(1 for s in universe if s.get("ratios"))
-    logger.info("Phase 2 done: %d/%d have ratios (%.1fs)", has_ratios, len(universe), time.time() - t0)
-
-    # ---- Phase 2.5: Quantitative pre-filter ----
-    pre_filtered = []
-    pre_skipped = []
-    for s in universe:
-        reason = should_skip_by_ratios(s.get("ratios", {}))
-        if reason:
-            s["prefilter_skip"] = reason
-            pre_skipped.append(s)
+    else:
+        # ---- Phase 1: Universe ----
+        cached_universe = _load_checkpoint("_meta", "universe")
+        if cached_universe and cached_universe.get("stocks"):
+            universe = cached_universe["stocks"]
+            logger.info("Phase 1: loaded %d stocks from cache", len(universe))
         else:
-            pre_filtered.append(s)
-    logger.info("Pre-filter: %d pass, %d skip (consecutive loss/low ROE/shrinking rev/poor cash)",
-                len(pre_filtered), len(pre_skipped))
+            logger.info("Phase 1: Building universe...")
+            t0 = time.time()
+            universe = await asyncio.to_thread(build_top_universe, top_n)
+            logger.info("Phase 1 done: %d stocks (%.1fs)", len(universe), time.time() - t0)
+            _save_checkpoint("_meta", "universe", {
+                "count": len(universe),
+                "stocks": [{"ticker": s["ticker"], "name": s["name"],
+                             "market_cap": s["market_cap"], "industry": s["industry"]}
+                            for s in universe],
+            })
 
-    # ---- Phase 3: Screening ----
-    logger.info("Phase 3: LLM screening %d stocks...", len(pre_filtered))
-    t0 = time.time()
-    proceed, skipped = await screen_all(pre_filtered, llm, concurrency=screening_concurrency)
-    logger.info("Phase 3 done: %d PROCEED, %d SKIP (%.1fs)",
-                len(proceed), len(skipped), time.time() - t0)
+        # ---- Phase 2: Ratios ----
+        logger.info("Phase 2: Computing ratios for %d stocks...", len(universe))
+        t0 = time.time()
+        universe = await compute_all_ratios(universe, concurrency=ratio_concurrency, as_of_date=as_of_date, rotator=rotator)
+        has_ratios = sum(1 for s in universe if s.get("ratios"))
+        logger.info("Phase 2 done: %d/%d have ratios (%.1fs)", has_ratios, len(universe), time.time() - t0)
 
-    # Save screening summary
-    _save_checkpoint("_meta", "screening_summary", {
-        "total": len(universe),
-        "proceed": len(proceed),
-        "skipped": len(skipped),
-        "pass_rate": f"{len(proceed) / max(len(universe), 1) * 100:.1f}%",
-        "proceed_tickers": [s["ticker"] for s in proceed],
-        "skip_sample": [
-            {"ticker": s["ticker"], "name": s["name"], "reason": s.get("reason", "")}
-            for s in skipped[:50]
-        ],
-    })
+        # ---- Phase 2.5: Quantitative pre-filter ----
+        pre_filtered = []
+        pre_skipped = []
+        for s in universe:
+            reason = should_skip_by_ratios(s.get("ratios", {}))
+            if reason:
+                s["prefilter_skip"] = reason
+                pre_skipped.append(s)
+            else:
+                pre_filtered.append(s)
+        logger.info("Pre-filter: %d pass, %d skip (consecutive loss/low ROE/shrinking rev/poor cash)",
+                    len(pre_filtered), len(pre_skipped))
+
+        # ---- Phase 3: Screening ----
+        logger.info("Phase 3: LLM screening %d stocks...", len(pre_filtered))
+        t0 = time.time()
+        proceed, skipped = await screen_all(pre_filtered, llm, concurrency=screening_concurrency)
+        logger.info("Phase 3 done: %d PROCEED, %d SKIP (%.1fs)",
+                    len(proceed), len(skipped), time.time() - t0)
+
+        # Save screening summary
+        _save_checkpoint("_meta", "screening_summary", {
+            "total": len(universe),
+            "proceed": len(proceed),
+            "skipped": len(skipped),
+            "pass_rate": f"{len(proceed) / max(len(universe), 1) * 100:.1f}%",
+            "proceed_tickers": [s["ticker"] for s in proceed],
+            "skip_sample": [
+                {"ticker": s["ticker"], "name": s["name"], "reason": s.get("reason", "")}
+                for s in skipped[:50]
+            ],
+        })
 
     # ---- Phase 4: Full pipeline ----
     logger.info("Phase 4: Running full pipeline on %d stocks (concurrency=%d)...",
@@ -903,6 +934,9 @@ if __name__ == "__main__":
                         help="Concurrent AkShare ratio fetches (default: 5)")
     parser.add_argument("--as-of-date", type=str, default=None,
                         help="Backtest mode: use data as of this date (YYYY-MM-DD)")
+    parser.add_argument("--incremental", type=str, default=None,
+                        help="Incremental mode: path to previous run's candidate_store.json. "
+                             "Skips Phase 1-3, only re-analyzes WATCHLIST+ candidates.")
     args = parser.parse_args()
 
     backtest_date = None
@@ -930,6 +964,7 @@ if __name__ == "__main__":
             screening_concurrency=args.screening_concurrency,
             ratio_concurrency=args.ratio_concurrency,
             as_of_date=backtest_date,
+            incremental_from=args.incremental,
         ))
     except Exception:
         logging.getLogger("overnight").error("Fatal exception", exc_info=True)
