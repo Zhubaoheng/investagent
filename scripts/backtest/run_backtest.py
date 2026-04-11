@@ -137,7 +137,11 @@ def run_backtest(initial_cash: float = 1_000_000) -> None:
     logger.info("Loaded price data for %d / %d tickers", loaded, len(tickers))
 
     # Strategy + analyzers
-    cerebro.addstrategy(MungerStrategy, decisions=decisions)
+    # Build cash rate table for daily interest calculation
+    cash_rates = {}
+    for year in range(START_DATE.year, END_DATE.year + 1):
+        cash_rates[year] = fetch_risk_free_rate(year)
+    cerebro.addstrategy(MungerStrategy, decisions=decisions, cash_rates=cash_rates)
     cerebro.addanalyzer(bt.analyzers.TimeReturn, _name="returns", timeframe=bt.TimeFrame.Days)
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="trades")
 

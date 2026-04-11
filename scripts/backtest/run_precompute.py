@@ -427,7 +427,7 @@ def detect_price_triggers(
 
     Returns list of (trigger_date, ticker) tuples.
     """
-    from scripts.backtest.data_feeds import fetch_daily_prices
+    from data_feeds import fetch_daily_prices
 
     triggers: list[tuple[date, str]] = []
 
@@ -514,7 +514,7 @@ def detect_valuation_triggers(
 
     Returns list of (trigger_date, ticker) tuples, one per stock (first only).
     """
-    from scripts.backtest.data_feeds import fetch_daily_prices
+    from data_feeds import fetch_daily_prices
 
     triggers: list[tuple[date, str]] = []
 

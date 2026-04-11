@@ -156,14 +156,17 @@ def fetch_benchmark(index_code: str, start: date, end: date) -> pd.DataFrame:
 
 
 def fetch_risk_free_rate(year: int) -> float:
-    """Return approximate 1-year Chinese government bond yield for a given year.
+    """Return approximate short-term repo/treasury yield for a given year.
 
-    Used for cash return calculation in backtesting.
+    Based on GC001 (1-day repo) / short-term treasury rates,
+    used for daily cash interest calculation in backtesting.
+    More representative of actual idle-cash returns than 1-year CGB.
     """
-    # Historical 1-year CGBs (approximate annual averages)
+    # Historical short-term repo/treasury averages (annualized)
+    # GC001 (上交所 1 天国债逆回购) typical range
     rates = {
-        2023: 0.0210,
-        2024: 0.0160,
-        2025: 0.0140,
+        2023: 0.0190,  # GC001 avg ~1.9%
+        2024: 0.0170,  # GC001 avg ~1.7%
+        2025: 0.0150,  # GC001 avg ~1.5%
     }
-    return rates.get(year, 0.0200)
+    return rates.get(year, 0.0180)

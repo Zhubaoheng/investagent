@@ -19,7 +19,7 @@ class MungerStrategy(bt.Strategy):
     """Munger-style concentrated investment strategy.
 
     Reads pre-computed decisions from a dict and executes them.
-    Monitors price triggers between scan dates.
+    Cash earns daily interest based on short-term repo/treasury rates.
     """
 
     params = dict(
@@ -27,6 +27,7 @@ class MungerStrategy(bt.Strategy):
         price_trigger_down=0.20,  # -20% triggers re-evaluation
         price_trigger_up=0.50,    # +50% triggers re-evaluation
         price_decisions={},     # {date_str: {ticker: target_weight, ...}} from price triggers
+        cash_rates={},          # {year: annual_rate} for daily cash interest
     )
 
     def __init__(self):
@@ -40,6 +41,13 @@ class MungerStrategy(bt.Strategy):
     def next(self):
         today = self.datetime.date()
         today_str = today.isoformat()
+
+        # Daily cash interest (short-term repo/treasury rate)
+        cash = self.broker.getcash()
+        if cash > 0 and self.p.cash_rates:
+            annual_rate = self.p.cash_rates.get(today.year, 0.018)
+            daily_interest = cash * annual_rate / 365
+            self.broker.add_cash(daily_interest)
 
         # Check for scheduled scan decisions
         if today_str in self.p.decisions:
