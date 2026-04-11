@@ -174,3 +174,126 @@ PDF → pymupdf4llm → extract_sections()
 **格式层**：LLM 输出不可信——我们有三道防线处理格式问题（_repair_json_strings → _coerce_strings_to_lists → Pydantic model_validator），crash rate 从 66% 降到 0%。
 
 **语义层**：同一输入跑 3 次做鲁棒性诊断，量化每个 agent 的输出方差，定位不稳定源头到具体的 agent 和数据层。最终把估值 IV spread 从 39% 降到 10%。"
+
+---
+
+## 生产级问题排查实录
+
+> 以下问题全部在 Top-200 A 股回测运行中真实遇到，按排查过程记录。
+
+### 问题 1：Filing Agent 42 分钟/只 — 代理陷阱
+
+**现象**：单只股票 filing agent 耗时 2544 秒（42 分钟），日志出现 40 分钟空白期（无 LLM 调用、无任何输出）。
+
+**排查过程**：
+1. 分析 LLM 调用时间线 → 空白期在"PDF 下载 + markdown 提取"阶段
+2. 检查 subprocess worker → CPU semaphore=4，正常
+3. 怀疑网络 → 发现 Claude Code 自动设置 `HTTP_PROXY=127.0.0.1:17890`
+4. 对比测试：cninfo API 走代理 1.37s vs 直连 0.28s（**慢 5 倍**）
+
+**根因**：Claude Code 启动时注入 `HTTP_PROXY`，所有 HTTP 请求走海外代理节点。cninfo 是国内站点，绕到海外再回来。6 份年报 PDF（每份 10-50MB）× 5 倍延迟 = 40 分钟空白。
+
+**修复**：脚本入口设 `NO_PROXY` 白名单（cninfo、eastmoney、sina、baostock 等国内域名）。Filing agent 从 42 分钟降到 **1-3 分钟**（36 倍加速）。
+
+**教训**：生产环境中的隐式配置（代理、DNS、TLS）比代码 bug 更难发现。日志空白不等于"在等 LLM"——可能是网络层的问题。
+
+### 问题 2：Pipeline 整体卡死 — baostock TCP socket 无超时
+
+**现象**：Top-200 回测跑到 58/89 只后完全停止，2 小时无任何日志输出，进程 CPU 0% 但不退出。
+
+**排查过程**：
+1. `lsof -p` 检查网络连接 → 发现 2 个 TCP 连接到 `114.94.20.73:10030`（ESTABLISHED 但无数据）
+2. 端口 10030 不是 HTTP → 确认是 baostock 的自有 TCP 协议
+3. 阅读 baostock 源码 `socketutil.py` → `while True: recv = socket.recv(8192)` **无 timeout 无限循环**
+4. baostock 的 socket 是全局单例，一旦卡住，后续所有调用都卡
+5. 关键：baostock 在线程池里运行 → `asyncio.wait_for` 无法取消线程中阻塞的 socket I/O
+
+**修复（三层防御）**：
+- **治本**：`sock.settimeout(30)` — 30 秒无数据抛 `socket.timeout`
+- **防御**：`asyncio.wait_for(timeout=300)` — LLM 调用层 5 分钟超时
+- **兜底**：`asyncio.wait_for(timeout=1800)` — Pipeline 层 30 分钟超时
+
+**教训**：
+- 第三方库的网络实现不能信任——即使是"稳定"的库也可能有无超时的阻塞 socket
+- asyncio 的 `wait_for` 只能取消协程，不能取消线程中的阻塞 I/O
+- 超时应该在最内层设置（socket 层），外层的超时只是兜底
+
+### 问题 3：baostock 并发 login 竞态 — 单例 socket 被覆盖
+
+**现象**：加了 socket timeout 后不再永久卡死，但 baostock 查询偶发 30 秒超时（error_code=10002007 "网络接收错误"）。
+
+**排查过程**：
+1. 加了 debug 日志后看到关键证据：
+   ```
+   19:38:22.449  baostock login #1 → code=0 success
+   19:38:22.449  baostock login #2 → code=0 success  ← 同一毫秒！
+   19:38:24.205  baostock login #3 → code=10002007 网络接收错误
+   ```
+2. 3 个线程同时调 `bs.login()`（10 并发 pipeline，每个需要 baostock 数据）
+3. baostock 的 `SocketUtil` 用 `__new__` 做单例，但 `connect()` 每次创建新 socket 覆盖全局变量
+4. 线程 2 的 login 覆盖了线程 1 的 socket → 线程 1 的后续 recv 在已关闭的 socket 上阻塞
+
+**修复**：`threading.Lock` + double-checked locking 保证 `_ensure_baostock_login()` 只执行一次。
+
+**教训**：
+- 全局单例 + 多线程 = 竞态条件。`global _BS_LOGGED_IN` 检查不是原子的
+- **先加日志，再修 bug**。没有日志时猜测根因是 "LLM 挂了" / "网络不好"，实际是并发竞态
+- Debug 日志应该在第一次遇到问题时就加，而不是猜了三轮之后
+
+### 问题 4：LLM 输出格式偶发失败 — MiniMax 不返回 tool_use
+
+**现象**：~3% 的 pipeline 因 `no tool_use block in LLM response` 或 Pydantic 校验失败而 ERROR。
+
+**根因**：MiniMax API 偶尔返回纯文本而非 tool_use block，或者返回的 JSON 字段类型不对。
+
+**修复**：`max_retries` 从 2 提到 5（总共 6 次尝试）。3% 降到接近 0%。
+
+**教训**：LLM API 的输出格式不是 100% 可靠的——即使用了 `tool_choice={"type": "tool"}`。重试是必要的防御层。
+
+### 问题 5：持仓状态丢失 — CandidateStore 重写 HELD 状态
+
+**现象**：理论场景分析发现：如果 S0 买了五粮液（INVESTABLE），S1 重新分析后降级为 WATCHLIST，CandidateStore 会把状态从 HELD 覆盖为 ANALYZED。PortfolioStrategy 不知道这是当前持仓，可能错误地不输出 HOLD 决策。
+
+**根因**：`ingest_scan_results()` 创建新 snapshot 时硬编码 `state=ANALYZED`，没有检查是否已经是 HELD。
+
+**修复**：ingest 时检查 `prev.state == HELD`，保留 HELD 状态。确保芒格的"坐在屁股上"原则——持仓降级不自动卖出，让 PortfolioStrategy 的 LLM 做出 HOLD/EXIT 判断。
+
+**教训**：状态机的转换逻辑要显式设计，不能用"创建新对象"隐式覆盖旧状态。
+
+---
+
+## 系统性能演进
+
+### Filing Agent 提速历程
+
+| 阶段 | 耗时 | 改动 | 提速 |
+|------|------|------|------|
+| 走代理 | 42 min | — | baseline |
+| NO_PROXY 直连 | 6.9 min | 绕过代理 | 6x |
+| CPU_SEM 提高 | 3.5 min | PDF 并发从 4 → 10 | 2x |
+| Sections cache 命中 | 3.8 min | 跳过 PDF 提取 | — |
+| PDF cache 命中 | <30s（预期） | 跳过下载 | 7x+ |
+| **总计** | **42 min → <30s** | | **80x+** |
+
+### 存储架构
+
+```
+data/
+├── cache/                    # 共享层（跨 run 复用）
+│   ├── filings/{market}/{ticker}/   # PDF + markdown + sections
+│   └── akshare/{market}/{ticker}.json  # AkShare 结构化数据
+└── runs/                     # 隔离层（每次运行独立）
+    └── overnight_{ts}_{id}/
+        ├── run.json          # 状态：running → completed
+        ├── checkpoints/      # 崩溃恢复
+        └── results.json
+```
+
+### 回测结果
+
+| 扫描点 | 股票池 | INVESTABLE | DEEP_DIVE | WATCHLIST | 耗时 |
+|--------|--------|-----------|-----------|-----------|------|
+| S0: 2023-11 | 200→89 | 1（五粮液） | 9 | 56 | 6.3h |
+| S1: 2024-05 | 66 增量 | 0 | 13 | 34 | ~3h |
+
+S0→S1 label 变化率 51%（30/59 只），说明 FY2023 年报带来了大量重新评估。五粮液从唯一的 INVESTABLE 降到 DEEP_DIVE，12 只从 WATCHLIST 升级到 DEEP_DIVE。
