@@ -486,6 +486,7 @@ async def pipeline_all(
     stocks: list[dict], llm: LLMClient, concurrency: int = 5,
     as_of_date: date | None = None,
     filing_cache: "FilingCache | None" = None,
+    akshare_cache: "AkShareCache | None" = None,
 ) -> list[dict]:
     """Run full pipeline on all stocks with progress tracking."""
     sem = asyncio.Semaphore(concurrency)
@@ -807,7 +808,7 @@ async def main(
     logger.info("Phase 4: Running full pipeline on %d stocks (concurrency=%d)...",
                 len(proceed), pipeline_concurrency)
     t0 = time.time()
-    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency, as_of_date=as_of_date, filing_cache=filing_cache)
+    pipeline_results = await pipeline_all(proceed, llm, concurrency=pipeline_concurrency, as_of_date=as_of_date, filing_cache=filing_cache, akshare_cache=akshare_cache)
     phase4_elapsed = time.time() - t0
     logger.info("Phase 4 done: %d analyzed (%.1fh)", len(pipeline_results), phase4_elapsed / 3600)
 
@@ -846,11 +847,12 @@ async def main(
             "total_hours": round(total_elapsed / 3600, 2),
             "pipeline_hours": round(phase4_elapsed / 3600, 2),
         },
-        "universe_size": len(universe),
+        "universe_size": len(universe) if not incremental_from else len(proceed),
+        "incremental": incremental_from is not None,
         "screening": {
             "proceed": len(proceed),
             "skipped": len(skipped),
-            "pass_rate": f"{len(proceed) / max(len(universe), 1) * 100:.1f}%",
+            "pass_rate": f"{len(proceed) / max(len(proceed) + len(skipped), 1) * 100:.1f}%",
         },
         "pipeline": {
             "total_analyzed": len(pipeline_results),
@@ -897,8 +899,12 @@ async def main(
     logger.info("OVERNIGHT EVALUATION COMPLETE")
     logger.info("=" * 60)
     logger.info("Total time: %.1fh (pipeline: %.1fh)", total_elapsed / 3600, phase4_elapsed / 3600)
-    logger.info("Universe: %d -> Screening: %d PROCEED -> Pipeline: %d analyzed",
-                len(universe), len(proceed), len(pipeline_results))
+    if incremental_from:
+        logger.info("Incremental: %d candidates -> Pipeline: %d analyzed",
+                    len(proceed), len(pipeline_results))
+    else:
+        logger.info("Universe: %d -> Screening: %d PROCEED -> Pipeline: %d analyzed",
+                    len(universe), len(proceed), len(pipeline_results))
     logger.info("Label distribution: %s",
                 " | ".join(f"{k}: {v}" for k, v in sorted(label_counts.items())))
     if top_candidates:
