@@ -216,7 +216,7 @@ class BaseAgent(ABC):
 
     async def run(
         self, input_data: BaseModel, ctx: Any = None,
-        *, max_retries: int = 2,
+        *, max_retries: int = 5,
     ) -> BaseAgentOutput:
         """Render prompts, call LLM, parse and validate output.
 
