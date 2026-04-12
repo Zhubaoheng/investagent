@@ -141,6 +141,18 @@ class LLMClient:
                 latency = time.time() - t0
                 _stats["retries"] += 1
                 status = e.status_code if hasattr(e, "status_code") else 429
+                err_msg = str(e)
+
+                # MiniMax usage limit (error code 2056): wait 30 min
+                if "2056" in err_msg or "usage limit exceeded" in err_msg.lower():
+                    wait = 1800
+                    logger.warning(
+                        "LLM usage limit exceeded (2056), sleeping %ds (30min) | %s",
+                        wait, err_msg[:120],
+                    )
+                    await asyncio.sleep(wait)
+                    continue  # retry without counting as failure
+
                 # Non-retryable API errors (4xx except 429)
                 if isinstance(e, anthropic.APIStatusError) and status not in (429, 529):
                     _stats["errors"] += 1
@@ -175,6 +187,18 @@ class LLMClient:
             except Exception as e:
                 latency = time.time() - t0
                 _stats["retries"] += 1
+                err_msg = str(e)
+
+                # MiniMax usage limit (error code 2056): wait 30 min
+                if "2056" in err_msg or "usage limit exceeded" in err_msg.lower():
+                    wait = 1800
+                    logger.warning(
+                        "LLM usage limit exceeded (2056), sleeping %ds (30min) | %s",
+                        wait, err_msg[:120],
+                    )
+                    await asyncio.sleep(wait)
+                    continue
+
                 if attempt == _MAX_ATTEMPTS - 1:
                     _stats["errors"] += 1
                     logger.error(
