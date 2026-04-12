@@ -22,6 +22,9 @@ _BS_LOGGED_IN = False
 
 
 _BS_LOGIN_LOCK = threading.Lock()
+# baostock uses a single global TCP socket with no thread safety.
+# ALL baostock operations (login, query, iterate) must be serialized.
+_BS_QUERY_LOCK = threading.Lock()
 
 
 def _ensure_baostock_login() -> None:
@@ -67,14 +70,16 @@ def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[
 
     try:
         t0 = _time.time()
-        rs = bs.query_history_k_data_plus(
-            bs_code, "date,close,peTTM,pbMRQ",
-            start_date=start, end_date=end,
-            frequency="d", adjustflag="2",
-        )
-        rows = []
-        while rs.error_code == "0" and rs.next():
-            rows.append(rs.get_row_data())
+        with _BS_QUERY_LOCK:
+            rs = bs.query_history_k_data_plus(
+                bs_code, "date,close,peTTM,pbMRQ",
+                start_date=start, end_date=end,
+                frequency="d", adjustflag="2",
+            )
+            rows = []
+            while rs.error_code == "0" and rs.next():
+                rows.append(rs.get_row_data())
+            error_code = rs.error_code
         elapsed = _time.time() - t0
         if elapsed > 5:
             logger.warning("baostock SLOW query for %s: %.1fs", ticker, elapsed)
@@ -86,7 +91,7 @@ def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[
             logger.debug("baostock %s: close=%s pe=%s pb=%s (%.1fs)", ticker, close, pe, pb, elapsed)
             return {"close": close, "pe": pe, "pb": pb}
         else:
-            logger.warning("baostock %s: no data returned (error_code=%s, %.1fs)", ticker, rs.error_code, elapsed)
+            logger.warning("baostock %s: no data returned (error_code=%s, %.1fs)", ticker, error_code, elapsed)
     except Exception:
         logger.warning("baostock failed for %s", ticker, exc_info=True)
     return None
