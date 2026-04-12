@@ -526,11 +526,11 @@ async def pipeline_all(
                 cached_fetcher = CachedFilingFetcher(resolve_filing_fetcher(exchange), filing_cache)
                 ctx = await asyncio.wait_for(
                     run_pipeline(intake, llm=llm, filing_fetcher=cached_fetcher, filing_cache=filing_cache, akshare_cache=akshare_cache),
-                    timeout=1800,  # 30 min max per stock
+                    timeout=5400,  # 90 min max per stock (allows for 30min 2056 quota sleep + buffer)
                 )
                 result = _extract_result(ctx, stock)
             except asyncio.TimeoutError:
-                logger.error("Pipeline TIMEOUT for %s %s (>30min)", ticker, stock.get("name", ""))
+                logger.error("Pipeline TIMEOUT for %s %s (>90min)", ticker, stock.get("name", ""))
                 result = {
                     "ticker": ticker, "name": stock.get("name", ""),
                     "market_cap": stock.get("market_cap"),
