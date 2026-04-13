@@ -6,30 +6,65 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_PROVIDER_DEFAULTS: dict[str, dict[str, str | None]] = {
-    "claude": {
-        "default_model": "claude-sonnet-4-20250514",
-        "base_url": None,
-        "api_key_env": None,  # SDK reads ANTHROPIC_API_KEY internally
-    },
-    "minimax": {
-        "default_model": "MiniMax-M2.7-highspeed",
-        "base_url_default": "https://api.minimaxi.com/anthropic",
-        "base_url_env": "MINIMAX_BASE_URL",
-        "api_key_env": "MINIMAX_API_KEY",
-    },
-    "deepseek": {
-        "default_model": "deepseek-reasoner",
-        "base_url_default": "https://api.deepseek.com/v1",
-        "base_url_env": "DEEPSEEK_BASE_URL",
-        "api_key_env": "DEEPSEEK_API_KEY",
-    },
-}
+# Known provider tags. Used only as a label for vendor-specific branching
+# (e.g. MiniMax 2056 quota handling). Connection info itself is NOT looked up
+# here — caller provides base_url + api_key directly.
+_KNOWN_PROVIDERS: tuple[str, ...] = ("claude", "minimax", "deepseek", "openai")
+
+
+@dataclass
+class LLMProviderConfig:
+    """Unified LLM connection config: base_url + api_key, plus a provider tag.
+
+    `provider` is preserved separately so downstream code can branch on
+    vendor-specific behavior (e.g. MiniMax 2056 quota code) instead of
+    sniffing the base_url.
+    """
+
+    base_url: str
+    api_key: str
+    model: str
+    provider: str = "openai"
+    extra_body: dict[str, Any] = field(default_factory=dict)
+
+
+def load_llm_config_from_env(prefix: str = "LLM") -> LLMProviderConfig:
+    """Load unified LLM config from env.
+
+    Reads ``{prefix}_BASE_URL``, ``{prefix}_API_KEY``, ``{prefix}_MODEL``,
+    and optional ``{prefix}_PROVIDER`` (tag for vendor-specific branches,
+    default "openai").
+    """
+    base_url = os.getenv(f"{prefix}_BASE_URL")
+    api_key = os.getenv(f"{prefix}_API_KEY")
+    model = os.getenv(f"{prefix}_MODEL")
+    provider = os.getenv(f"{prefix}_PROVIDER", "openai")
+
+    missing = [k for k, v in [
+        (f"{prefix}_BASE_URL", base_url),
+        (f"{prefix}_API_KEY", api_key),
+        (f"{prefix}_MODEL", model),
+    ] if not v]
+    if missing:
+        raise ValueError(f"Missing required env vars: {', '.join(missing)}")
+    if provider not in _KNOWN_PROVIDERS:
+        logger.warning(
+            "Unknown LLM provider tag %r; vendor-specific branches will not trigger. "
+            "Known: %s", provider, _KNOWN_PROVIDERS,
+        )
+
+    return LLMProviderConfig(
+        base_url=base_url,  # type: ignore[arg-type]
+        api_key=api_key,    # type: ignore[arg-type]
+        model=model,        # type: ignore[arg-type]
+        provider=provider,
+    )
 
 # yfinance tickers for 10-year government bond yields
 _BOND_TICKERS: dict[str, str] = {
@@ -117,39 +152,14 @@ class Settings:
     net_cash_high_priority_threshold: float = 1.5
 
     def __init__(self) -> None:
-        self.provider: str = os.getenv("INVESTAGENT_PROVIDER", "claude")
-        if self.provider not in _PROVIDER_DEFAULTS:
-            raise ValueError(
-                f"Unknown provider {self.provider!r}. "
-                f"Supported: {list(_PROVIDER_DEFAULTS)}"
-            )
-
-        prov = _PROVIDER_DEFAULTS[self.provider]
-        self.model_name: str = os.getenv(
-            "INVESTAGENT_MODEL", prov["default_model"]  # type: ignore[arg-type]
-        )
-        self.max_tokens: int = int(os.getenv("INVESTAGENT_MAX_TOKENS", "4096"))
-
-        # Base URL
-        base_url_env = prov.get("base_url_env")
-        if base_url_env:
-            self.api_base_url: str | None = os.getenv(
-                base_url_env, prov.get("base_url_default")
-            )
-        else:
-            self.api_base_url = prov.get("base_url")
-
-        # API key
-        api_key_env = prov.get("api_key_env")
-        if api_key_env:
-            self.api_key: str | None = os.getenv(api_key_env)
-            if not self.api_key:
-                raise ValueError(
-                    f"Provider {self.provider!r} requires the "
-                    f"{api_key_env} environment variable"
-                )
-        else:
-            self.api_key = None
+        # LLM config is only required when an LLMClient is actually created.
+        # Settings itself tolerates missing vars so unrelated tests can
+        # instantiate it freely.
+        self.provider: str = os.getenv("LLM_PROVIDER", "openai")
+        self.model_name: str | None = os.getenv("LLM_MODEL")
+        self.api_base_url: str | None = os.getenv("LLM_BASE_URL")
+        self.api_key: str | None = os.getenv("LLM_API_KEY")
+        self.max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "4096"))
 
         # Risk-free rates (cached, refreshed monthly)
         self.risk_free_rates: dict[str, float] = _fetch_risk_free_rates()
@@ -161,47 +171,34 @@ class Settings:
 
 
 def create_llm_client(
-    provider: str,
+    base_url: str | None = None,
+    api_key: str | None = None,
     *,
     model: str | None = None,
+    provider: str = "openai",
     extra_body: dict[str, Any] | None = None,
+    env_prefix: str = "LLM",
 ) -> "LLMClient":
-    """Create an LLMClient for a specific provider.
+    """Create an LLMClient from base_url + api_key (+ optional provider tag).
 
-    Reads API key and base URL from environment variables defined in
-    _PROVIDER_DEFAULTS. Allows multiple providers to coexist (e.g.,
-    MiniMax for exclusion, DeepSeek R1 for analysis).
+    Any of base_url / api_key / model / provider left None will be filled in
+    from ``{env_prefix}_BASE_URL``, ``{env_prefix}_API_KEY``,
+    ``{env_prefix}_MODEL``, ``{env_prefix}_PROVIDER``.
     """
     from poorcharlie.llm import LLMClient
 
-    if provider not in _PROVIDER_DEFAULTS:
-        raise ValueError(
-            f"Unknown provider {provider!r}. Supported: {list(_PROVIDER_DEFAULTS)}"
-        )
-
-    prov = _PROVIDER_DEFAULTS[provider]
-    model_name = model or prov["default_model"]
-
-    # Base URL
-    base_url_env = prov.get("base_url_env")
-    if base_url_env:
-        base_url: str | None = os.getenv(base_url_env, prov.get("base_url_default"))
-    else:
-        base_url = prov.get("base_url")
-
-    # API key
-    api_key: str | None = None
-    api_key_env = prov.get("api_key_env")
-    if api_key_env:
-        api_key = os.getenv(api_key_env)
-        if not api_key:
-            raise ValueError(
-                f"Provider {provider!r} requires the {api_key_env} environment variable"
-            )
+    if base_url is None or api_key is None or model is None:
+        env_cfg = load_llm_config_from_env(env_prefix)
+        base_url = base_url or env_cfg.base_url
+        api_key = api_key or env_cfg.api_key
+        model = model or env_cfg.model
+        if provider == "openai":  # caller didn't override
+            provider = env_cfg.provider
 
     return LLMClient(
-        model=model_name,  # type: ignore[arg-type]
+        provider=provider,
+        model=model,
         base_url=base_url,
         api_key=api_key,
-        extra_body=extra_body,
+        extra_body=extra_body or {},
     )

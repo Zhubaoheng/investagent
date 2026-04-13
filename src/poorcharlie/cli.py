@@ -109,6 +109,7 @@ async def _run(args: argparse.Namespace) -> None:
             "effort": "high",
         }
     llm = LLMClient(
+        provider=settings.provider,
         model=settings.model_name,
         base_url=settings.api_base_url,
         api_key=settings.api_key,

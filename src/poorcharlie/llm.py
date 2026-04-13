@@ -48,7 +48,9 @@ class LLMClient:
         client: anthropic.AsyncAnthropic | None = None,
         extra_body: dict[str, Any] | None = None,
         temperature: float = 0.0,
+        provider: str = "claude",
     ) -> None:
+        self.provider = provider
         if client:
             self._client = client
         else:
@@ -143,8 +145,12 @@ class LLMClient:
                 status = e.status_code if hasattr(e, "status_code") else 429
                 err_msg = str(e)
 
-                # MiniMax usage limit (error code 2056): wait 30 min
-                if "2056" in err_msg or "usage limit exceeded" in err_msg.lower():
+                # MiniMax usage limit (error code 2056): wait 30 min.
+                # Gated on provider to avoid matching unrelated "2056" substrings
+                # from other vendors.
+                if self.provider == "minimax" and (
+                    "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
+                ):
                     wait = 1800
                     logger.warning(
                         "LLM usage limit exceeded (2056), sleeping %ds (30min) | %s",
@@ -190,7 +196,9 @@ class LLMClient:
                 err_msg = str(e)
 
                 # MiniMax usage limit (error code 2056): wait 30 min
-                if "2056" in err_msg or "usage limit exceeded" in err_msg.lower():
+                if self.provider == "minimax" and (
+                    "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
+                ):
                     wait = 1800
                     logger.warning(
                         "LLM usage limit exceeded (2056), sleeping %ds (30min) | %s",

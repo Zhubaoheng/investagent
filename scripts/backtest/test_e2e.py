@@ -53,7 +53,7 @@ TEST_STOCKS = [
 
 def _create_llm() -> LLMClient:
     """Create MiniMax LLM client."""
-    return create_llm_client("minimax", extra_body={
+    return create_llm_client(provider="minimax", extra_body={
         "context_window_size": 200000,
         "effort": "high",
     })

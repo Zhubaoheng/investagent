@@ -111,7 +111,7 @@ async def run_scan_decision(
 async def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     store = CandidateStore(DATA_DIR / "candidate_store.json")
-    llm = create_llm_client("minimax", extra_body={
+    llm = create_llm_client(provider="minimax", extra_body={
         "context_window_size": 200000, "effort": "high",
     })
 

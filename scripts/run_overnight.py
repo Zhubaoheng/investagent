@@ -731,7 +731,7 @@ async def main(
     logger.info("  Output: %s", OUTPUT_DIR)
     logger.info("=" * 60)
 
-    llm = create_llm_client("minimax", extra_body={
+    llm = create_llm_client(provider="minimax", extra_body={
         "context_window_size": 200000,
         "effort": "high",
     })

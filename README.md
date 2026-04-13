@@ -17,10 +17,18 @@ uv sync
 # 2. Playwright 浏览器（巨潮资讯网抓取用）
 uv run playwright install
 
-# 3. 配置 API Key
-echo "MINIMAX_API_KEY=sk-xxx" > .env
-# DeepSeek（回测时间隔离用，可选）：
-# echo "DEEPSEEK_API_KEY=sk-xxx" >> .env
+# 3. 配置 LLM（统一两参数：base_url + api_key）
+cat >> .env <<'EOF'
+LLM_BASE_URL=https://api.minimaxi.com/anthropic
+LLM_API_KEY=sk-xxx
+LLM_MODEL=MiniMax-M2.7-highspeed
+LLM_PROVIDER=minimax         # 可选标签，用于厂商特例分支（如 MiniMax 2056 配额）
+# 切 DeepSeek：
+#   LLM_BASE_URL=https://api.deepseek.com/anthropic
+#   LLM_API_KEY=...
+#   LLM_MODEL=deepseek-reasoner
+#   LLM_PROVIDER=deepseek
+EOF
 
 # 4. 验证
 uv run python -m pytest tests/ -q           # 275 tests
@@ -39,7 +47,17 @@ from poorcharlie.config import create_llm_client
 from poorcharlie.schemas.company import CompanyIntake
 from poorcharlie.workflow.orchestrator import run_pipeline
 
-llm = create_llm_client("minimax", extra_body={"context_window_size": 200000, "effort": "high"})
+# 不传参时，自动从 .env 读取 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL / LLM_PROVIDER
+llm = create_llm_client(extra_body={"context_window_size": 200000, "effort": "high"})
+
+# 也可以显式传参（两参数：base_url + api_key），用于多 provider 并存场景：
+# llm = create_llm_client(
+#     base_url="https://api.deepseek.com/anthropic",
+#     api_key="sk-xxx",
+#     model="deepseek-reasoner",
+#     provider="deepseek",   # 标签；用于厂商特例分支
+# )
+
 intake = CompanyIntake(ticker="600519", name="贵州茅台", exchange="SSE", sector="食品饮料")
 ctx = asyncio.run(run_pipeline(intake, llm=llm))
 
@@ -47,6 +65,8 @@ committee = ctx.get_result("committee")
 print(committee.final_label)
 print(committee.thesis)
 ```
+
+> **调用模型的统一方式**：LLM 只认两个参数 — `base_url` + `api_key`（加可选的 `model` 和 `provider` 标签）。不分厂商的环境变量前缀，统一用 `LLM_*`。任意 OpenAI/Anthropic 兼容的 HTTP 端点都能直接接入，只要换 `LLM_BASE_URL` 和 `LLM_API_KEY`。`LLM_PROVIDER` 是可选标签（`claude` / `minimax` / `deepseek` / `openai`），仅用于驱动少量厂商特例分支（如 MiniMax 2056 配额码的 30 分钟重试），不影响连接本身。
 
 ### 回测模式（历史数据）
 
@@ -253,8 +273,11 @@ for k, v in data.items():
 
 | 变量 | 必需 | 说明 |
 |------|:----:|------|
-| `MINIMAX_API_KEY` | 是 | MiniMax LLM API Key |
-| `DEEPSEEK_API_KEY` | 否 | DeepSeek R1 Key（时间隔离回测用） |
+| `LLM_BASE_URL` | 是 | LLM API base URL（Anthropic / OpenAI 兼容端点） |
+| `LLM_API_KEY` | 是 | LLM API Key |
+| `LLM_MODEL` | 是 | 模型名 |
+| `LLM_PROVIDER` | 否 | 厂商标签 `claude` / `minimax` / `deepseek` / `openai`，默认 `openai`；用于特例分支 |
+| `LLM_MAX_TOKENS` | 否 | 默认 4096 |
 | `CLASH_SOCKET` | 否 | Clash unix socket 路径 |
 | `CLASH_PROXY` | 否 | Clash HTTP 代理 URL |
 | `CLASH_GROUP` | 否 | Clash 代理组名称（节点轮换用） |

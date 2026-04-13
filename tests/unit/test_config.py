@@ -1,69 +1,81 @@
-"""Tests for poorcharlie.config."""
+"""Tests for poorcharlie.config — unified LLM_* env scheme."""
 
 import pytest
 
-from poorcharlie.config import Settings
+from poorcharlie.config import (
+    LLMProviderConfig,
+    Settings,
+    load_llm_config_from_env,
+)
 
 
 def _clean_env(monkeypatch):
-    """Remove all provider-related env vars to start from a clean slate."""
     for var in (
-        "INVESTAGENT_PROVIDER",
-        "INVESTAGENT_MODEL",
-        "INVESTAGENT_MAX_TOKENS",
-        "MINIMAX_API_KEY",
-        "MINIMAX_BASE_URL",
+        "LLM_BASE_URL",
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "LLM_PROVIDER",
+        "LLM_MAX_TOKENS",
     ):
         monkeypatch.delenv(var, raising=False)
 
 
-def test_default_provider_is_claude(monkeypatch):
+def test_settings_reads_unified_env(monkeypatch):
     _clean_env(monkeypatch)
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("LLM_API_KEY", "sk-xxx")
+    monkeypatch.setenv("LLM_MODEL", "some-model")
+    monkeypatch.setenv("LLM_PROVIDER", "minimax")
     s = Settings()
-    assert s.provider == "claude"
-    assert s.model_name == "claude-sonnet-4-20250514"
+    assert s.provider == "minimax"
+    assert s.model_name == "some-model"
+    assert s.api_base_url == "https://api.example.com/v1"
+    assert s.api_key == "sk-xxx"
+
+
+def test_settings_defaults_provider_to_openai(monkeypatch):
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("LLM_API_KEY", "sk-xxx")
+    monkeypatch.setenv("LLM_MODEL", "some-model")
+    s = Settings()
+    assert s.provider == "openai"
+
+
+def test_missing_required_env_raises(monkeypatch):
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("LLM_API_KEY", "sk-xxx")
+    monkeypatch.setenv("LLM_MODEL", "some-model")
+    with pytest.raises(ValueError, match="LLM_BASE_URL"):
+        load_llm_config_from_env("LLM")
+
+
+def test_settings_tolerates_missing_env(monkeypatch):
+    _clean_env(monkeypatch)
+    s = Settings()  # should not raise
     assert s.api_base_url is None
     assert s.api_key is None
 
 
-def test_minimax_provider_defaults(monkeypatch):
+def test_load_llm_config_from_env_returns_dataclass(monkeypatch):
     _clean_env(monkeypatch)
-    monkeypatch.setenv("INVESTAGENT_PROVIDER", "minimax")
-    monkeypatch.setenv("MINIMAX_API_KEY", "test-key-123")
-    s = Settings()
-    assert s.provider == "minimax"
-    assert s.model_name == "MiniMax-M2.7-highspeed"
-    assert s.api_base_url == "https://api.minimaxi.com/anthropic"
-    assert s.api_key == "test-key-123"
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("LLM_API_KEY", "sk-xxx")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("LLM_PROVIDER", "deepseek")
+    cfg = load_llm_config_from_env("LLM")
+    assert isinstance(cfg, LLMProviderConfig)
+    assert cfg.provider == "deepseek"
+    assert cfg.base_url == "https://api.example.com/v1"
+    assert cfg.api_key == "sk-xxx"
+    assert cfg.model == "m"
 
 
-def test_minimax_custom_base_url(monkeypatch):
+def test_unknown_provider_tag_warns_but_accepts(monkeypatch, caplog):
     _clean_env(monkeypatch)
-    monkeypatch.setenv("INVESTAGENT_PROVIDER", "minimax")
-    monkeypatch.setenv("MINIMAX_API_KEY", "test-key")
-    monkeypatch.setenv("MINIMAX_BASE_URL", "https://api.minimax.io/anthropic")
-    s = Settings()
-    assert s.api_base_url == "https://api.minimax.io/anthropic"
-
-
-def test_minimax_missing_api_key_raises(monkeypatch):
-    _clean_env(monkeypatch)
-    monkeypatch.setenv("INVESTAGENT_PROVIDER", "minimax")
-    with pytest.raises(ValueError, match="MINIMAX_API_KEY"):
-        Settings()
-
-
-def test_explicit_model_overrides_provider_default(monkeypatch):
-    _clean_env(monkeypatch)
-    monkeypatch.setenv("INVESTAGENT_PROVIDER", "minimax")
-    monkeypatch.setenv("MINIMAX_API_KEY", "test-key")
-    monkeypatch.setenv("INVESTAGENT_MODEL", "MiniMax-M2.5")
-    s = Settings()
-    assert s.model_name == "MiniMax-M2.5"
-
-
-def test_unknown_provider_raises(monkeypatch):
-    _clean_env(monkeypatch)
-    monkeypatch.setenv("INVESTAGENT_PROVIDER", "openai")
-    with pytest.raises(ValueError, match="Unknown provider"):
-        Settings()
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("LLM_API_KEY", "sk-xxx")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("LLM_PROVIDER", "something-weird")
+    cfg = load_llm_config_from_env("LLM")
+    assert cfg.provider == "something-weird"
