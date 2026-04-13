@@ -85,11 +85,15 @@ def _fetch_quote_baostock(ticker: str, exchange: str, as_of_date: date) -> dict[
             logger.warning("baostock SLOW query for %s: %.1fs", ticker, elapsed)
         if rows:
             last = rows[-1]
+            bar_date = date.fromisoformat(last[0]) if last[0] else None
             close = float(last[1]) if last[1] else None
             pe = float(last[2]) if last[2] else None
             pb = float(last[3]) if last[3] else None
-            logger.debug("baostock %s: close=%s pe=%s pb=%s (%.1fs)", ticker, close, pe, pb, elapsed)
-            return {"close": close, "pe": pe, "pb": pb}
+            logger.debug(
+                "baostock %s: date=%s close=%s pe=%s pb=%s (%.1fs)",
+                ticker, bar_date, close, pe, pb, elapsed,
+            )
+            return {"close": close, "pe": pe, "pb": pb, "bar_date": bar_date}
         else:
             logger.warning("baostock %s: no data returned (error_code=%s, %.1fs)", ticker, error_code, elapsed)
     except Exception:
@@ -143,6 +147,7 @@ def _fetch_historical_quote_sync(
     pb_ratio = None
     market_cap = None
     shares = None
+    quote_date: date | None = None
 
     if currency == "CNY":
         # Primary: baostock (price + PE + PB, no AkShare dependency)
@@ -151,10 +156,13 @@ def _fetch_historical_quote_sync(
             price = quote["close"]
             pe_ratio = quote.get("pe")
             pb_ratio = quote.get("pb")
+            quote_date = quote.get("bar_date")
 
-        # Fallback: Sina (price only)
+        # Fallback: Sina (price only) — conservative: assume <= as_of_date
         if price is None:
             price = _fetch_price_sina(ticker, exchange, as_of_date)
+            if price is not None:
+                quote_date = as_of_date
 
     else:
         # HK/US: yfinance
@@ -167,6 +175,11 @@ def _fetch_historical_quote_sync(
             hist = t.history(start=start, end=(as_of_date + timedelta(days=1)).strftime("%Y-%m-%d"))
             if not hist.empty:
                 price = float(hist["Close"].iloc[-1])
+                last_ts = hist.index[-1]
+                try:
+                    quote_date = last_ts.date() if hasattr(last_ts, "date") else None
+                except Exception:
+                    quote_date = None
                 info = t.info
                 shares = info.get("sharesOutstanding")
                 if shares and price:
@@ -185,6 +198,7 @@ def _fetch_historical_quote_sync(
         pe_ratio=pe_ratio,
         pb_ratio=pb_ratio,
         shares_outstanding=shares,
+        quote_date=quote_date,
     )
 
 

@@ -541,6 +541,13 @@ class FilingAgent(BaseAgent):
                 "Backtest filter: fiscal_year <= %s → IS=%d BS=%d CF=%d rows",
                 max_fy, len(ak_is), len(ak_bs), len(ak_cf),
             )
+            # Defensive: assert no lookahead slipped through the filter
+            leaked = [r.fiscal_year for r in (ak_is + ak_bs + ak_cf) if r.fiscal_year > max_fy]
+            if leaked:
+                raise AssertionError(
+                    f"Temporal leak: AkShare rows with fiscal_year > {max_fy} survived "
+                    f"filter: {sorted(set(leaked))}"
+                )
 
         # AkShare is source of truth — REPLACE, don't merge.
         new_is = ak_is if ak_is else list(output.income_statement)

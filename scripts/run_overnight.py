@@ -479,6 +479,25 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
     except (KeyError, AttributeError):
         pass
 
+    try:
+        info = ctx.get_result("info_capture")
+        ms = getattr(info, "market_snapshot", None)
+        if ms is not None and getattr(ms, "price", None) is not None:
+            result["scan_close_price"] = ms.price
+    except (KeyError, AttributeError):
+        pass
+
+    try:
+        val = ctx.get_result("valuation")
+        iv = getattr(val, "intrinsic_value_per_share", None)
+        if iv is not None and getattr(iv, "base", None) is not None:
+            result["intrinsic_value_base"] = iv.base
+            scan_close = result.get("scan_close_price")
+            if scan_close and scan_close > 0:
+                result["valuation_trigger_ratio"] = (iv.base * 0.8) / scan_close
+    except (KeyError, AttributeError):
+        pass
+
     return result
 
 

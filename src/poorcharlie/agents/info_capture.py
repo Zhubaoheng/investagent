@@ -66,6 +66,7 @@ def _quote_to_snapshot(quote: MarketQuote) -> MarketSnapshot:
         pb_ratio=quote.pb_ratio,
         dividend_yield=quote.dividend_yield,
         currency=quote.currency,
+        quote_date=quote.quote_date.isoformat() if quote.quote_date else None,
     )
 
 
@@ -177,9 +178,36 @@ class InfoCaptureAgent(BaseAgent):
         try:
             quote = await fetcher.get_quote(ticker_for_fetch)
             logger.info(
-                "Market data for %s: price=%s, mcap=%s",
-                ticker_for_fetch, quote.price, quote.market_cap,
+                "Market data for %s: price=%s, mcap=%s, quote_date=%s",
+                ticker_for_fetch, quote.price, quote.market_cap, quote.quote_date,
             )
+            # Temporal guard: in backtest mode, drop any quote dated after as_of_date.
+            # Also warn if fetcher produced a live quote (quote_date=None) while
+            # backtest cutoff is set — likely indicates wrong fetcher wiring.
+            if intake.as_of_date:
+                qd = quote.quote_date
+                if qd is None:
+                    logger.warning(
+                        "Quote for %s has no quote_date in backtest mode (as_of=%s) — "
+                        "possible live fetcher leak; dropping price/mcap",
+                        ticker_for_fetch, intake.as_of_date,
+                    )
+                    quote = quote.model_copy(update={
+                        "price": None, "market_cap": None,
+                        "pe_ratio": None, "pb_ratio": None,
+                        "enterprise_value": None, "dividend_yield": None,
+                    })
+                elif qd > intake.as_of_date:
+                    logger.warning(
+                        "LOOKAHEAD BLOCKED: quote for %s dated %s > as_of %s; "
+                        "dropping price/mcap",
+                        ticker_for_fetch, qd, intake.as_of_date,
+                    )
+                    quote = quote.model_copy(update={
+                        "price": None, "market_cap": None,
+                        "pe_ratio": None, "pb_ratio": None,
+                        "enterprise_value": None, "dividend_yield": None,
+                    })
             return quote
         except Exception:
             logger.warning(

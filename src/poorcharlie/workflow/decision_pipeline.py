@@ -120,18 +120,28 @@ async def run_decision_pipeline(
     # Step 3: Update store and return decisions
     # ------------------------------------------------------------------
     effective_date = scan_date or date.today()
-    new_holdings = [
-        PortfolioHolding(
+    # Preserve entry_price/date for existing holdings (don't reset on re-eval)
+    existing_entries = {
+        h.ticker: (h.entry_date, h.entry_price)
+        for h in store.get_current_holdings()
+    }
+    new_holdings = []
+    for d in strategy_output.position_decisions:
+        if d.action == ActionType.EXIT or d.target_weight <= 0:
+            continue
+        detail = candidate_details.get(d.ticker, {})
+        prev_date, prev_price = existing_entries.get(d.ticker, (None, None))
+        entry_date = prev_date or effective_date
+        entry_price = prev_price if prev_price is not None else detail.get("scan_close_price")
+        new_holdings.append(PortfolioHolding(
             ticker=d.ticker,
             name=d.name,
-            industry=candidate_details.get(d.ticker, {}).get("industry", ""),
+            industry=detail.get("industry", ""),
             target_weight=d.target_weight,
-            entry_date=effective_date,
+            entry_date=entry_date,
             entry_reason=d.reason,
-        )
-        for d in strategy_output.position_decisions
-        if d.action != ActionType.EXIT and d.target_weight > 0
-    ]
+            entry_price=entry_price,
+        ))
 
     store.update_holdings(new_holdings, scan_date=effective_date)
     store.save()

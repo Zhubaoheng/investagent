@@ -49,6 +49,7 @@ class PortfolioHolding(BaseModel, frozen=True):
     target_weight: float
     entry_date: date
     entry_reason: str = ""
+    entry_price: float | None = None  # qfq close price on entry_date — basis for price triggers
 
 
 class StoreState(BaseModel):

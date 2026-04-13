@@ -17,6 +17,8 @@ class MarketSnapshot(BaseModel, frozen=True):
     pb_ratio: float | None = None
     dividend_yield: float | None = None
     currency: str | None = None
+    # Temporal provenance (None if source is live/unknown)
+    quote_date: str | None = None
 
 
 class FilingRef(BaseModel, frozen=True):

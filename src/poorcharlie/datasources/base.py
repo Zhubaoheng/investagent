@@ -42,6 +42,9 @@ class MarketQuote(BaseModel, frozen=True):
     pb_ratio: float | None = None
     dividend_yield: float | None = None
     shares_outstanding: float | None = None
+    # Temporal provenance: observation date of this quote (None = live/unknown).
+    # Used to detect lookahead leaks in backtest mode.
+    quote_date: date | None = None
 
 
 # ---------------------------------------------------------------------------

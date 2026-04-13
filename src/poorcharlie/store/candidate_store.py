@@ -208,14 +208,19 @@ class CandidateStore:
                     update={"state": CandidateState.HELD},
                 )
 
-        # Mark exited candidates
+        # Drop exited candidates fully (prevents phantom re-entry via watchlist)
         for ticker in old_tickers - new_tickers:
             if ticker in self._state.candidates:
                 c = self._state.candidates[ticker]
                 if c.state == CandidateState.HELD:
-                    self._state.candidates[ticker] = c.model_copy(
-                        update={"state": CandidateState.EXITED},
-                    )
+                    # Only keep in candidates if it still has an actionable label
+                    # from a recent scan (else remove to prevent survivorship bias)
+                    if c.final_label in _ACTIONABLE_LABELS:
+                        self._state.candidates[ticker] = c.model_copy(
+                            update={"state": CandidateState.ANALYZED},
+                        )
+                    else:
+                        del self._state.candidates[ticker]
 
         self._state.holdings = list(holdings)
         self._state.last_updated = datetime.now(tz=timezone.utc)

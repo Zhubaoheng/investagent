@@ -40,12 +40,13 @@ END_DATE = date(2025, 9, 30)
 
 
 def _load_decisions() -> dict[str, dict[str, float]]:
-    """Load all_decisions.json from precompute phase."""
+    """Load all_decisions.json. Handles both v1.0 and v1.1 schemas."""
+    from decision_schema import load_weights_only
     decisions_file = DATA_DIR / "all_decisions.json"
     if not decisions_file.exists():
         logger.error("No decisions file found at %s. Run run_precompute.py first.", decisions_file)
         return {}
-    data = json.loads(decisions_file.read_text(encoding="utf-8"))
+    data = load_weights_only(decisions_file)
     logger.info("Loaded decisions for %d dates: %s", len(data), sorted(data.keys()))
     return data
 

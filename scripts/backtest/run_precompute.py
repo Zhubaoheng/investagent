@@ -829,11 +829,12 @@ async def main(concurrency: int = 5) -> None:
             if ticker not in entry_prices:
                 entry_prices[ticker] = 0  # placeholder, will be updated from price data
 
-        # Price triggers between this scan and the next
+        # Price triggers DISABLED per Munger-style redesign: volatility != risk.
+        # Only fundamental checkpoints (scheduled scans) drive decisions on holdings.
+        # The detect_price_triggers function is retained for diagnostic/attribution
+        # analysis only. To re-enable, restore the call block from git history.
         if i < len(SCAN_DATES) - 1:
             next_scan = SCAN_DATES[i + 1]
-            logger.info("Checking price triggers: %s to %s", scan_date, next_scan)
-
             try:
                 triggers = await asyncio.to_thread(
                     detect_price_triggers,
@@ -841,17 +842,13 @@ async def main(concurrency: int = 5) -> None:
                     scan_date + timedelta(days=1), next_scan - timedelta(days=1),
                 )
                 if triggers:
-                    analysis_llm = create_llm_client("minimax")
-                    trigger_decisions = await handle_price_triggers(
-                        triggers, current_holdings, analysis_llm, previous_results,
-                    )
-                    all_decisions.update(trigger_decisions)
-                    # Update holdings from last trigger
-                    if trigger_decisions:
-                        last_trigger = sorted(trigger_decisions.keys())[-1]
-                        current_holdings = trigger_decisions[last_trigger]
+                    for td, tk in triggers:
+                        logger.info(
+                            "Price trigger observed (diagnostic, no action): %s on %s",
+                            tk, td,
+                        )
             except Exception:
-                logger.error("Price trigger processing failed", exc_info=True)
+                logger.warning("Price trigger diagnostic scan failed", exc_info=True)
 
             # Valuation triggers: monitor WATCHLIST+ non-held stocks
             try:

@@ -121,64 +121,35 @@ def _run_overnight(
     return run_dir
 
 
+async def _detect_triggers_async(
+    prev_store_path: Path,
+    scan_start: date,
+    scan_end: date,
+    all_decisions: dict,
+    trigger_output_dir: Path,
+) -> None:
+    """Delegate to the shared run_triggers module (Munger-style redesign)."""
+    from run_triggers import run_triggers as _rt
+    await _rt(
+        prev_store_path=prev_store_path,
+        scan_start=scan_start,
+        scan_end=scan_end,
+        all_decisions=all_decisions,
+        trigger_output_dir=trigger_output_dir,
+        enable_opportunity=True,
+    )
+
+
 def _detect_triggers(
     prev_store_path: Path,
     scan_start: date,
     scan_end: date,
     all_decisions: dict,
+    trigger_output_dir: Path,
 ) -> None:
-    """Detect price + valuation triggers between scan dates."""
-    from poorcharlie.store.candidate_store import CandidateStore
-    from run_precompute import detect_valuation_triggers
-    from data_feeds import fetch_daily_prices
-
-    store = CandidateStore(prev_store_path)
-    holdings = store.get_current_holdings()
-    held_tickers = {h.ticker: h.target_weight for h in holdings}
-
-    logger.info("--- Triggers: %s → %s ---", scan_start, scan_end)
-
-    # Price triggers for held stocks
-    if held_tickers:
-        logger.info("Monitoring %d held stocks for price triggers", len(held_tickers))
-        for ticker in held_tickers:
-            try:
-                df = fetch_daily_prices(ticker, scan_start, scan_end)
-                if df.empty:
-                    continue
-                entry_close = df.iloc[0]["close"]
-                for _, row in df.iterrows():
-                    close = row["close"]
-                    dt = str(row["date"])[:10]
-                    pct = (close - entry_close) / entry_close
-                    if pct <= -0.20:
-                        logger.info("Price trigger DOWN: %s on %s (%.1f%%)", ticker, dt, pct * 100)
-                        break
-                    elif pct >= 0.50:
-                        logger.info("Price trigger UP: %s on %s (+%.1f%%)", ticker, dt, pct * 100)
-                        break
-            except Exception:
-                logger.warning("Price trigger failed for %s", ticker, exc_info=True)
-
-    # Valuation triggers for WATCHLIST+ unheld
-    watchlist = store.get_valuation_watchlist()
-    if watchlist:
-        logger.info("Monitoring %d WATCHLIST+ stocks for valuation triggers", len(watchlist))
-        try:
-            val_triggers = detect_valuation_triggers(watchlist, scan_start, scan_end)
-            for trigger_date, ticker in val_triggers:
-                c = store._state.candidates.get(ticker)
-                if c and c.final_label in ("INVESTABLE", "DEEP_DIVE"):
-                    trigger_alloc = dict(
-                        (h.ticker, h.target_weight) for h in holdings
-                    )
-                    trigger_alloc[ticker] = 0.05
-                    all_decisions[trigger_date.isoformat()] = trigger_alloc
-                    logger.info("Valuation trigger: %s on %s → 5%% trial", ticker, trigger_date)
-        except Exception:
-            logger.warning("Valuation trigger detection failed", exc_info=True)
-    else:
-        logger.info("No valuation watchlist")
+    asyncio.run(_detect_triggers_async(
+        prev_store_path, scan_start, scan_end, all_decisions, trigger_output_dir,
+    ))
 
 
 def _extract_allocations(run_dir: Path) -> dict[str, float]:
@@ -202,14 +173,18 @@ def main():
                         help="Start from scan index (0=S0, 1=S1, ...). Use to resume.")
     args = parser.parse_args()
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    all_decisions: dict[str, dict[str, float]] = {}
+    from decision_schema import load_decisions, make_record, save_decisions
 
-    # Load existing decisions if resuming
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     decisions_file = DATA_DIR / "all_decisions.json"
+    trigger_dir = DATA_DIR / "triggers"
+
+    # Load existing decisions (v1.1 normalized) if resuming
     if decisions_file.exists() and args.start_from > 0:
-        all_decisions = json.loads(decisions_file.read_text())
+        all_decisions = load_decisions(decisions_file)
         logger.info("Loaded %d existing decisions", len(all_decisions))
+    else:
+        all_decisions = {}
 
     prev_run_dir: Path | None = None
 
@@ -219,7 +194,13 @@ def main():
             prev_run_dir = _find_latest_run(scan_date.isoformat())
             if prev_run_dir:
                 alloc = _extract_allocations(prev_run_dir)
-                all_decisions[scan_date.isoformat()] = alloc
+                all_decisions[scan_date.isoformat()] = make_record(
+                    source="scan",
+                    weights=alloc,
+                    scan_id=f"S{i}",
+                    run_id=prev_run_dir.name,
+                    rationale=f"S{i} scan result (loaded from prior run)",
+                )
                 logger.info("Skipped S%d (%s): loaded from %s (%d positions)",
                             i, scan_date, prev_run_dir.name, len(alloc))
             continue
@@ -262,24 +243,30 @@ def main():
 
         # Record allocations
         alloc = _extract_allocations(run_dir)
-        all_decisions[scan_date.isoformat()] = alloc
+        all_decisions[scan_date.isoformat()] = make_record(
+            source="scan",
+            weights=alloc,
+            scan_id=f"S{i}",
+            run_id=run_dir.name,
+            rationale=f"S{i} {'cold start' if i == 0 else 'incremental'} scan",
+        )
         logger.info("S%d portfolio: %d positions, %.0f%% cash",
                      i, len(alloc), (1 - sum(alloc.values())) * 100)
 
-        # Detect triggers between this scan and next
+        # Between-scan trigger processing (opportunity triggers only)
         if i < len(SCAN_DATES) - 1:
             next_date = SCAN_DATES[i + 1]
             store_path = run_dir / "candidate_store.json"
             if store_path.exists():
-                _detect_triggers(store_path, scan_date, next_date, all_decisions)
+                _detect_triggers(
+                    store_path, scan_date, next_date,
+                    all_decisions, trigger_dir,
+                )
 
         prev_run_dir = run_dir
 
-        # Save progress after each scan
-        decisions_file.write_text(
-            json.dumps(all_decisions, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        # Save progress after each scan (schema v1.1)
+        save_decisions(decisions_file, all_decisions)
         logger.info("Saved %d decision points to %s", len(all_decisions), decisions_file)
 
     # Final summary
@@ -288,12 +275,16 @@ def main():
     logger.info("BACKTEST COMPLETE: %d decision points", len(all_decisions))
     logger.info("=" * 70)
     for dt in sorted(all_decisions.keys()):
-        alloc = all_decisions[dt]
-        n = len(alloc)
-        cash = 1 - sum(alloc.values())
-        tickers = ", ".join(f"{t}({w:.0%})" for t, w in sorted(alloc.items(), key=lambda x: -x[1])[:5])
+        rec = all_decisions[dt]
+        weights = rec.get("weights", {})
+        n = len(weights)
+        cash = rec.get("cash", 1 - sum(weights.values()))
+        src = rec.get("source", "?")
+        tickers = ", ".join(
+            f"{t}({w:.0%})" for t, w in sorted(weights.items(), key=lambda x: -x[1])[:5]
+        )
         more = f" +{n-5} more" if n > 5 else ""
-        logger.info("  %s: %d positions, %.0f%% cash | %s%s", dt, n, cash * 100, tickers, more)
+        logger.info("  %s [%s]: %d pos, %.0f%% cash | %s%s", dt, src, n, cash * 100, tickers, more)
 
     logger.info("")
     logger.info("Next step: run backtrader replay:")
