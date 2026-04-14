@@ -39,7 +39,9 @@ _NO_PROXY = (
     "cninfo.com.cn,static.cninfo.com.cn,"
     "eastmoney.com,push2.eastmoney.com,push2his.eastmoney.com,"
     "10jqka.com.cn,sina.com.cn,finance.sina.com.cn,"
-    "csindex.com.cn,legulegu.com,baostock.com"
+    "csindex.com.cn,legulegu.com,baostock.com,"
+    "minimaxi.com,api.minimaxi.com,"
+    "deepseek.com,api.deepseek.com"
 )
 os.environ.setdefault("NO_PROXY", _NO_PROXY)
 os.environ.setdefault("no_proxy", _NO_PROXY)

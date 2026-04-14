@@ -39,7 +39,10 @@ _NO_PROXY_DOMAINS = (
     "10jqka.com.cn,sina.com.cn,finance.sina.com.cn,"
     "csindex.com.cn,legulegu.com,"
     "hkexnews.hk,www1.hkexnews.hk,"
-    "baostock.com"
+    "baostock.com,"
+    # LLM 国内直连端点：走本地代理会被代理池限流拖垮
+    "minimaxi.com,api.minimaxi.com,"
+    "deepseek.com,api.deepseek.com"
 )
 os.environ.setdefault("NO_PROXY", _NO_PROXY_DOMAINS)
 os.environ.setdefault("no_proxy", _NO_PROXY_DOMAINS)
