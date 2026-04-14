@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import time
-from datetime import datetime, time as dtime, timedelta
 from typing import Any
 
 import anthropic
@@ -15,55 +14,36 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
-# Default fallback when no reset schedule is configured: 30-minute sleep.
-_DEFAULT_QUOTA_SLEEP_S = 1800
-_QUOTA_WAKE_BUFFER_S = 60   # small safety margin after the reset boundary
-_QUOTA_MAX_SLEEP_S = 6 * 3600  # never sleep longer than 6h in one shot
+# Poll every N seconds when quota is exhausted; adapt to any reset schedule
+# without needing to know it. Override via {PROVIDER}_QUOTA_POLL_SECONDS.
+# Also cap cumulative wait per call via {PROVIDER}_QUOTA_MAX_WAIT_SECONDS so a
+# permanently-exhausted plan doesn't block the pipeline indefinitely.
+_DEFAULT_QUOTA_POLL_S = 300         # 5 min between retries
+_DEFAULT_QUOTA_MAX_WAIT_S = 6 * 3600  # give up after 6h cumulative wait
 
 
-def _parse_reset_hours(raw: str | None) -> list[int]:
-    """Parse comma-separated hours (0-23). Empty/invalid → []."""
-    if not raw:
-        return []
-    hours: list[int] = []
-    for part in raw.split(","):
-        part = part.strip()
-        if not part:
-            continue
+def _quota_poll_seconds(provider: str) -> int:
+    raw = os.getenv(f"{provider.upper()}_QUOTA_POLL_SECONDS")
+    if raw:
         try:
-            h = int(part)
+            v = int(raw)
+            if v > 0:
+                return v
         except ValueError:
-            continue
-        if 0 <= h <= 23:
-            hours.append(h)
-    return sorted(set(hours))
+            pass
+    return _DEFAULT_QUOTA_POLL_S
 
 
-def _quota_sleep_seconds(provider: str) -> tuple[int, str]:
-    """How long to sleep for a usage-limit hit, and a human-readable description.
-
-    If ``{PROVIDER}_QUOTA_RESET_HOURS`` env is set (e.g. "0,5,10,15,20"),
-    sleep until the next reset hour (local time) + small buffer, capped
-    at _QUOTA_MAX_SLEEP_S. Otherwise fall back to the 30-min default.
-    """
-    env_key = f"{provider.upper()}_QUOTA_RESET_HOURS"
-    reset_hours = _parse_reset_hours(os.getenv(env_key))
-    if not reset_hours:
-        return _DEFAULT_QUOTA_SLEEP_S, "30min (default)"
-
-    now = datetime.now()
-    today = now.date()
-    # Find the next reset boundary strictly after now.
-    candidates = [
-        datetime.combine(today, dtime(h, 0)) for h in reset_hours
-    ] + [
-        datetime.combine(today + timedelta(days=1), dtime(reset_hours[0], 0)),
-    ]
-    next_reset = min(c for c in candidates if c > now)
-    delta = (next_reset - now).total_seconds() + _QUOTA_WAKE_BUFFER_S
-    wait = int(min(max(delta, _QUOTA_WAKE_BUFFER_S), _QUOTA_MAX_SLEEP_S))
-    desc = f"until {next_reset.strftime('%H:%M')} reset (~{wait/60:.0f}min)"
-    return wait, desc
+def _quota_max_wait_seconds(provider: str) -> int:
+    raw = os.getenv(f"{provider.upper()}_QUOTA_MAX_WAIT_SECONDS")
+    if raw:
+        try:
+            v = int(raw)
+            if v > 0:
+                return v
+        except ValueError:
+            pass
+    return _DEFAULT_QUOTA_MAX_WAIT_S
 
 # Cumulative LLM call stats (thread-safe for asyncio single-thread)
 _stats = {
@@ -160,6 +140,9 @@ class LLMClient:
         # backoff only for rate limits (429/529).
         _MAX_ATTEMPTS = 10
         _CALL_TIMEOUT = 300  # 5 min max per LLM call (guards against hung connections)
+        # Cumulative time spent sleeping on quota-exhaustion (2056). Capped so
+        # a permanently-dry plan doesn't block the whole pipeline forever.
+        quota_cum_wait_s = 0
         for attempt in range(_MAX_ATTEMPTS):
             _stats["calls"] += 1
             t0 = time.time()
@@ -198,19 +181,28 @@ class LLMClient:
                 status = e.status_code if hasattr(e, "status_code") else 429
                 err_msg = str(e)
 
-                # MiniMax usage limit (error code 2056): sleep until the next
-                # quota reset boundary (configured via MINIMAX_QUOTA_RESET_HOURS)
-                # or 30 min if unset. Gated on provider to avoid matching
-                # unrelated "2056" substrings from other vendors.
+                # MiniMax usage limit (error code 2056): short-poll until the
+                # quota refills. No schedule assumption — works for any plan.
+                # Cap cumulative wait so a permanently-dry account fails loudly.
                 if self.provider == "minimax" and (
                     "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
                 ):
-                    wait, desc = _quota_sleep_seconds(self.provider)
+                    poll_s = _quota_poll_seconds(self.provider)
+                    max_wait = _quota_max_wait_seconds(self.provider)
+                    if quota_cum_wait_s + poll_s > max_wait:
+                        _stats["errors"] += 1
+                        logger.error(
+                            "LLM quota still exhausted after %.1fmin cumulative "
+                            "wait (cap %.1fmin) — giving up this call.",
+                            quota_cum_wait_s / 60, max_wait / 60,
+                        )
+                        raise
+                    quota_cum_wait_s += poll_s
                     logger.warning(
-                        "LLM usage limit exceeded (2056), sleeping %s | %s",
-                        desc, err_msg[:120],
+                        "LLM usage limit (2056), polling again in %ds (total waited %.0fmin)",
+                        poll_s, quota_cum_wait_s / 60,
                     )
-                    await asyncio.sleep(wait)
+                    await asyncio.sleep(poll_s)
                     continue  # retry without counting as failure
 
                 # Non-retryable API errors (4xx except 429)
@@ -249,16 +241,26 @@ class LLMClient:
                 _stats["retries"] += 1
                 err_msg = str(e)
 
-                # MiniMax usage limit (error code 2056): sleep until next reset.
+                # MiniMax usage limit (error code 2056): short-poll until refill.
                 if self.provider == "minimax" and (
                     "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
                 ):
-                    wait, desc = _quota_sleep_seconds(self.provider)
+                    poll_s = _quota_poll_seconds(self.provider)
+                    max_wait = _quota_max_wait_seconds(self.provider)
+                    if quota_cum_wait_s + poll_s > max_wait:
+                        _stats["errors"] += 1
+                        logger.error(
+                            "LLM quota still exhausted after %.1fmin cumulative "
+                            "wait (cap %.1fmin) — giving up this call.",
+                            quota_cum_wait_s / 60, max_wait / 60,
+                        )
+                        raise
+                    quota_cum_wait_s += poll_s
                     logger.warning(
-                        "LLM usage limit exceeded (2056), sleeping %s | %s",
-                        desc, err_msg[:120],
+                        "LLM usage limit (2056), polling again in %ds (total waited %.0fmin)",
+                        poll_s, quota_cum_wait_s / 60,
                     )
-                    await asyncio.sleep(wait)
+                    await asyncio.sleep(poll_s)
                     continue
 
                 if attempt == _MAX_ATTEMPTS - 1:
