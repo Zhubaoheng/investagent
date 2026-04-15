@@ -113,6 +113,12 @@ async def reevaluate_ticker(
     shutil.copy2(prev_store_path, trigger_store_path)
     store = CandidateStore(trigger_store_path)
 
+    # Snapshot previous holdings BEFORE the decision — used to enforce
+    # "only the triggered ticker may change" post-process semantics.
+    prev_holding_weights = {
+        h.ticker: h.target_weight for h in store.get_current_holdings()
+    }
+
     # Look up the candidate's prior snapshot for name/industry
     prev = store._state.candidates.get(ticker)
     if prev is None:
@@ -144,14 +150,95 @@ async def reevaluate_ticker(
     store.save()
 
     # Run decision pipeline — evaluates this opportunity alongside current holdings
-    allocations = await run_decision_pipeline(store, llm, scan_date=trigger_date)
+    raw_allocations = await run_decision_pipeline(store, llm, scan_date=trigger_date)
+
+    # --- Enforce trigger semantics -------------------------------------
+    # An opportunity trigger is a REACTIVE signal about ONE ticker crossing
+    # its own IV * 0.8 threshold. The re-evaluation pipeline only analyzed
+    # that ticker — it used stale snapshots for everything else. So the
+    # agent shouldn't use this re-eval as a license to rebalance the whole
+    # book ("oh cash is available, let me ADD to 000651"): the other
+    # holdings haven't hit their own opportunity thresholds.
+    #
+    # Policy: keep prev weights for all non-trigger holdings; apply the
+    # agent's decision only for the triggered ticker. Full-book rebalance
+    # is the scheduled scan's job, not the trigger's.
+    allocations: dict[str, float] = dict(prev_holding_weights)
+    trigger_decision: str = "HOLD"
+    if ticker in raw_allocations:
+        new_w = raw_allocations[ticker]
+        prev_w = prev_holding_weights.get(ticker, 0.0)
+        if prev_w == 0 and new_w > 0:
+            trigger_decision = f"BUY {new_w*100:.0f}%"
+        elif prev_w > 0 and new_w > prev_w + 1e-6:
+            trigger_decision = f"ADD {prev_w*100:.0f}→{new_w*100:.0f}%"
+        elif prev_w > 0 and new_w < prev_w - 1e-6:
+            trigger_decision = f"REDUCE {prev_w*100:.0f}→{new_w*100:.0f}%"
+        elif prev_w > 0 and abs(new_w - prev_w) <= 1e-6:
+            trigger_decision = f"HOLD {new_w*100:.0f}%"
+        else:
+            trigger_decision = "SKIP"
+        allocations[ticker] = new_w
+    else:
+        # Agent chose not to include the triggered ticker at all
+        if ticker in allocations:
+            trigger_decision = "EXIT"
+            del allocations[ticker]
+        else:
+            trigger_decision = "SKIP"
+
+    # Detect and strip incidental rebalancing (agent changed weights on
+    # non-trigger tickers). We don't allow this — log for observability
+    # then discard.
+    stripped: list[tuple[str, float, float]] = []
+    for other_ticker, new_w in raw_allocations.items():
+        if other_ticker == ticker:
+            continue
+        prev_w = prev_holding_weights.get(other_ticker, 0.0)
+        if abs(new_w - prev_w) > 1e-6:
+            stripped.append((other_ticker, prev_w, new_w))
+    if stripped:
+        logger.info(
+            "Trigger %s: stripped %d incidental rebalance action(s) "
+            "(only trigger ticker may change on opportunity re-eval)",
+            ticker, len(stripped),
+        )
+        for t, pw, nw in stripped[:5]:
+            logger.info("  would-be: %s %.1f%% → %.1f%% (ignored)",
+                        t, pw * 100, nw * 100)
+
+    # Clear weight-0 entries (EXIT)
+    allocations = {t: w for t, w in allocations.items() if w > 0}
 
     metadata = {
         "run_id": trigger_output_dir.name,
-        "rationale": f"opportunity trigger on {ticker} at {trigger_date}",
+        "rationale": (
+            f"opportunity trigger on {ticker} at {trigger_date}; "
+            f"decision: {trigger_decision}"
+        ),
         "trigger_reason": (
             f"{ticker} price crossed IV × 0.8; committee={pipeline_label}"
         ),
         "pipeline_label": pipeline_label,
+        "trigger_decision": trigger_decision,
     }
+
+    # Also update the trigger's saved store so the cascading baseline
+    # reflects the filtered allocations (not the raw LLM output).
+    filtered_holdings = []
+    for h in store.get_current_holdings():
+        if h.ticker == ticker and ticker in allocations:
+            filtered_holdings.append(h.model_copy(update={"target_weight": allocations[ticker]}))
+        elif h.ticker in allocations:
+            # Preserved from prev — keep the holding as-is
+            filtered_holdings.append(h)
+    # If trigger ticker is a new BUY (not in prev holdings), it won't be in
+    # store.get_current_holdings() — but decision_pipeline already called
+    # update_holdings which added it. We need to filter that too.
+    for h in store.get_current_holdings():
+        if h.ticker not in {x.ticker for x in filtered_holdings} and h.ticker in allocations:
+            filtered_holdings.append(h)
+    store.update_holdings(filtered_holdings, scan_date=trigger_date)
+    store.save()
+
     return allocations, metadata

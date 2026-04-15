@@ -799,30 +799,24 @@ def get_opportunity_queue(run_dir: Path) -> OpportunityQueue | None:
         if m2 and started:
             trig_ticker = started[-1]["ticker"]
             trig_action: str | None = None
-            other_changes: list[str] = []  # non-HOLD actions on other tickers
+            stripped_count = 0  # non-trigger-ticker actions that were filtered
             for j in range(idx + 1, min(idx + 40, len(lines))):
                 ma = _OPP_ACTION_RE.search(lines[j])
                 if ma:
-                    ticker = ma["ticker"]
-                    action = ma["action"]
-                    wt = ma["weight"]
-                    if ticker == trig_ticker:
-                        trig_action = f"{action} {wt}%"
-                    elif action != "HOLD":
-                        other_changes.append(f"{action} {ticker} {wt}%")
+                    if ma["ticker"] == trig_ticker:
+                        trig_action = f"{ma['action']} {ma['weight']}%"
+                    elif ma["action"] != "HOLD":
+                        # Non-HOLD on other tickers would normally appear as
+                        # incidental rebalancing in the LLM output. Since
+                        # opportunity_trigger strips these, we just count them.
+                        stripped_count += 1
                     continue
                 if _OPP_START_RE.search(lines[j]) or _OPP_DONE_RE.search(lines[j]):
                     break
-            # Build summary
-            if trig_action is None:
-                trig_part = "skip"
-            else:
-                trig_part = trig_action
+            trig_part = trig_action if trig_action else "skip"
             parts = [trig_part]
-            if other_changes:
-                # Limit to 2 most interesting to keep display tight
-                parts.append("also " + ", ".join(other_changes[:2]))
-            parts.append(f"→ {m2['n_pos']}p {m2['cash']}%c")
+            if stripped_count > 0:
+                parts.append(f"({stripped_count} LLM rebal suggestions ignored)")
             completed.append({
                 "ticker": trig_ticker,
                 "ts": line[:19],
