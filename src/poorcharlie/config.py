@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Known provider tags. Used only as a label for vendor-specific branching
 # (e.g. MiniMax 2056 quota handling). Connection info itself is NOT looked up
 # here — caller provides base_url + api_key directly.
-_KNOWN_PROVIDERS: tuple[str, ...] = ("claude", "minimax", "deepseek", "openai")
+_KNOWN_PROVIDERS: tuple[str, ...] = ("claude", "minimax", "deepseek", "openai", "qwen")
 
 
 @dataclass
@@ -38,13 +38,26 @@ def load_llm_config_from_env(prefix: str = "LLM") -> LLMProviderConfig:
     """Load unified LLM config from env.
 
     Reads ``{prefix}_BASE_URL``, ``{prefix}_API_KEY``, ``{prefix}_MODEL``,
-    and optional ``{prefix}_PROVIDER`` (tag for vendor-specific branches,
-    default "openai").
+    optional ``{prefix}_PROVIDER`` (tag for vendor-specific branches,
+    default "openai"), and optional ``{prefix}_EXTRA_BODY`` (JSON-encoded
+    dict for vendor-specific request parameters).
     """
     base_url = os.getenv(f"{prefix}_BASE_URL")
     api_key = os.getenv(f"{prefix}_API_KEY")
     model = os.getenv(f"{prefix}_MODEL")
     provider = os.getenv(f"{prefix}_PROVIDER", "openai")
+    extra_raw = os.getenv(f"{prefix}_EXTRA_BODY", "").strip()
+    extra_body: dict[str, Any] = {}
+    if extra_raw:
+        try:
+            parsed = json.loads(extra_raw)
+            if isinstance(parsed, dict):
+                extra_body = parsed
+            else:
+                logger.warning("%s_EXTRA_BODY must be a JSON object, got %s",
+                               prefix, type(parsed).__name__)
+        except json.JSONDecodeError as e:
+            logger.warning("Invalid %s_EXTRA_BODY JSON: %s", prefix, e)
 
     missing = [k for k, v in [
         (f"{prefix}_BASE_URL", base_url),
@@ -64,6 +77,7 @@ def load_llm_config_from_env(prefix: str = "LLM") -> LLMProviderConfig:
         api_key=api_key,    # type: ignore[arg-type]
         model=model,        # type: ignore[arg-type]
         provider=provider,
+        extra_body=extra_body,
     )
 
 # yfinance tickers for 10-year government bond yields

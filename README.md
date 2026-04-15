@@ -26,98 +26,67 @@ uv run poorcharlie 600519                     # 单股分析
 
 ## LLM 配置
 
-项目支持任意 **Anthropic Messages API 兼容** 的端点。下面四家是现成的（可只配一家，用 `LLM_DEFAULT_PROFILE` 切换）：
+**最简用法**：3 个变量就够了。任意兼容 Anthropic Messages API (`POST /v1/messages`) 的端点都能用。
 
-### 方式 A：MiniMax（国内，默认推荐）
+```bash
+cat >> .env <<'EOF'
+LLM_BASE_URL=https://api.minimaxi.com/anthropic    # 换成你的
+LLM_API_KEY=你的-api-key
+LLM_MODEL=MiniMax-M2.7-highspeed                    # 换成你的
+LLM_PROVIDER=minimax                                 # 可选，见下
+EOF
+
+uv run python scripts/llm_diag.py   # ✓ 就通了
+```
+
+`LLM_PROVIDER` 是可选**厂商标签**，只用于触发少量厂商特例：
+- `minimax` → 遇到 2056 配额码时 poll 到下次重置
+- `qwen` / `deepseek` / `claude` / `openai` → 对应厂商的细节
+- 不填默认 `openai`（不触发任何特例）
+
+### 4 家现成 provider 的 URL + model 模板
+
+直接替换 `LLM_*` 三个值：
+
+| Provider | `LLM_BASE_URL` | `LLM_MODEL` | `LLM_PROVIDER` |
+|---|---|---|---|
+| **MiniMax** | `https://api.minimaxi.com/anthropic` | `MiniMax-M2.7-highspeed` | `minimax` |
+| **DashScope**（阿里百炼） | `https://coding.dashscope.aliyuncs.com/apps/anthropic` | `qwen3-coder-plus` | `qwen` |
+| **DeepSeek** | `https://api.deepseek.com/anthropic` | `deepseek-reasoner` | `deepseek` |
+| **Claude**（Anthropic 原生） | `https://api.anthropic.com` | `claude-sonnet-4-6` | `claude` |
+
+> MiniMax 可加一行 `LLM_EXTRA_BODY={"context_window_size":200000,"effort":"high"}` 启用大 context。其他厂商不需要。
+
+### 高级：同时配多家、一行切换
+
+只用一家时上面就够了。如果你想同时配多家、在它们之间切换，用**命名 profile**——给每家自己的前缀：
 
 ```bash
 cat >> .env <<'EOF'
 MINIMAX_BASE_URL=https://api.minimaxi.com/anthropic
-MINIMAX_API_KEY=你的-minimax-api-key
+MINIMAX_API_KEY=sk-xxx
 MINIMAX_MODEL=MiniMax-M2.7-highspeed
 MINIMAX_PROVIDER=minimax
-MINIMAX_EXTRA_BODY={"context_window_size":200000,"effort":"high"}
-LLM_DEFAULT_PROFILE=minimax
-EOF
-```
 
-### 方式 B：DashScope（阿里云百炼，Qwen）
-
-```bash
-cat >> .env <<'EOF'
 DASHSCOPE_BASE_URL=https://coding.dashscope.aliyuncs.com/apps/anthropic
-DASHSCOPE_API_KEY=你的-dashscope-api-key
+DASHSCOPE_API_KEY=sk-sp-xxx
 DASHSCOPE_MODEL=qwen3-coder-plus
 DASHSCOPE_PROVIDER=qwen
-LLM_DEFAULT_PROFILE=dashscope
+
+LLM_DEFAULT_PROFILE=minimax       # 当前用哪个
 EOF
 ```
 
-### 方式 C：DeepSeek
+三种切换方式：
 
 ```bash
-cat >> .env <<'EOF'
-DEEPSEEK_BASE_URL=https://api.deepseek.com/anthropic
-DEEPSEEK_API_KEY=你的-deepseek-api-key
-DEEPSEEK_MODEL=deepseek-reasoner
-DEEPSEEK_PROVIDER=deepseek
-LLM_DEFAULT_PROFILE=deepseek
-EOF
+# (1) 改 .env 里的 LLM_DEFAULT_PROFILE=dashscope
+# (2) 命令行临时切换：
+LLM_DEFAULT_PROFILE=dashscope uv run python scripts/backtest/run_full_backtest.py
+# (3) 代码里显式：llm = create_llm_client(profile="dashscope")
 ```
 
-### 方式 D：Claude（Anthropic 原生）
-
-```bash
-cat >> .env <<'EOF'
-CLAUDE_BASE_URL=https://api.anthropic.com
-CLAUDE_API_KEY=sk-ant-你的-key
-CLAUDE_MODEL=claude-sonnet-4-6
-CLAUDE_PROVIDER=claude
-LLM_DEFAULT_PROFILE=claude
-EOF
-```
-
-### 验证配置
-
-```bash
-uv run python scripts/llm_diag.py
-# 期望输出:
-# Configured profiles: ['minimax']            ← 已配置的 profile
-# Default profile: minimax
-# ✓ minimax  2.31s  MiniMax-M2.7-highspeed (minimax)  reply='ok'
-```
-
-看到 `✓` 就是通了。看到 `✗` 按报错信息排查。
-
-### 同时配多家 + 切换
-
-四家都写进 `.env` 也没关系（不冲突）。切换只需改 `LLM_DEFAULT_PROFILE`：
-
-```bash
-# 方式 1：改 .env
-LLM_DEFAULT_PROFILE=dashscope
-
-# 方式 2：命令行一次性切换
-LLM_DEFAULT_PROFILE=claude uv run python scripts/backtest/run_full_backtest.py ...
-
-# 方式 3：代码里显式指定
-llm = create_llm_client(profile="deepseek")
-```
-
-### 自己加一个新 provider
-
-只要端点兼容 Anthropic Messages API（POST `/v1/messages`），任意名字的 profile 都能用：
-
-```bash
-cat >> .env <<'EOF'
-MYPROVIDER_BASE_URL=https://xxx.example.com/anthropic
-MYPROVIDER_API_KEY=你的-key
-MYPROVIDER_MODEL=some-model-name
-LLM_DEFAULT_PROFILE=myprovider
-EOF
-
-uv run python scripts/llm_diag.py  # 应自动发现 myprovider
-```
+Profile 前缀可以是**任意名字**——`scripts/llm_diag.py` 会自动发现所有带完整三元组（`_BASE_URL` + `_API_KEY` + `_MODEL`）的前缀。不需要在代码里登记。
 
 ## 使用方式
 
@@ -370,21 +339,25 @@ for k, v in data.items():
 
 ## 环境变量
 
-**LLM 相关**（详见上面"LLM 配置"章节，4 个 profile 任选一个或多个）：
+**LLM 相关**（详见上面"LLM 配置"章节）：
+
+单 provider（最常用）：
 
 | 变量 | 必需 | 说明 |
 |------|:----:|------|
-| `LLM_DEFAULT_PROFILE` | 是 | `minimax` / `dashscope` / `deepseek` / `claude` 之一——当前激活的 profile |
-| `{PROFILE}_BASE_URL` | 是 | 例：`MINIMAX_BASE_URL`、`DASHSCOPE_BASE_URL` |
-| `{PROFILE}_API_KEY` | 是 | 对应的 API key |
-| `{PROFILE}_MODEL` | 是 | 模型名 |
-| `{PROFILE}_PROVIDER` | 否 | 厂商标签（控制特例分支，如 MiniMax 2056 配额重试），默认等于 profile 名 |
-| `{PROFILE}_EXTRA_BODY` | 否 | JSON，厂商专有参数（如 MiniMax 的 `context_window_size`） |
+| `LLM_BASE_URL` | 是 | 端点地址，须兼容 Anthropic Messages API |
+| `LLM_API_KEY` | 是 | API key |
+| `LLM_MODEL` | 是 | 模型名 |
+| `LLM_PROVIDER` | 否 | 厂商标签（`minimax` / `qwen` / `deepseek` / `claude` / `openai`），驱动厂商特例 |
+| `LLM_EXTRA_BODY` | 否 | JSON 字符串，厂商专有参数（仅 MiniMax 需要） |
 
-**实现原理**（知道更好，不懂也能用）：
-- 所有 provider 都走统一的 Anthropic Messages API 协议
-- `create_llm_client()` 会按 `LLM_DEFAULT_PROFILE` 读对应的 `{NAME}_BASE_URL` + `_API_KEY` + `_MODEL`
-- 想切就改 `LLM_DEFAULT_PROFILE` 一行，不用改代码
+多 provider 并存（可选）：
+
+| 变量 | 必需 | 说明 |
+|------|:----:|------|
+| `{NAME}_BASE_URL` / `_API_KEY` / `_MODEL` | — | 为每家 provider 取任意前缀（如 `MINIMAX_`, `DASHSCOPE_`），各自一套 |
+| `{NAME}_PROVIDER` / `_EXTRA_BODY` | 否 | 同上 |
+| `LLM_DEFAULT_PROFILE` | 是 | 当前激活哪个前缀（不区分大小写） |
 
 **Legacy（向后兼容，未配置 profile 时用）**：
 
