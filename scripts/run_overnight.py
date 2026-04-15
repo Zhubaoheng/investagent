@@ -497,7 +497,25 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
             result["intrinsic_value_base"] = iv.base
             scan_close = result.get("scan_close_price")
             if scan_close and scan_close > 0:
-                result["valuation_trigger_ratio"] = (iv.base * 0.8) / scan_close
+                # Munger-style tiered trigger:
+                #   (C) only INVESTABLE / DEEP_DIVE candidates are eligible
+                #       (committee already saw conviction; WATCHLIST+ alone
+                #       isn't enough to re-spend LLM on re-evaluation)
+                #   (B) required margin of safety scales with quality tier
+                #       GREAT → 15%, GOOD → 25%, AVERAGE → 40%
+                #       BELOW_AVERAGE / POOR never trigger.
+                label = result.get("final_label", "")
+                quality = result.get("enterprise_quality", "")
+                mos_by_quality = {
+                    "GREAT": 0.15,
+                    "GOOD": 0.25,
+                    "AVERAGE": 0.40,
+                }
+                required_mos = mos_by_quality.get(quality)
+                if (label in ("INVESTABLE", "DEEP_DIVE")
+                        and required_mos is not None):
+                    trigger_price = iv.base * (1 - required_mos)
+                    result["valuation_trigger_ratio"] = trigger_price / scan_close
     except (KeyError, AttributeError):
         pass
 

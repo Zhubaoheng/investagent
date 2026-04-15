@@ -110,17 +110,49 @@ async def run_triggers(
                 logger.warning("Price observation failed for %s", ticker, exc_info=True)
 
     # ------------------------------------------------------------------
-    # Opportunity triggers (WATCHLIST+ unheld crosses IV × 0.8)
+    # Opportunity triggers (Munger-tiered; see top-of-file docstring)
     # ------------------------------------------------------------------
-    watchlist = store.get_valuation_watchlist()
+    #   Label filter:    only INVESTABLE / DEEP_DIVE
+    #   Quality filter:  only GREAT / GOOD / AVERAGE
+    #   MoS threshold:   GREAT 15%, GOOD 25%, AVERAGE 40%
+    # This is recomputed per-candidate at trigger time so older stores
+    # whose stored valuation_trigger_ratio was built with the old uniform
+    # 20% threshold still use the new tiered logic going forward.
+    _MOS_BY_QUALITY = {"GREAT": 0.15, "GOOD": 0.25, "AVERAGE": 0.40}
+    _ELIGIBLE_LABELS = ("INVESTABLE", "DEEP_DIVE")
+
+    watchlist_all = store.get_valuation_watchlist()
+    watchlist: dict[str, dict] = {}
+    for ticker, info in watchlist_all.items():
+        c = store._state.candidates.get(ticker)
+        if c is None:
+            continue
+        if c.final_label not in _ELIGIBLE_LABELS:
+            continue
+        required_mos = _MOS_BY_QUALITY.get(c.enterprise_quality)
+        if required_mos is None:
+            continue
+        iv_base = c.intrinsic_value_base
+        scan_close = c.scan_close_price
+        if not iv_base or not scan_close or scan_close <= 0:
+            continue
+        recomputed_ratio = (iv_base * (1 - required_mos)) / scan_close
+        watchlist[ticker] = {
+            **info,
+            "trigger_ratio": recomputed_ratio,
+        }
+
+    skipped = len(watchlist_all) - len(watchlist)
+    logger.info(
+        "Opportunity watchlist: %d candidates after Munger filter "
+        "(label∈%s, quality∈%s), %d dropped",
+        len(watchlist), _ELIGIBLE_LABELS,
+        list(_MOS_BY_QUALITY.keys()), skipped,
+    )
     if not watchlist:
-        logger.info("No valuation watchlist")
+        logger.info("No eligible opportunity candidates")
         return
 
-    logger.info(
-        "Monitoring %d WATCHLIST+ stocks for opportunity triggers",
-        len(watchlist),
-    )
     try:
         val_triggers = detect_valuation_triggers(watchlist, scan_start, scan_end)
     except Exception:
@@ -152,7 +184,7 @@ async def run_triggers(
     logger.info("Processing %d opportunity triggers with full pipeline re-eval", len(val_triggers))
     for trigger_date, ticker in val_triggers:
         c = store._state.candidates.get(ticker)
-        if not c or c.final_label not in ("INVESTABLE", "DEEP_DIVE", "WATCHLIST", "SPECIAL_SITUATION"):
+        if not c or c.final_label not in _ELIGIBLE_LABELS:
             continue
 
         trig_dir = trigger_output_dir / f"opp_{trigger_date.isoformat()}_{ticker}"
