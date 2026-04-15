@@ -799,6 +799,21 @@ async def main(
         logger.info("INCREMENTAL MODE: %d candidates from %s", len(proceed), prev_store_path)
         logger.info("  (skipped Phase 1-3: Universe / Ratios / Screening)")
 
+        # Seed the NEW run's candidate_store with previous holdings so that
+        # if Phase 5 decision_pipeline falls back (CrossComparison timeout etc.),
+        # holdings are preserved instead of wiped to cash. Without this,
+        # a fallback on an incremental scan blows the portfolio away.
+        prev_holdings = prev_store.get_current_holdings()
+        if prev_holdings:
+            new_store = CandidateStore(OUTPUT_DIR / "candidate_store.json")
+            new_store.update_holdings(prev_holdings, scan_date=as_of_date or date.today())
+            new_store.save()
+            logger.info(
+                "Seeded new store with %d holdings from previous run "
+                "(protects against Phase 5 fallback wipeout)",
+                len(prev_holdings),
+            )
+
         _save_checkpoint("_meta", "incremental_source", {
             "source": str(prev_store_path),
             "candidates": len(proceed),
