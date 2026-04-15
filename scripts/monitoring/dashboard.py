@@ -363,26 +363,30 @@ def _render(s: Snapshot) -> Layout:
     root = Layout()
     in_opp_phase = s.phase and s.phase.phase == 6 and s.opp_queue is not None
 
+    # Minimum height for Holdings panel: header(2) + CASH row + up to ~12
+    # data rows = 15 lines. Without reserving this, Phase 6's tall Opportunity
+    # panel would squeeze Holdings and crop the tail of the portfolio.
+    n_rows_needed = max(10, len(s.holdings) + 2)  # +header/cash
+    mid_min = n_rows_needed + 2
+
     if in_opp_phase:
-        # Phase 6: dedicate a large panel to opportunity queue + current pipeline
         root.split_column(
             Layout(_header(s), name="header", size=4),
             Layout(_scans_panel(s), name="scans", size=5),
-            Layout(name="opp", ratio=2),
-            Layout(name="mid", ratio=2),
-            Layout(name="bot", ratio=1),
+            Layout(name="opp", ratio=2, minimum_size=10),
+            Layout(name="mid", ratio=3, minimum_size=mid_min),
+            Layout(name="bot", ratio=1, minimum_size=6),
         )
         root["opp"].split_row(
             Layout(_opp_queue_panel(s), name="opp_queue", ratio=3),
             Layout(_ticker_pipeline_panel(s), name="ticker_pipeline", ratio=2),
         )
     else:
-        # Scan phase or idle: default layout
         root.split_column(
             Layout(_header(s), name="header", size=4),
             Layout(_scans_panel(s), name="scans", size=5),
-            Layout(name="mid", ratio=2),
-            Layout(name="bot", ratio=1),
+            Layout(name="mid", ratio=3, minimum_size=mid_min),
+            Layout(name="bot", ratio=1, minimum_size=6),
         )
 
     root["mid"].split_row(
