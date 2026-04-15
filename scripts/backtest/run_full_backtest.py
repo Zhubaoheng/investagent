@@ -129,6 +129,7 @@ async def _detect_triggers_async(
     scan_end: date,
     all_decisions: dict,
     trigger_output_dir: Path,
+    concurrency: int | None = None,
 ) -> None:
     """Delegate to the shared run_triggers module (Munger-style redesign)."""
     from run_triggers import run_triggers as _rt
@@ -139,6 +140,7 @@ async def _detect_triggers_async(
         all_decisions=all_decisions,
         trigger_output_dir=trigger_output_dir,
         enable_opportunity=True,
+        concurrency=concurrency,
     )
 
 
@@ -148,9 +150,11 @@ def _detect_triggers(
     scan_end: date,
     all_decisions: dict,
     trigger_output_dir: Path,
+    concurrency: int | None = None,
 ) -> None:
     asyncio.run(_detect_triggers_async(
-        prev_store_path, scan_start, scan_end, all_decisions, trigger_output_dir,
+        prev_store_path, scan_start, scan_end, all_decisions,
+        trigger_output_dir, concurrency=concurrency,
     ))
 
 

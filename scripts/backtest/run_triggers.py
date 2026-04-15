@@ -60,6 +60,7 @@ async def run_triggers(
     all_decisions: dict,
     trigger_output_dir: Path,
     enable_opportunity: bool = True,
+    concurrency: int | None = None,
 ) -> None:
     """Observe holdings (log-only) and process opportunity triggers."""
     from data_feeds import fetch_daily_prices
@@ -181,32 +182,60 @@ async def run_triggers(
     filing_cache = FilingCache(PROJECT_ROOT / "data" / "cache" / "filings")
     akshare_cache = AkShareCache(PROJECT_ROOT / "data" / "cache" / "akshare")
 
-    logger.info("Processing %d opportunity triggers with full pipeline re-eval", len(val_triggers))
-    for trigger_date, ticker in val_triggers:
-        c = store._state.candidates.get(ticker)
-        if not c or c.final_label not in _ELIGIBLE_LABELS:
-            continue
-
-        trig_dir = trigger_output_dir / f"opp_{trigger_date.isoformat()}_{ticker}"
+    # Decide concurrency. Priority: arg > env > default 3.
+    # Rationale: 3× throughput without oversaturating LLM quota.
+    # Each trigger spins up ~14 agents internally, so 3 concurrent =
+    # up to ~42 in-flight LLM calls at peak. MiniMax 1500/5h comfortably
+    # handles this; if quota block hits, our poll logic handles it.
+    if concurrency is None:
+        import os as _os
         try:
-            outcome = await reevaluate_ticker(
-                ticker=ticker,
-                trigger_date=trigger_date,
-                prev_store_path=prev_store_path,
-                trigger_output_dir=trig_dir,
-                llm=llm,
-                filing_cache=filing_cache,
-                akshare_cache=akshare_cache,
-            )
-        except Exception:
-            logger.warning("Opportunity re-eval failed for %s on %s",
-                           ticker, trigger_date, exc_info=True)
-            continue
+            concurrency = int(_os.getenv("OPPORTUNITY_TRIGGER_CONCURRENCY", "3"))
+        except ValueError:
+            concurrency = 3
+    concurrency = max(1, concurrency)
 
+    eligible = [
+        (td, tk) for td, tk in val_triggers
+        if (c := store._state.candidates.get(tk)) is not None
+        and c.final_label in _ELIGIBLE_LABELS
+    ]
+    logger.info(
+        "Processing %d opportunity triggers with full pipeline re-eval "
+        "(concurrency=%d)",
+        len(eligible), concurrency,
+    )
+
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _process_one(trigger_date: date, ticker: str):
+        async with sem:
+            trig_dir = trigger_output_dir / f"opp_{trigger_date.isoformat()}_{ticker}"
+            try:
+                return trigger_date, ticker, await reevaluate_ticker(
+                    ticker=ticker,
+                    trigger_date=trigger_date,
+                    prev_store_path=prev_store_path,
+                    trigger_output_dir=trig_dir,
+                    llm=llm,
+                    filing_cache=filing_cache,
+                    akshare_cache=akshare_cache,
+                )
+            except Exception:
+                logger.warning("Opportunity re-eval failed for %s on %s",
+                               ticker, trigger_date, exc_info=True)
+                return trigger_date, ticker, None
+
+    tasks = [_process_one(td, tk) for td, tk in eligible]
+    # Preserve chronological order when writing back — triggers with the
+    # same trigger_date could race; dict assignment is atomic in Python.
+    results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    # Sort by trigger_date to keep all_decisions keys chronologically grouped
+    for trigger_date, ticker, outcome in sorted(results, key=lambda r: r[0]):
         if outcome is None:
             continue
         allocations, meta = outcome
-
         rec = make_record(
             source="opportunity_trigger",
             weights=allocations,
@@ -237,6 +266,11 @@ def main():
         "--no-opportunity", action="store_true",
         help="Detect but skip opportunity re-eval (diagnostic mode)",
     )
+    parser.add_argument(
+        "--concurrency", type=int, default=None,
+        help="Max concurrent opportunity re-evals (default 3 or "
+             "OPPORTUNITY_TRIGGER_CONCURRENCY env)",
+    )
     args = parser.parse_args()
 
     from decision_schema import load_decisions, save_decisions
@@ -257,6 +291,7 @@ def main():
         store_path, start_date, end_date,
         all_decisions, trigger_dir,
         enable_opportunity=not args.no_opportunity,
+        concurrency=args.concurrency,
     ))
     added = len(all_decisions) - before
 
