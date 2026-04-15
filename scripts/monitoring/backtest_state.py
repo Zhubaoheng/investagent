@@ -714,6 +714,9 @@ _OPP_START_RE = re.compile(
 _OPP_DONE_RE = re.compile(
     r"Decision pipeline complete: (?P<n_pos>\d+) positions, (?P<cash>-?\d+)% cash"
 )
+_OPP_ACTION_RE = re.compile(
+    r"^\s*(?P<ticker>\d{6})\s+\S+:\s+(?P<action>BUY|ADD|HOLD|REDUCE|EXIT)\s+(?P<weight>-?\d+)%"
+)
 _AGENT_TOOK_RE = re.compile(
     r"\[(?P<ticker>\d{6}|\w+)\]\s+(?P<agent>[\w_]+)\s+took\s+(?P<sec>[\d.]+)s"
 )
@@ -774,7 +777,10 @@ def get_opportunity_queue(run_dir: Path) -> OpportunityQueue | None:
         if "Opportunity watchlist" in lines[j]:
             break
 
-    # Walk forward from processing_idx to extract opportunity starts and completions
+    # Walk forward from processing_idx to extract opportunity starts and completions.
+    # After each "Decision pipeline complete" line, decision_pipeline logs one
+    # "TICKER NAME: ACTION WT% - reason" line per position. Scan for the line
+    # that matches the triggered ticker to show what the agent did with it.
     started: list[dict[str, str]] = []  # {ticker, name, as_of, ts}
     completed: list[dict[str, Any]] = []  # {ticker, ts, summary}
     for idx in range(processing_idx + 1, len(lines)):
@@ -790,10 +796,20 @@ def get_opportunity_queue(run_dir: Path) -> OpportunityQueue | None:
             continue
         m2 = _OPP_DONE_RE.search(line)
         if m2 and started:
+            trig_ticker = started[-1]["ticker"]
+            # Scan up to next 40 lines for the per-ticker action line.
+            action_part = "not in portfolio"
+            for j in range(idx + 1, min(idx + 40, len(lines))):
+                ma = _OPP_ACTION_RE.search(lines[j])
+                if ma and ma["ticker"] == trig_ticker:
+                    action_part = f"{ma['action']} {ma['weight']}%"
+                    break
+                if _OPP_START_RE.search(lines[j]) or _OPP_DONE_RE.search(lines[j]):
+                    break  # entered next opportunity block
             completed.append({
-                "ticker": started[-1]["ticker"],
+                "ticker": trig_ticker,
                 "ts": line[:19],
-                "summary": f"{m2['n_pos']} pos, {m2['cash']}% cash",
+                "summary": f"{action_part} · port {m2['n_pos']}pos {m2['cash']}%c",
             })
 
     # Reconcile: mark status
