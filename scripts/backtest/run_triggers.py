@@ -182,17 +182,18 @@ async def run_triggers(
     filing_cache = FilingCache(PROJECT_ROOT / "data" / "cache" / "filings")
     akshare_cache = AkShareCache(PROJECT_ROOT / "data" / "cache" / "akshare")
 
-    # Decide concurrency. Priority: arg > env > default 3.
-    # Rationale: 3× throughput without oversaturating LLM quota.
-    # Each trigger spins up ~14 agents internally, so 3 concurrent =
-    # up to ~42 in-flight LLM calls at peak. MiniMax 1500/5h comfortably
-    # handles this; if quota block hits, our poll logic handles it.
+    # Decide concurrency. Priority: arg > env > default 10.
+    # Matches the main scan's pipeline_concurrency=10 default. Each trigger
+    # internally runs ~14 agents (some in parallel), so peak in-flight calls
+    # can be high; the 2056 polling path absorbs quota exhaustion when it
+    # hits, so this mostly trades off "burn quota fast then wait" vs
+    # "trickle out at low throughput".
     if concurrency is None:
         import os as _os
         try:
-            concurrency = int(_os.getenv("OPPORTUNITY_TRIGGER_CONCURRENCY", "3"))
+            concurrency = int(_os.getenv("OPPORTUNITY_TRIGGER_CONCURRENCY", "10"))
         except ValueError:
-            concurrency = 3
+            concurrency = 10
     concurrency = max(1, concurrency)
 
     eligible = [
