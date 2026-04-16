@@ -121,17 +121,15 @@ class LLMClient:
             "max_tokens": max_tokens,
             "temperature": self._temperature,
         }
-        # Tool choice: force specific tool when possible, but Qwen's thinking
-        # mode rejects {type:"tool"} or {type:"any"} with 400
-        # "InternalError.Algo.InvalidParameter". Use {type:"auto"} for qwen
-        # and rely on the system prompt to make the model pick the tool.
-        if tools:
-            if self.provider == "qwen":
-                kwargs["tool_choice"] = {"type": "auto"}
-            elif len(tools) == 1:
-                kwargs["tool_choice"] = {"type": "tool", "name": tools[0]["name"]}
-            else:
-                kwargs["tool_choice"] = {"type": "any"}
+        # Force specific tool if exactly one tool is provided.
+        # Qwen thinking mode SOMETIMES rejects {type:"tool"} or {type:"any"}
+        # with "InvalidParameter: tool_choice ... not supported in thinking
+        # mode". We handle that via a one-shot fallback to tool_choice=auto
+        # in the retry loop below, not by pre-emptively weakening it.
+        if len(tools) == 1:
+            kwargs["tool_choice"] = {"type": "tool", "name": tools[0]["name"]}
+        elif tools:
+            kwargs["tool_choice"] = {"type": "any"}
         # Provider-specific parameters (e.g., MiniMax context_window, effort)
         if self._extra_body:
             kwargs["extra_body"] = self._extra_body
@@ -189,6 +187,22 @@ class LLMClient:
                 _stats["retries"] += 1
                 status = e.status_code if hasattr(e, "status_code") else 429
                 err_msg = str(e)
+
+                # Qwen thinking-mode tool_choice incompatibility: if DashScope
+                # rejects our {type:"tool"} or {type:"any"} with the specific
+                # thinking-mode error, retry once with tool_choice=auto and
+                # let the system prompt direct the model to use the tool.
+                if (self.provider == "qwen"
+                        and status == 400
+                        and "tool_choice" in err_msg
+                        and ("thinking mode" in err_msg or "InvalidParameter" in err_msg)
+                        and kwargs.get("tool_choice", {}).get("type") != "auto"):
+                    logger.warning(
+                        "Qwen thinking-mode rejected tool_choice=%s; retrying with auto",
+                        kwargs.get("tool_choice"),
+                    )
+                    kwargs["tool_choice"] = {"type": "auto"}
+                    continue
 
                 # MiniMax usage limit (error code 2056): short-poll until the
                 # quota refills. No schedule assumption — works for any plan.
