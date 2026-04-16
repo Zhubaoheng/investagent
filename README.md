@@ -115,11 +115,12 @@ Profile 前缀可以是**任意名字**——`scripts/llm_diag.py` 会自动发�
 
 ```python
 import asyncio
+from dotenv import load_dotenv
 from poorcharlie.config import create_llm_client
 from poorcharlie.schemas.company import CompanyIntake
 from poorcharlie.workflow.orchestrator import run_pipeline
 
-# 无参时按 LLM_DEFAULT_PROFILE 读对应的 profile
+load_dotenv()  # 读 .env 里的 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL
 llm = create_llm_client()
 
 intake = CompanyIntake(ticker="600519", name="贵州茅台", exchange="SSE", sector="食品饮料")
