@@ -4,6 +4,40 @@
 
 **不是股价预测工具。** 只判断一家公司是否值得深入研究、公开信息能否支撑分析、风险回报是否达标。
 
+## 回测结果（2023-11 → 2026-04）
+
+![净值曲线](docs/backtest/nav_curve.png)
+
+| 指标 | PoorCharlie | 沪深 300 |
+|------|:-----------:|:--------:|
+| 累计收益 | **+31.5%** | +32.4% |
+| 年化收益（CAGR） | 11.8% | — |
+| 年化波动率 | 19.3% | — |
+| Sharpe Ratio | 0.51 | — |
+| 最大回撤 | -17.7% | — |
+| Alpha | +0.95% | — |
+| Beta | 0.87 | — |
+
+> 回测条件：¥1000 万初始资金，A 股 Top 1000 市值，5 次定期扫描（S0-S4）+ 估值触发。100 股整手交易，含佣金 0.025%/印花税 0.05%/滑点 0.1%。LLM: MiniMax-M2.7。
+
+<details>
+<summary>持仓变化 / 交易量 / 回撤图</summary>
+
+![持仓变化](docs/backtest/holdings_timeline.png)
+![交易量](docs/backtest/trade_volume.png)
+![回撤](docs/backtest/drawdown.png)
+
+</details>
+
+<details>
+<summary>交割单（237 笔）</summary>
+
+完整交割单：[`docs/backtest/trade_log.csv`](docs/backtest/trade_log.csv)
+
+详细回测报告：[`docs/backtest/report.md`](docs/backtest/report.md)
+
+</details>
+
 ## 部署
 
 ```bash
@@ -230,9 +264,9 @@ uv run python scripts/backtest/run_backtest.py
 |------|------|
 | 单只上限 | 20% |
 | 单行业上限 | 35% |
-| 无 INVESTABLE 时最低现金 | 50% |
+| 无 INVESTABLE 时最低现金 | 30% |
 | 新建仓 WATCHLIST | 最多 5%（极特殊情况） |
-| 已持仓 label 降级 | 不触发减仓（buy/hold 分离） |
+| 已持仓 label 降级 | 不触发减仓（quality 恶化 + MoS < 5% 才减） |
 
 **分红处理**：使用前复权（qfq）价格，分红收益已隐含在价格涨跌中，无需额外处理。
 
@@ -291,11 +325,13 @@ Part 1: 公司研究（单公司分析）
       6. Critic（魔鬼代言人）
       7. Investment Committee（最终裁决）
 
-Part 2: 投资决策（组合级）
+Part 2: 投资决策（组合级，三层架构）
 ──────────────────────────
   CandidateStore（候选池持久化，跨扫描周期演进）
-  → CrossComparisonAgent（横向对比："只能选 10 只，选哪些？"）
-  → PortfolioStrategyAgent（BUY/HOLD/ADD/REDUCE/EXIT + 仓位分配）
+  → Layer 1: IndustryScreeningAgent（按申万 L1 行业分组，并行筛选）
+             同行业深度对比：周期位置、竞争格局、谁能活过洗牌
+  → Layer 2: CrossComparisonAgent（跨行业终选，附带行业级 insight）
+  → Layer 3: PortfolioStrategyAgent（BUY/HOLD/ADD/REDUCE/EXIT + 仓位分配）
   → 输出 {ticker: weight}（供报告和回测消费）
 ```
 

@@ -45,6 +45,38 @@ def _quota_max_wait_seconds(provider: str) -> int:
             pass
     return _DEFAULT_QUOTA_MAX_WAIT_S
 
+
+class _QuotaGate:
+    """Process-wide quota coordination for a single provider.
+
+    Problem: when the pipeline runs N concurrent LLM calls and hits a
+    provider quota limit (e.g., MiniMax 2056), each call independently
+    sleeps poll_s and retries — a thundering herd that:
+    1. Spams logs with N "polling" lines per poll window.
+    2. Wakes all N calls simultaneously, which may immediately re-trip
+       the rate limit when quota partially refills.
+
+    Fix: only ONE caller ("prober") probes at a time. When the probe
+    succeeds, it sets `healthy` and all waiters wake and retry their
+    own calls. Failed probes (non-quota errors) release the prober
+    slot so the next caller takes over.
+    """
+
+    def __init__(self) -> None:
+        self.healthy = asyncio.Event()
+        self.healthy.set()
+        self.prober_active = False
+
+
+_quota_gates: dict[str, _QuotaGate] = {}
+
+
+def _get_quota_gate(provider: str) -> _QuotaGate:
+    if provider not in _quota_gates:
+        _quota_gates[provider] = _QuotaGate()
+    return _quota_gates[provider]
+
+
 # Cumulative LLM call stats (thread-safe for asyncio single-thread)
 _stats = {
     "calls": 0,
@@ -149,6 +181,19 @@ class LLMClient:
         # Quota polling does NOT consume a retry attempt — it's a separate
         # dimension bounded by quota_cum_wait_s vs max_wait.
         quota_cum_wait_s = 0
+        is_prober = False  # set to True when this call has taken the probing role
+        gate = _get_quota_gate(self.provider)
+
+        # Before firing, block if another concurrent call has already detected
+        # quota exhaustion. Only one prober probes; everyone else waits here.
+        if not gate.healthy.is_set():
+            t_wait = time.time()
+            await gate.healthy.wait()
+            logger.info(
+                "LLM %s: quota gate released after %.0fs, retrying",
+                self.provider, time.time() - t_wait,
+            )
+
         attempt = 0
         while attempt < _MAX_ATTEMPTS:
             _stats["calls"] += 1
@@ -180,6 +225,15 @@ class LLMClient:
                         _stats["total_latency"] / _stats["successes"],
                     )
 
+                # If I was probing and just succeeded, quota is back — wake everyone.
+                if is_prober:
+                    gate.prober_active = False
+                    gate.healthy.set()
+                    logger.info(
+                        "LLM %s: prober succeeded, quota gate opened",
+                        self.provider,
+                    )
+
                 return resp
 
             except (anthropic.RateLimitError, anthropic.APIStatusError) as e:
@@ -204,37 +258,31 @@ class LLMClient:
                     kwargs["tool_choice"] = {"type": "auto"}
                     continue
 
-                # MiniMax usage limit (error code 2056): short-poll until the
-                # quota refills. No schedule assumption — works for any plan.
-                # Cap cumulative wait so a permanently-dry account fails loudly.
+                # MiniMax usage limit (error code 2056): coordinate via shared
+                # gate so only ONE caller probes while others wait. Prevents
+                # the thundering-herd pattern where N concurrent calls each
+                # independently sleep and wake together.
                 if self.provider == "minimax" and (
                     "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
                 ):
-                    poll_s = _quota_poll_seconds(self.provider)
-                    max_wait = _quota_max_wait_seconds(self.provider)
-                    if quota_cum_wait_s + poll_s > max_wait:
-                        _stats["errors"] += 1
-                        logger.error(
-                            "LLM quota still exhausted after %.1fmin cumulative "
-                            "wait (cap %.1fmin) — giving up this call.",
-                            quota_cum_wait_s / 60, max_wait / 60,
-                        )
-                        raise
-                    quota_cum_wait_s += poll_s
-                    logger.warning(
-                        "LLM usage limit (2056), polling again in %ds (total waited %.0fmin)",
-                        poll_s, quota_cum_wait_s / 60,
+                    extra_wait, is_prober, give_up = await self._handle_quota_exhausted(
+                        gate, quota_cum_wait_s, is_prober,
                     )
-                    await asyncio.sleep(poll_s)
+                    if give_up:
+                        _stats["errors"] += 1
+                        raise
+                    quota_cum_wait_s += extra_wait
                     continue  # retry without counting as failure
 
                 # Non-retryable API errors (4xx except 429)
                 if isinstance(e, anthropic.APIStatusError) and status not in (429, 529):
                     _stats["errors"] += 1
                     logger.error("LLM API error %s after %.1fs: %s", status, latency, e)
+                    self._release_prober_if_held(gate, is_prober)
                     raise
                 if attempt == _MAX_ATTEMPTS - 1:
                     _stats["errors"] += 1
+                    self._release_prober_if_held(gate, is_prober)
                     raise
                 # Rate limit: backoff
                 wait = min(30 * (attempt + 1), 1800)
@@ -254,6 +302,7 @@ class LLMClient:
                         "LLM call timeout after %ds (attempt %d/%d) | input~%dchars",
                         _CALL_TIMEOUT, attempt + 1, _MAX_ATTEMPTS, input_chars,
                     )
+                    self._release_prober_if_held(gate, is_prober)
                     raise
                 logger.warning(
                     "LLM call timeout after %ds, retrying (attempt %d/%d) | input~%dchars",
@@ -266,26 +315,17 @@ class LLMClient:
                 _stats["retries"] += 1
                 err_msg = str(e)
 
-                # MiniMax usage limit (error code 2056): short-poll until refill.
+                # MiniMax usage limit (error code 2056): coordinate via shared gate.
                 if self.provider == "minimax" and (
                     "2056" in err_msg or "usage limit exceeded" in err_msg.lower()
                 ):
-                    poll_s = _quota_poll_seconds(self.provider)
-                    max_wait = _quota_max_wait_seconds(self.provider)
-                    if quota_cum_wait_s + poll_s > max_wait:
-                        _stats["errors"] += 1
-                        logger.error(
-                            "LLM quota still exhausted after %.1fmin cumulative "
-                            "wait (cap %.1fmin) — giving up this call.",
-                            quota_cum_wait_s / 60, max_wait / 60,
-                        )
-                        raise
-                    quota_cum_wait_s += poll_s
-                    logger.warning(
-                        "LLM usage limit (2056), polling again in %ds (total waited %.0fmin)",
-                        poll_s, quota_cum_wait_s / 60,
+                    extra_wait, is_prober, give_up = await self._handle_quota_exhausted(
+                        gate, quota_cum_wait_s, is_prober,
                     )
-                    await asyncio.sleep(poll_s)
+                    if give_up:
+                        _stats["errors"] += 1
+                        raise
+                    quota_cum_wait_s += extra_wait
                     continue
 
                 if attempt == _MAX_ATTEMPTS - 1:
@@ -294,6 +334,7 @@ class LLMClient:
                         "LLM failed after %d attempts: %s: %s | input~%dchars",
                         _MAX_ATTEMPTS, type(e).__name__, e, input_chars,
                     )
+                    self._release_prober_if_held(gate, is_prober)
                     raise
                 # Timeout/connection error: retry immediately (no backoff)
                 logger.warning(
@@ -304,3 +345,83 @@ class LLMClient:
                 attempt += 1
 
         raise RuntimeError("Unreachable")
+
+    @staticmethod
+    def _release_prober_if_held(gate: _QuotaGate, is_prober: bool) -> None:
+        """Release the prober slot so other waiters can retry.
+
+        Called before every `raise` that exits the retry loop. If this
+        coroutine held the prober role and is about to bail out, we must
+        unblock everyone else — otherwise they deadlock on `gate.healthy`.
+        """
+        if is_prober:
+            gate.prober_active = False
+            gate.healthy.set()
+
+    async def _handle_quota_exhausted(
+        self,
+        gate: _QuotaGate,
+        quota_cum_wait_s: int,
+        is_prober: bool,
+    ) -> tuple[int, bool, bool]:
+        """Coordinate multi-caller behavior on quota-exhaustion (2056).
+
+        Returns (extra_wait_seconds, new_is_prober_flag, should_give_up).
+
+        Semantics:
+        - First caller to hit 2056 becomes the prober: sleeps poll_s, then
+          retries its own call (which acts as the probe).
+        - Subsequent callers await `gate.healthy` without making API calls,
+          so the provider sees only the prober's traffic during exhaustion.
+        - On probe success (see the success branch in create_message), the
+          prober sets `gate.healthy` — all waiters wake and retry their
+          own calls with fresh quota.
+        - If cumulative wait exceeds the per-call cap, this caller gives
+          up; if it was the prober, the role is released for the next
+          caller to take over.
+        """
+        poll_s = _quota_poll_seconds(self.provider)
+        max_wait = _quota_max_wait_seconds(self.provider)
+
+        if quota_cum_wait_s + poll_s > max_wait:
+            # Free the prober slot AND wake everyone else so they can retry.
+            # Correct intuition: we don't know if quota is still exhausted; if
+            # one waiter wakes and succeeds, it takes over the healthy signal.
+            # Otherwise the next failure will re-clear and elect a new prober.
+            self._release_prober_if_held(gate, is_prober)
+            logger.error(
+                "LLM %s quota still exhausted after %.1fmin cumulative "
+                "wait (cap %.1fmin) — giving up this call.",
+                self.provider, quota_cum_wait_s / 60, max_wait / 60,
+            )
+            return 0, is_prober, True
+
+        gate.healthy.clear()
+        if is_prober or not gate.prober_active:
+            # Take the prober role if we don't already have it.
+            if not is_prober:
+                gate.prober_active = True
+                is_prober = True
+                logger.warning(
+                    "LLM %s quota exhausted (2056), I'm the prober — "
+                    "polling every %ds; other calls will wait on the gate",
+                    self.provider, poll_s,
+                )
+            else:
+                logger.warning(
+                    "LLM %s: prober still blocked (total waited %.0fmin), "
+                    "sleeping another %ds",
+                    self.provider, quota_cum_wait_s / 60, poll_s,
+                )
+            await asyncio.sleep(poll_s)
+            return poll_s, is_prober, False
+
+        # Someone else is probing — wait for their verdict (no API call).
+        t_wait = time.time()
+        await gate.healthy.wait()
+        waited = time.time() - t_wait
+        logger.info(
+            "LLM %s: woken by prober after %.0fs, retrying own call",
+            self.provider, waited,
+        )
+        return int(waited), is_prober, False

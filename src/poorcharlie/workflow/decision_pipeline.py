@@ -1,18 +1,30 @@
-"""Part 2 Decision Pipeline — candidate pool → cross-comparison → portfolio strategy.
+"""Part 2 Decision Pipeline — layered cross-comparison → portfolio strategy.
 
-Chains CandidateStore, CrossComparisonAgent, and PortfolioStrategyAgent
-into a single async pipeline. Output is {ticker: target_weight} compatible
-with both overnight reports and backtest replay.
+Three-layer architecture:
+  Layer 1: Industry screening (parallel) — within-industry deep comparison
+  Layer 2: Cross-comparison — cross-industry final ranking
+  Layer 3: Portfolio strategy — weight allocation
+
+Chains CandidateStore, IndustryScreeningAgent, CrossComparisonAgent, and
+PortfolioStrategyAgent. Output is {ticker: target_weight} compatible with
+both overnight reports and backtest replay.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from collections import defaultdict
 from datetime import date
+from typing import Any
 
 from poorcharlie.agents.cross_comparison import (
     CrossComparisonAgent,
     CrossComparisonInput,
+)
+from poorcharlie.agents.industry_screening import (
+    IndustryScreeningAgent,
+    IndustryScreeningInput,
 )
 from poorcharlie.agents.portfolio_strategy import (
     PortfolioStrategyAgent,
@@ -26,19 +38,137 @@ from poorcharlie.store.candidate_store import CandidateStore
 
 logger = logging.getLogger(__name__)
 
+# Groups smaller than this skip Layer 1 (auto-advance all)
+_MIN_GROUP_FOR_SCREENING = 3
+
+
+def _build_industry_map() -> dict[str, str]:
+    """Fetch Shenwan L1 industry classification: ticker -> industry name."""
+    import time
+    try:
+        import akshare as ak
+        ind = ak.sw_index_first_info()
+        industry_map: dict[str, str] = {}
+        for _, row in ind.iterrows():
+            code = str(row["行业代码"])
+            name = str(row["行业名称"])
+            try:
+                cons = ak.sw_index_third_cons(symbol=code)
+                for _, c in cons.iterrows():
+                    raw = str(c["股票代码"]).split(".")[0].zfill(6)
+                    if raw not in industry_map:
+                        industry_map[raw] = name
+            except Exception:
+                pass
+            time.sleep(0.15)
+        logger.info("Shenwan L1 industry map: %d tickers, %d industries",
+                     len(industry_map), len(set(industry_map.values())))
+        return industry_map
+    except Exception:
+        logger.warning("Failed to build industry map, falling back to single-layer",
+                       exc_info=True)
+        return {}
+
+
+def _group_by_industry(
+    candidates: list, industry_map: dict[str, str],
+) -> dict[str, list]:
+    """Group candidates by Shenwan L1 industry."""
+    groups: dict[str, list] = defaultdict(list)
+    for c in candidates:
+        ind = industry_map.get(c.ticker, "其他")
+        groups[ind].append(c)
+    return dict(groups)
+
+
+async def _run_layer1(
+    groups: dict[str, list],
+    llm: LLMClient,
+) -> tuple[list[dict], list[dict]]:
+    """Layer 1: parallel within-industry screening.
+
+    Returns (survivors_as_dicts, industry_insights).
+    Small groups (< _MIN_GROUP_FOR_SCREENING) auto-advance.
+    """
+    survivors: list[dict] = []
+    industry_insights: list[dict] = []
+
+    async def _screen_group(industry: str, group_candidates: list) -> None:
+        if len(group_candidates) < _MIN_GROUP_FOR_SCREENING:
+            # Auto-advance small groups
+            for c in group_candidates:
+                survivors.append(c.model_dump(mode="json"))
+            industry_insights.append({
+                "industry": industry,
+                "insight": f"{len(group_candidates)} 只标的，数量过少跳过行业筛选",
+                "cycle": "UNKNOWN",
+            })
+            logger.info("Layer 1 [%s]: %d candidates, auto-advance (< %d)",
+                         industry, len(group_candidates), _MIN_GROUP_FOR_SCREENING)
+            return
+
+        logger.info("Layer 1 [%s]: screening %d candidates", industry, len(group_candidates))
+        agent = IndustryScreeningAgent(llm)
+        screening_input = IndustryScreeningInput(
+            industry_name=industry,
+            candidates=[c.model_dump(mode="json") for c in group_candidates],
+        )
+        try:
+            output = await agent.run(screening_input)
+        except Exception:
+            logger.warning("Layer 1 [%s] failed, auto-advancing all", industry, exc_info=True)
+            for c in group_candidates:
+                survivors.append(c.model_dump(mode="json"))
+            return
+
+        industry_insights.append({
+            "industry": industry,
+            "insight": output.group_insight,
+            "cycle": output.cycle_assessment,
+        })
+
+        # Collect survivors: advance=True and not hard-excluded
+        excluded = set(output.hard_exclusions)
+        advanced = 0
+        for rc in output.ranked_candidates:
+            if rc.ticker in excluded:
+                continue
+            if not rc.advance:
+                continue
+            # Find original candidate data to pass forward
+            orig = next((c for c in group_candidates if c.ticker == rc.ticker), None)
+            if orig is None:
+                continue
+            d = orig.model_dump(mode="json")
+            d["_layer1_conviction"] = rc.conviction_score
+            d["_layer1_strengths"] = rc.strengths_in_group
+            survivors.append(d)
+            advanced += 1
+
+        logger.info(
+            "Layer 1 [%s]: %d/%d advanced | cycle=%s | %s",
+            industry, advanced, len(group_candidates),
+            output.cycle_assessment, output.group_insight[:80],
+        )
+
+    # Run all groups in parallel
+    await asyncio.gather(*[
+        _screen_group(ind, grp) for ind, grp in groups.items()
+    ])
+
+    return survivors, industry_insights
+
 
 async def run_decision_pipeline(
     store: CandidateStore,
     llm: LLMClient,
     scan_date: date | None = None,
 ) -> dict[str, float]:
-    """Run Part 2 decision pipeline.
+    """Run the full layered decision pipeline.
 
-    1. Load actionable candidates from store
-    2. Run CrossComparisonAgent (if >= 2 candidates)
-    3. Run PortfolioStrategyAgent
-    4. Update store with new holdings
-    5. Return {ticker: target_weight}
+    Layer 1: Industry screening (parallel within-industry comparison)
+    Layer 2: Cross-comparison (cross-industry final ranking)
+    Layer 3: Portfolio strategy (weight allocation)
     """
     candidates = store.get_actionable_candidates()
     logger.info("Decision pipeline: %d actionable candidates", len(candidates))
@@ -49,18 +179,48 @@ async def run_decision_pipeline(
         store.save()
         return {}
 
-    # Build candidate detail lookup (for PortfolioStrategyAgent)
     candidate_details = {
         c.ticker: c.model_dump(mode="json") for c in candidates
     }
 
+    # Separate HELD positions (bypass Layer 1)
+    held_tickers = {h.ticker for h in store.get_current_holdings()}
+    new_candidates = [c for c in candidates if c.ticker not in held_tickers]
+    held_candidates = [c for c in candidates if c.ticker in held_tickers]
+
     # ------------------------------------------------------------------
-    # Step 1: Cross-comparison (skip if only 1 candidate)
+    # Layer 1: Industry screening (parallel)
     # ------------------------------------------------------------------
-    if len(candidates) >= 2:
-        logger.info("Running CrossComparisonAgent on %d candidates", len(candidates))
+    industry_map = _build_industry_map()
+    if industry_map and len(new_candidates) >= _MIN_GROUP_FOR_SCREENING:
+        groups = _group_by_industry(new_candidates, industry_map)
+        logger.info("Layer 1: %d new candidates in %d industry groups",
+                     len(new_candidates), len(groups))
+
+        survivors, industry_insights = await _run_layer1(groups, llm)
+        logger.info("Layer 1 complete: %d survivors from %d candidates",
+                     len(survivors), len(new_candidates))
+    else:
+        # Fallback: skip Layer 1
+        if not industry_map:
+            logger.warning("No industry map — falling back to single-layer comparison")
+        survivors = [c.model_dump(mode="json") for c in new_candidates]
+        industry_insights = []
+
+    # Add HELD candidates (bypassed Layer 1)
+    for c in held_candidates:
+        survivors.append(c.model_dump(mode="json"))
+    logger.info("Layer 2 input: %d candidates (%d from Layer 1 + %d HELD)",
+                 len(survivors), len(survivors) - len(held_candidates), len(held_candidates))
+
+    # ------------------------------------------------------------------
+    # Layer 2: Cross-comparison
+    # ------------------------------------------------------------------
+    if len(survivors) >= 2:
+        logger.info("Running CrossComparisonAgent (Layer 2) on %d candidates", len(survivors))
         comparison_input = CrossComparisonInput(
-            candidates=[c.model_dump(mode="json") for c in candidates],
+            candidates=survivors,
+            industry_insights=industry_insights,
         )
         comparison_agent = CrossComparisonAgent(llm)
         try:
@@ -71,29 +231,30 @@ async def run_decision_pipeline(
                     logger.warning("Concentration: %s", w)
         except Exception:
             logger.error(
-                "CrossComparison failed — preserving current holdings as-is "
-                "instead of forcing a PortfolioStrategy rewrite (would almost "
-                "certainly cause unjustified churn).",
+                "CrossComparison failed — preserving current holdings.",
                 exc_info=True,
             )
-            # Safer fallback: don't pretend we have a ranking. Just return
-            # the current holdings unchanged; next scheduled scan can retry.
             store.save()
             return store.to_portfolio_decisions()
-    else:
-        c = candidates[0]
+    elif len(survivors) == 1:
+        c = survivors[0]
         ranked = [{
-            "ticker": c.ticker,
-            "name": c.name,
+            "ticker": c.get("ticker", ""),
+            "name": c.get("name", ""),
             "rank": 1,
             "conviction_score": 7,
             "strengths_vs_peers": [],
             "weaknesses_vs_peers": [],
             "portfolio_fit_notes": "唯一候选标的",
         }]
+    else:
+        logger.info("No survivors from Layer 1 — 100%% cash")
+        store.update_holdings([], scan_date=scan_date)
+        store.save()
+        return {}
 
     # ------------------------------------------------------------------
-    # Step 2: Portfolio strategy
+    # Layer 3: Portfolio strategy
     # ------------------------------------------------------------------
     current_holdings = store.get_current_holdings()
     current_weight = sum(h.target_weight for h in current_holdings)
@@ -114,7 +275,7 @@ async def run_decision_pipeline(
         available_cash_pct=1.0 - current_weight,
     )
 
-    logger.info("Running PortfolioStrategyAgent")
+    logger.info("Running PortfolioStrategyAgent (Layer 3)")
     strategy_agent = PortfolioStrategyAgent(llm)
     try:
         strategy_output = await strategy_agent.run(strategy_input)
@@ -124,10 +285,9 @@ async def run_decision_pipeline(
         return store.to_portfolio_decisions()
 
     # ------------------------------------------------------------------
-    # Step 3: Update store and return decisions
+    # Update store and return decisions
     # ------------------------------------------------------------------
     effective_date = scan_date or date.today()
-    # Preserve entry_price/date for existing holdings (don't reset on re-eval)
     existing_entries = {
         h.ticker: (h.entry_date, h.entry_price)
         for h in store.get_current_holdings()
@@ -140,11 +300,15 @@ async def run_decision_pipeline(
         prev_date, prev_price = existing_entries.get(d.ticker, (None, None))
         entry_date = prev_date or effective_date
         entry_price = prev_price if prev_price is not None else detail.get("scan_close_price")
+        # LLM sometimes returns percentages (15.0) instead of fractions (0.15)
+        weight = d.target_weight
+        if weight > 1.0:
+            weight = weight / 100.0
         new_holdings.append(PortfolioHolding(
             ticker=d.ticker,
             name=d.name,
             industry=detail.get("industry", ""),
-            target_weight=d.target_weight,
+            target_weight=weight,
             entry_date=entry_date,
             entry_reason=d.reason,
             entry_price=entry_price,
@@ -165,27 +329,3 @@ async def run_decision_pipeline(
                      d.target_weight * 100, d.reason)
 
     return allocations
-
-
-def _fallback_ranking(candidates: list) -> list[dict]:
-    """Simple deterministic ranking when CrossComparison fails."""
-    quality_order = {"GREAT": 0, "GOOD": 1, "AVERAGE": 2, "BELOW_AVERAGE": 3, "POOR": 4}
-
-    def sort_key(c):
-        q = quality_order.get(c.enterprise_quality, 5)
-        mos = c.margin_of_safety_pct if c.margin_of_safety_pct is not None else -100
-        return (q, -mos)
-
-    sorted_candidates = sorted(candidates, key=sort_key)
-    return [
-        {
-            "ticker": c.ticker,
-            "name": c.name,
-            "rank": i + 1,
-            "conviction_score": max(1, 8 - sort_key(c)[0]),
-            "strengths_vs_peers": [],
-            "weaknesses_vs_peers": [],
-            "portfolio_fit_notes": "",
-        }
-        for i, c in enumerate(sorted_candidates)
-    ]

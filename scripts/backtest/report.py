@@ -71,7 +71,7 @@ def generate_report(
     nav: pd.Series,
     benchmarks: dict[str, pd.Series],
     decisions: dict[str, dict],
-    trades: list[dict],
+    trades: dict,
     output_path: Path,
     params: dict | None = None,
 ) -> None:
@@ -124,22 +124,67 @@ def generate_report(
                 lines.append(f"- {ticker}: {weight:.0%}")
         lines.append("")
 
-    # Trade log
-    if trades:
-        lines.append("## Trade Log\n")
-        lines.append("| Date | Ticker | Action | Size | Price | PnL |")
-        lines.append("|------|--------|--------|------|-------|-----|")
-        for t in trades[:50]:  # limit to first 50
+    # Trade log: fills + closed round-trips
+    orders = trades.get("orders", []) if isinstance(trades, dict) else []
+    closed = trades.get("closed", []) if isinstance(trades, dict) else []
+    summary = trades.get("summary", {}) if isinstance(trades, dict) else {}
+
+    total_commission = sum(o.get("commission", 0.0) for o in orders)
+    total_buy_value = sum(o["value"] for o in orders if o.get("action") == "BUY")
+    total_sell_value = sum(
+        abs(o["value"]) for o in orders if o.get("action") == "SELL"
+    )
+
+    lines.append("## Trade Summary\n")
+    lines.append(f"- Total fills: {len(orders)} "
+                 f"(BUY: {sum(1 for o in orders if o.get('action') == 'BUY')}, "
+                 f"SELL: {sum(1 for o in orders if o.get('action') == 'SELL')})")
+    lines.append(f"- Total buy turnover: ¥{total_buy_value:,.0f}")
+    lines.append(f"- Total sell turnover: ¥{total_sell_value:,.0f}")
+    lines.append(f"- Total commission + taxes + slippage: ¥{total_commission:,.0f}")
+    lines.append(f"- Closed round-trips: {len(closed)} "
+                 f"(analyzer reports closed={summary.get('total_closed', '?')}, "
+                 f"open={summary.get('total_open', '?')})")
+    if closed:
+        total_net_pnl = sum(c["pnl_net"] for c in closed)
+        winners = [c for c in closed if c["pnl_net"] > 0]
+        losers = [c for c in closed if c["pnl_net"] < 0]
+        lines.append(f"- Closed net PnL: ¥{total_net_pnl:,.0f} "
+                     f"({len(winners)} winners, {len(losers)} losers)")
+    lines.append("")
+
+    if closed:
+        lines.append("## Closed Trades\n")
+        lines.append("| Date | Ticker | Size | Price | Value | Gross PnL | Net PnL |")
+        lines.append("|------|--------|------|-------|-------|-----------|---------|")
+        for c in closed:
             lines.append(
-                f"| {t.get('date', '')} | {t.get('ticker', '')} | "
-                f"{t.get('action', '')} | {t.get('size', '')} | "
-                f"{t.get('price', '')} | {t.get('pnl', '')} |"
+                f"| {c['date']} | {c['ticker']} | {c['size']} | "
+                f"{c['price']:.2f} | ¥{c['value']:,.0f} | "
+                f"¥{c['pnl_gross']:,.0f} | ¥{c['pnl_net']:,.0f} |"
+            )
+        lines.append("")
+
+    if orders:
+        lines.append("## All Fills\n")
+        lines.append("| Date | Ticker | Action | Size | Price | Value | Commission |")
+        lines.append("|------|--------|--------|------|-------|-------|------------|")
+        for o in orders:
+            lines.append(
+                f"| {o['date']} | {o['ticker']} | {o['action']} | "
+                f"{o['size']} | {o['price']:.2f} | ¥{o['value']:,.0f} | "
+                f"¥{o['commission']:.2f} |"
             )
         lines.append("")
 
     report_text = "\n".join(lines)
     (output_path / "report.md").write_text(report_text, encoding="utf-8")
     logger.info("Saved report to %s", output_path / "report.md")
+
+    # Also dump the raw fill log as JSON for external analysis.
+    with open(output_path / "fills.json", "w") as f:
+        json.dump({"orders": orders, "closed": closed, "summary": summary},
+                  f, indent=2, default=str)
 
     # Also save raw metrics as JSON
     with open(output_path / "metrics.json", "w") as f:

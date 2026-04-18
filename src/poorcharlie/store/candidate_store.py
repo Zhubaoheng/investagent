@@ -16,9 +16,17 @@ from poorcharlie.schemas.candidate import (
 
 logger = logging.getLogger(__name__)
 
-# Labels worth tracking in the candidate pool
+# Labels worth tracking in the candidate pool (stored in candidate_store.json)
 _ACTIONABLE_LABELS = frozenset({
     "INVESTABLE", "DEEP_DIVE", "WATCHLIST", "SPECIAL_SITUATION",
+})
+
+# Labels that enter the decision pipeline (cross-comparison + portfolio strategy).
+# WATCHLIST is excluded: it means "wait for better price" and is monitored
+# via valuation triggers instead. Only stocks the system considers buyable NOW
+# should compete for portfolio slots.
+_DECISION_LABELS = frozenset({
+    "INVESTABLE", "DEEP_DIVE", "SPECIAL_SITUATION",
 })
 
 
@@ -119,13 +127,17 @@ class CandidateStore:
     # ------------------------------------------------------------------
 
     def get_actionable_candidates(self) -> list[CandidateSnapshot]:
-        """Return candidates eligible for cross-comparison.
+        """Return candidates eligible for cross-comparison and portfolio construction.
 
-        Includes snapshots with actionable labels in ANALYZED or COMPARED state.
+        Two paths into the decision pipeline:
+        1. New candidates: only INVESTABLE/DEEP_DIVE (not WATCHLIST —
+           those are "wait for better price", monitored via triggers).
+        2. Held positions: always included regardless of label, because
+           portfolio_strategy needs to see them to decide HOLD/REDUCE/EXIT.
         """
         return [
             c for c in self._state.candidates.values()
-            if c.final_label in _ACTIONABLE_LABELS
+            if (c.final_label in _DECISION_LABELS or c.state == CandidateState.HELD)
             and c.state in (CandidateState.ANALYZED, CandidateState.COMPARED, CandidateState.HELD)
         ]
 

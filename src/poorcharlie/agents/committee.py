@@ -33,13 +33,23 @@ def _post_process_committee(
     output: CommitteeOutput,
     ctx: Any,
 ) -> CommitteeOutput:
-    """Deterministic label correction.
+    """Deterministic label correction — both downgrades AND upgrades.
 
     LLM consistently defaults to WATCHLIST regardless of upstream signals.
-    These rules enforce what the prompt asks but LLM doesn't deliver.
+    These rules enforce what the prompt asks but LLM doesn't deliver:
+
+    Downgrades (防呆):
+      POOR/BELOW_AVERAGE → REJECT
+      MoS < -50% + weak quality → REJECT
+      AVERAGE + hurdle not met → REJECT
+
+    Upgrades (防漏):
+      GREAT + CHEAP + hurdle met → INVESTABLE
+      GOOD + CHEAP + hurdle met + MoS > 20% → INVESTABLE
+      (GOOD|GREAT) + CHEAP + hurdle met (low MoS) → at least DEEP_DIVE
     """
-    # Extract upstream signals
     quality = ""
+    price_vs_value = ""
     mos = None
     hurdle = None
 
@@ -53,13 +63,14 @@ def _post_process_committee(
         val = ctx.get_result("valuation")
         mos = getattr(val, "margin_of_safety_pct", None)
         hurdle = getattr(val, "meets_hurdle_rate", None)
+        price_vs_value = getattr(val, "price_vs_value", "")
     except (KeyError, AttributeError):
         pass
 
     label = output.final_label
     original_label = label
 
-    # --- Hard REJECT only (防呆) ---
+    # --- Downgrades (防呆) ---
     if quality in ("POOR", "BELOW_AVERAGE"):
         label = FinalLabel.REJECT
     elif mos is not None and mos < -50 and quality in ("AVERAGE", "POOR", "BELOW_AVERAGE", ""):
@@ -67,10 +78,28 @@ def _post_process_committee(
     elif quality == "AVERAGE" and hurdle is False:
         label = FinalLabel.REJECT
 
+    # --- Upgrades (防漏) ---
+    # Only upgrade if we haven't just downgraded to REJECT, and the LLM
+    # gave a label weaker than what the hard criteria warrant.
+    if label != FinalLabel.REJECT and hurdle is True and price_vs_value == "CHEAP":
+        if quality == "GREAT":
+            # Prompt rule: "GREAT + CHEAP + hurdle → 默认 INVESTABLE"
+            if _LABEL_RANK.get(label, 0) < _LABEL_RANK[FinalLabel.INVESTABLE]:
+                label = FinalLabel.INVESTABLE
+        elif quality == "GOOD" and mos is not None and mos > 20:
+            # Prompt rule: "GOOD + CHEAP + hurdle → 可以 INVESTABLE"
+            # Require MoS > 20% as extra confirmation for non-GREAT quality.
+            if _LABEL_RANK.get(label, 0) < _LABEL_RANK[FinalLabel.INVESTABLE]:
+                label = FinalLabel.INVESTABLE
+        elif quality == "GOOD":
+            # GOOD + CHEAP + hurdle but thin MoS → at least DEEP_DIVE
+            if _LABEL_RANK.get(label, 0) < _LABEL_RANK[FinalLabel.DEEP_DIVE]:
+                label = FinalLabel.DEEP_DIVE
+
     if label != original_label:
         logger.info(
-            "Committee post-process: %s → %s (quality=%s mos=%s hurdle=%s)",
-            original_label.value, label.value, quality, mos, hurdle,
+            "Committee post-process: %s → %s (quality=%s pvv=%s mos=%s hurdle=%s)",
+            original_label.value, label.value, quality, price_vs_value, mos, hurdle,
         )
         return output.model_copy(update={"final_label": label})
     return output

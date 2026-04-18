@@ -43,6 +43,11 @@ class MungerStrategy(bt.Strategy):
         price_decisions={},
         cash_rates={},          # {year: annual_rate} for daily cash interest
         exec_days=EXEC_DAYS,    # days to spread execution over
+        # Ideal-execution mode: allow fractional shares (bypass A-share
+        # 100-share lot minimum) so small portfolios can hold high-priced
+        # stocks at their exact target weight. Combined with zero costs
+        # this produces a "paper" NAV showing allocation alpha only.
+        ideal_sizing=False,
     )
 
     def __init__(self):
@@ -50,6 +55,15 @@ class MungerStrategy(bt.Strategy):
         self.order_pending = {}      # ticker -> order object
         # Gradual execution queue: list of {ticker, daily_size, days_left, is_buy, weight}
         self._exec_queue: list[dict] = []
+        # Structured trade records — one entry per filled order (buy or sell)
+        # and one per closed round-trip. Consumed by the report generator.
+        self.order_log: list[dict] = []
+        self.closed_trades: list[dict] = []
+        # Decision dates that have already been dispatched. Prevents firing
+        # the same scan twice if its raw date falls on a non-trading day
+        # (weekend/holiday) and we defer to the next trading day.
+        self._dispatched_decisions: set[str] = set()
+        self._dispatched_price_decisions: set[str] = set()
 
     def log(self, txt: str) -> None:
         dt = self.datetime.date()
@@ -66,11 +80,33 @@ class MungerStrategy(bt.Strategy):
             daily_interest = cash * annual_rate / 365
             self.broker.add_cash(daily_interest)
 
-        # Check for new decisions → queue gradual execution
-        if today_str in self.p.decisions:
-            self._queue_rebalance(self.p.decisions[today_str])
-        elif today_str in self.p.price_decisions:
-            self._queue_rebalance(self.p.price_decisions[today_str])
+        # Check for new decisions → queue gradual execution.
+        # Decision dates may fall on weekends/holidays (A-share exchange
+        # closed). Dispatch any still-pending decision whose raw date is
+        # <= today. This yields "execute at next trading day" semantics.
+        for d_str, target in self.p.decisions.items():
+            if d_str in self._dispatched_decisions:
+                continue
+            if d_str <= today_str:
+                self._dispatched_decisions.add(d_str)
+                if d_str != today_str:
+                    self.log(
+                        f"Scan {d_str} falls on non-trading day; "
+                        f"dispatching at next open {today_str}"
+                    )
+                self._queue_rebalance(target)
+
+        for d_str, target in self.p.price_decisions.items():
+            if d_str in self._dispatched_price_decisions:
+                continue
+            if d_str <= today_str:
+                self._dispatched_price_decisions.add(d_str)
+                if d_str != today_str:
+                    self.log(
+                        f"Price trigger {d_str} falls on non-trading day; "
+                        f"dispatching at next open {today_str}"
+                    )
+                self._queue_rebalance(target)
 
         # Execute queued orders (daily slice)
         self._process_exec_queue()
@@ -106,11 +142,17 @@ class MungerStrategy(bt.Strategy):
             if abs(diff) < portfolio_value * 0.01:
                 continue  # skip tiny adjustments
 
-            total_size = int(abs(diff) / data.close[0] / 100) * 100
-            if total_size <= 0:
-                continue
-
-            daily_size = max(100, int(total_size / self.p.exec_days / 100) * 100)
+            if self.p.ideal_sizing:
+                # Fractional shares: exact target, no 100-lot rounding.
+                total_size = abs(diff) / data.close[0]
+                if total_size <= 0:
+                    continue
+                daily_size = total_size / self.p.exec_days
+            else:
+                total_size = int(abs(diff) / data.close[0] / 100) * 100
+                if total_size <= 0:
+                    continue
+                daily_size = max(100, int(total_size / self.p.exec_days / 100) * 100)
             is_buy = diff > 0
 
             self._exec_queue.append({
@@ -138,7 +180,7 @@ class MungerStrategy(bt.Strategy):
                 continue
 
             size = min(item["daily_size"], item["remaining_size"])
-            if size <= 0:
+            if size < 0.5:
                 continue
 
             if item["is_buy"]:
@@ -173,16 +215,44 @@ class MungerStrategy(bt.Strategy):
                 return data
         return None
 
+    def notify_order(self, order):
+        if order.status != order.Completed:
+            return
+        if abs(order.executed.size) < 0.5:
+            return
+        self.order_log.append({
+            "date": self.datetime.date().isoformat(),
+            "ticker": order.data._name,
+            "action": "BUY" if order.isbuy() else "SELL",
+            "size": int(order.executed.size),
+            "price": float(order.executed.price),
+            "value": float(order.executed.value),
+            "commission": float(order.executed.comm),
+        })
+
     def notify_trade(self, trade):
         if trade.isclosed:
             self.log(
                 f"TRADE CLOSED {trade.data._name}: "
                 f"PnL={trade.pnl:.2f} Net={trade.pnlcomm:.2f}"
             )
+            self.closed_trades.append({
+                "date": self.datetime.date().isoformat(),
+                "ticker": trade.data._name,
+                "pnl_gross": float(trade.pnl),
+                "pnl_net": float(trade.pnlcomm),
+                "size": int(trade.size),
+                "price": float(trade.price),
+                "value": float(trade.value),
+            })
 
 
 class BacktestCommission(bt.CommInfoBase):
-    """A-share commission: buy commission + sell commission + stamp tax."""
+    """A-share commission: buy commission + sell commission + stamp tax.
+
+    Set commission/stamp_tax/slippage to 0 via the `zero_cost` factory
+    to get a frictionless paper-NAV curve (pure allocation alpha).
+    """
 
     params = dict(
         commission=COMMISSION_RATE,
@@ -196,3 +266,8 @@ class BacktestCommission(bt.CommInfoBase):
         if size < 0:  # selling
             commission += abs(size) * price * self.p.stamp_tax
         return commission + slippage
+
+    @classmethod
+    def zero_cost(cls) -> "BacktestCommission":
+        """Frictionless mode: zero commission, zero stamp tax, zero slippage."""
+        return cls(commission=0.0, stamp_tax=0.0, slippage=0.0)

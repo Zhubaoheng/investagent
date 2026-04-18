@@ -18,6 +18,7 @@ from poorcharlie.schemas.cross_comparison import CrossComparisonOutput
 
 class CrossComparisonInput(BaseModel, frozen=True):
     candidates: list[dict] = []  # CandidateSnapshot summaries as dicts
+    industry_insights: list[dict] = []  # [{industry, insight, cycle}] from Layer 1
 
 
 class CrossComparisonAgent(BaseAgent):
@@ -71,8 +72,12 @@ class CrossComparisonAgent(BaseAgent):
             ind = c["industry"]
             industry_counts[ind] = industry_counts.get(ind, 0) + 1
 
+        industry_insights = data.industry_insights or []
+
         return {
             "candidates": candidates,
             "candidate_count": len(candidates),
             "industry_counts": industry_counts,
+            "has_industry_insights": bool(industry_insights),
+            "industry_insights": industry_insights,
         }

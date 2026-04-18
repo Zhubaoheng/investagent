@@ -36,6 +36,18 @@
 - {{ ind }}：{{ count }} 家
 {% endfor %}
 
+{% if has_industry_insights %}
+## 行业级分析（来自行业筛选层）
+
+以下标的已经过行业内部深度对比筛选，每个行业的核心判断如下：
+
+{% for g in industry_insights %}
+- **{{ g.industry }}**（周期：{{ g.cycle }}）：{{ g.insight }}
+{% endfor %}
+
+请在跨行业排序时参考以上判断——如果某行业被判为 PEAK（盈利峰值），该行业标的的估值吸引力应打折。
+{% endif %}
+
 ## 对比维度
 
 请从以下 5 个维度对候选标的进行横向对比：

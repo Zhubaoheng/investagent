@@ -32,17 +32,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger("backtest")
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "backtest"
+_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "full_backtest"
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "data" / "backtest_results"
 
-START_DATE = date(2024, 5, 1)
-END_DATE = date(2025, 9, 30)
+# Window covers the full SCAN_DATES range (S0 2023-11-18 → S4 2025-09-22)
+# and extends to today so we can observe buy-and-hold performance after the
+# final scan (no more decision updates = pure long-hold).
+START_DATE = date(2023, 11, 1)
+END_DATE = date.today()
 
 
-def _load_decisions() -> dict[str, dict[str, float]]:
+def _load_decisions(data_dir: Path) -> dict[str, dict[str, float]]:
     """Load all_decisions.json. Handles both v1.0 and v1.1 schemas."""
     from decision_schema import load_weights_only
-    decisions_file = DATA_DIR / "all_decisions.json"
+    decisions_file = data_dir / "all_decisions.json"
     if not decisions_file.exists():
         logger.error("No decisions file found at %s. Run run_precompute.py first.", decisions_file)
         return {}
@@ -80,28 +83,46 @@ def _build_nav_from_cerebro(cerebro, strategy, initial_cash: float) -> pd.Series
     return pd.Series(nav_values[1:], index=pd.DatetimeIndex(dt_index))
 
 
-def _extract_trades(strategy) -> list[dict]:
-    """Extract closed trade records from backtrader."""
-    trades = []
+def _extract_trades(strategy) -> dict:
+    """Return structured fill log and closed-trade PnL list from the strategy.
+
+    The strategy populates `order_log` (every BUY/SELL fill) and
+    `closed_trades` (each round-trip with PnL) via its notify_* hooks.
+    We also surface TradeAnalyzer's aggregate counters for cross-check.
+    """
+    analyzer_summary: dict[str, int] = {}
     try:
         analysis = strategy.analyzers.trades.get_analysis()
-        # TradeAnalyzer provides aggregate stats; individual trades come from notify_trade
-        # For now return summary stats
         total = analysis.get("total", {})
-        if total:
-            trades.append({
-                "type": "summary",
-                "total_closed": total.get("closed", 0),
-                "total_open": total.get("open", 0),
-            })
+        analyzer_summary = {
+            "total_closed": int(total.get("closed", 0)),
+            "total_open": int(total.get("open", 0)),
+        }
     except Exception:
         pass
-    return trades
+    return {
+        "orders": getattr(strategy, "order_log", []),
+        "closed": getattr(strategy, "closed_trades", []),
+        "summary": analyzer_summary,
+    }
 
 
-def run_backtest(initial_cash: float = 1_000_000) -> None:
-    """Execute the backtrader backtest."""
-    decisions = _load_decisions()
+def run_backtest(
+    initial_cash: float = 1_000_000,
+    data_dir: Path | None = None,
+    ideal: bool = False,
+) -> None:
+    """Execute the backtrader backtest.
+
+    Args:
+        initial_cash: starting cash in CNY.
+        data_dir: directory containing all_decisions.json.
+        ideal: if True, zero transaction costs AND fractional shares. The
+            resulting NAV curve reflects pure allocation alpha with no
+            A-share frictions (commission, stamp tax, slippage, 100-lot
+            minimums). Useful for isolating strategy signal quality.
+    """
+    decisions = _load_decisions(data_dir or _DEFAULT_DATA_DIR)
     if not decisions:
         return
 
@@ -110,7 +131,11 @@ def run_backtest(initial_cash: float = 1_000_000) -> None:
 
     cerebro = bt.Cerebro()
     cerebro.broker.setcash(initial_cash)
-    cerebro.broker.addcommissioninfo(BacktestCommission())
+    if ideal:
+        cerebro.broker.addcommissioninfo(BacktestCommission.zero_cost())
+        logger.info("IDEAL MODE: zero costs, fractional shares")
+    else:
+        cerebro.broker.addcommissioninfo(BacktestCommission())
 
     # Load price data for each ticker
     loaded = 0
@@ -142,7 +167,10 @@ def run_backtest(initial_cash: float = 1_000_000) -> None:
     cash_rates = {}
     for year in range(START_DATE.year, END_DATE.year + 1):
         cash_rates[year] = fetch_risk_free_rate(year)
-    cerebro.addstrategy(MungerStrategy, decisions=decisions, cash_rates=cash_rates)
+    cerebro.addstrategy(
+        MungerStrategy, decisions=decisions, cash_rates=cash_rates,
+        ideal_sizing=ideal,
+    )
     cerebro.addanalyzer(bt.analyzers.TimeReturn, _name="returns", timeframe=bt.TimeFrame.Days)
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="trades")
 
@@ -164,7 +192,7 @@ def run_backtest(initial_cash: float = 1_000_000) -> None:
     # Fetch benchmarks
     logger.info("Fetching benchmark data...")
     benchmarks: dict[str, pd.Series] = {}
-    for name, code in [("CSI 300", "000300"), ("Hang Seng", "HSI"), ("S&P 500", "SPX")]:
+    for name, code in [("CSI 300", "000300")]:
         try:
             bench = fetch_benchmark(code, START_DATE, END_DATE)
             if not bench.empty:
@@ -201,5 +229,18 @@ def run_backtest(initial_cash: float = 1_000_000) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run backtrader backtest replay")
     parser.add_argument("--initial-cash", type=float, default=1_000_000)
+    parser.add_argument(
+        "--data-dir", type=Path, default=_DEFAULT_DATA_DIR,
+        help="Directory containing all_decisions.json (default: data/full_backtest)",
+    )
+    parser.add_argument(
+        "--ideal", action="store_true",
+        help="Frictionless mode: zero transaction costs + fractional shares "
+             "(isolates allocation alpha from execution drag).",
+    )
     args = parser.parse_args()
-    run_backtest(initial_cash=args.initial_cash)
+    run_backtest(
+        initial_cash=args.initial_cash,
+        data_dir=args.data_dir,
+        ideal=args.ideal,
+    )

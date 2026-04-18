@@ -221,6 +221,19 @@ async def run_triggers(
         if outcome is None:
             continue
         allocations, meta = outcome
+
+        # Only write a decision if the triggered ticker actually entered
+        # the portfolio. If the pipeline rejected it (0% weight), the
+        # trigger produced no meaningful change — writing it as a decision
+        # point just duplicates the prior scan's record at a new date.
+        if ticker not in allocations or allocations.get(ticker, 0) <= 0:
+            logger.info(
+                "Opportunity %s on %s: rejected by pipeline (label=%s), "
+                "not writing decision record",
+                ticker, trigger_date, meta.get("pipeline_label", "?"),
+            )
+            continue
+
         rec = make_record(
             source="opportunity_trigger",
             weights=allocations,
@@ -229,12 +242,20 @@ async def run_triggers(
             trigger_ticker=ticker,
             trigger_reason=meta["trigger_reason"],
         )
-        all_decisions[trigger_date.isoformat()] = rec
-        logger.info(
-            "Opportunity %s on %s → %d positions, cash=%.1f%% (label=%s)",
-            ticker, trigger_date, len(allocations),
-            rec["cash"] * 100, meta["pipeline_label"],
-        )
+        date_key = trigger_date.isoformat()
+        existing = all_decisions.get(date_key)
+        if existing is not None and existing.get("source") == "scan":
+            logger.warning(
+                "Opportunity %s on %s skipped: scan record already owns this date",
+                ticker, trigger_date,
+            )
+        else:
+            all_decisions[date_key] = rec
+            logger.info(
+                "Opportunity %s on %s → %d positions, cash=%.1f%% (label=%s)",
+                ticker, trigger_date, len(allocations),
+                rec["cash"] * 100, meta["pipeline_label"],
+            )
         # Roll the baseline forward so the next trigger sees this
         # trigger's allocation as the starting point.
         new_baseline = trig_dir / "candidate_store.json"

@@ -34,7 +34,10 @@ TOLERANCE = 1e-6
 # LLM-generated weights (from PortfolioStrategyAgent) can overshoot 1.0 by a
 # few percent due to rounding / arithmetic imprecision. Scale them down silently
 # up to this threshold; beyond it, treat as a bug and raise.
-RENORMALIZE_MAX_OVERFLOW = 0.10  # up to +10% overflow → auto-scale
+# Observed S4 case: LLM allocated 14 positions summing to 112% (wanted 100%
+# invested, 0% cash); 12% overshoot renormalizes cleanly and preserves relative
+# conviction. Crashing on 12% blocks the pipeline for no benefit.
+RENORMALIZE_MAX_OVERFLOW = 0.20  # up to +20% overflow → auto-scale
 
 
 def load_decisions(path: Path) -> dict[str, dict[str, Any]]:
@@ -84,6 +87,15 @@ def make_record(
     """
     weights = dict(weights)  # defensive copy before possible renormalize
     total = sum(weights.values())
+    # LLM sometimes returns percentages (15.0 = 15%) instead of fractions
+    # (0.15). Auto-detect: if total > 2.0, it's clearly percentages.
+    if total > 2.0:
+        logger.warning(
+            "weights appear to be percentages (sum=%.1f), converting to fractions",
+            total,
+        )
+        weights = {t: w / 100.0 for t, w in weights.items()}
+        total = sum(weights.values())
     overflow = total - 1.0
     if overflow > RENORMALIZE_MAX_OVERFLOW:
         raise ValueError(

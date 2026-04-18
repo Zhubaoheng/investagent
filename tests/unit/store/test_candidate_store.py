@@ -71,10 +71,11 @@ class TestCandidateStore:
         store = CandidateStore(tmp_path / "store.json")
         store.ingest_scan_results(_sample_results(), date(2024, 5, 6))
 
-        # Only INVESTABLE + WATCHLIST kept (not REJECT, TOO_HARD)
+        # Only INVESTABLE + DEEP_DIVE enter decision pipeline
+        # (WATCHLIST monitored via triggers, not cross-comparison)
         actionable = store.get_actionable_candidates()
         tickers = {c.ticker for c in actionable}
-        assert tickers == {"600519", "000858"}
+        assert tickers == {"600519"}  # 000858 is WATCHLIST → excluded
 
     def test_ingest_snapshot_fields(self, tmp_path: Path):
         store = CandidateStore(tmp_path / "store.json")
@@ -112,15 +113,16 @@ class TestCandidateStore:
     def test_ingest_removes_rejected(self, tmp_path: Path):
         store = CandidateStore(tmp_path / "store.json")
         store.ingest_scan_results(_sample_results(), date(2024, 5, 6))
-        assert len(store.get_actionable_candidates()) == 2
+        # Only INVESTABLE (600519) in decision pipeline; 000858 is WATCHLIST
+        assert len(store.get_actionable_candidates()) == 1
 
-        # Reject 五粮液 in next scan
+        # Reject 茅台 in next scan — should drop from actionable
         store.ingest_scan_results(
-            [{"ticker": "000858", "final_label": "REJECT"}],
+            [{"ticker": "600519", "final_label": "REJECT"}],
             date(2024, 9, 2),
         )
         tickers = {c.ticker for c in store.get_actionable_candidates()}
-        assert "000858" not in tickers
+        assert "600519" not in tickers
 
     def test_update_holdings(self, tmp_path: Path):
         store = CandidateStore(tmp_path / "store.json")
@@ -219,7 +221,8 @@ class TestCandidateStore:
 
         # Reload
         store2 = CandidateStore(path)
-        assert len(store2.get_actionable_candidates()) == 2
+        # 600519 is HELD → included; 000858 is WATCHLIST (not held) → excluded
+        assert len(store2.get_actionable_candidates()) == 1
         assert len(store2.get_current_holdings()) == 1
         assert store2.to_portfolio_decisions() == {"600519": 0.25}
 
