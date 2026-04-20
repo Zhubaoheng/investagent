@@ -133,6 +133,138 @@ class PortfolioOutput(BaseAgentOutput):
 2. **估值严重过高**：`price_vs_value` 变为 `EXPENSIVE`，安全边际为负且超过阈值
 3. **出现明显更好的机会**：候选标的性价比显著优于当前持仓
 
+### 4.7 Change-Triggered Rebalancing（变化触发的调仓）
+
+**问题**：扫描日不应该自动等于调仓日。芒格原则——*"Never interrupt compound interest unnecessarily."* 如果没有实质变化，组合应原样保留。
+
+**设计**：在调用 PortfolioStrategy LLM **之前**，由规则引擎（`workflow/change_detector.py`）检查是否存在任何"值得重新决策"的触发。若没有任何触发，直接返回上期组合权重，**完全跳过 LLM 调用**。
+
+**5 个触发条件**（任一命中即唤醒 LLM）：
+
+| 编号 | 触发名 | 检测逻辑 | 预期动作 |
+|------|--------|---------|---------|
+| T1 | `QUALITY_DOWNGRADE` | 任一已持仓标的 `enterprise_quality` 相比上期降级（按 GREAT > GOOD > AVERAGE > BELOW_AVERAGE > POOR 排序） | 考虑 REDUCE 或 EXIT |
+| T2 | `NEW_KILL_SHOT` | 任一已持仓标的 Critic 输出的 `kill_shots` 集合出现了**新增条目**（相比上期） | 严肃考虑 EXIT |
+| T3 | `ACCOUNTING_RED` | 任一已持仓标的的 `accounting_risk_level` 变为 `RED`（上期不是 RED） | 立即 EXIT |
+| T4 | `NEW_INVESTABLE` | 存在未持仓的标的 `final_label=INVESTABLE` 且上期不是 INVESTABLE | 评估是否建仓（可能需要减弱仓腾地方） |
+| T5 | `LABEL_REJECT` | 任一已持仓标的 `final_label` 降为 `REJECT` / `TOO_HARD` | EXIT |
+
+**冷启动例外**：若 `CandidateStore` 中没有任何候选的 `prev_scan_date`（即首次扫描），返回一个合成的 cold-start trigger，让 LLM 正常运行建仓逻辑。
+
+**持久化**：`CandidateSnapshot` 新增字段用于变化检测：
+- `kill_shots: list[str]` — 当期 Critic 输出
+- `accounting_risk_level: str` — 当期 AccountingRisk 输出（GREEN/YELLOW/RED）
+- `prev_final_label`, `prev_enterprise_quality`, `prev_kill_shots`, `prev_accounting_risk_level`, `prev_scan_date` — 上期值，由 `ingest_scan_results` 在覆盖前保留
+
+**LLM 端的配合**：当 change_detector 发现触发并唤醒 LLM 时，`PortfolioStrategyInput.change_triggers` 把触发列表传给 LLM，prompt 明确要求：
+> "默认动作是**维持上期组合不变**。只对 change_triggers 里明确列出的标的做调整。没有触发的持仓一律 HOLD 且保留上期 target_weight。"
+
+这条硬约束和 LLM 的默认"全面重估"倾向作对，确保即便 LLM 被唤醒，它也只动该动的部分。
+
+**结果**：大多数扫描日将发现"无触发" → 零 LLM 调用 → 零交易摩擦 → 复利不被打断。仅当市场/基本面发生实质变化时，系统才动作。
+
+### 4.8 持仓分级：CORE vs SATELLITE
+
+**问题**：当前系统对所有持仓用同一套卖出规则。但茅台和东航物流本质不同——前者是芒格说的"复利机器"，后者是周期机会。两者应该被**差异化保护**。
+
+**设计**：`PositionDecision` 新增 `position_tier: PositionTier`（`CORE` 或 `SATELLITE`），`PortfolioHolding` 同步持久化 tier。
+
+**CORE 的三条必要条件**（同时满足）：
+1. `enterprise_quality == GREAT`
+2. `final_label == INVESTABLE`
+3. 投资论点（thesis/strengths）明确描述护城河宽深、可持续、每年变宽——不是"还不错"而是"10年后依然稳固"
+
+**SATELLITE**：其他所有 `INVESTABLE / DEEP_DIVE / SPECIAL_SITUATION` 中不满足上述三条的标的。周期股、转机股、护城河中等的好生意、估值驱动的机会。
+
+**差异化卖出规则**：
+
+| 卖出原因 | CORE | SATELLITE |
+|---------|:------:|:-----------:|
+| 估值过贵（MoS 负、PE 高位） | **不卖** | 允许 REDUCE |
+| Committee label → WATCHLIST | **不卖** | 允许 REDUCE |
+| 出现更好的相对机会 | **不卖** | 允许轮换 |
+| quality → GOOD / AVERAGE | REDUCE 仓位但不 EXIT | REDUCE 或 EXIT |
+| quality → BELOW_AVERAGE / POOR | 允许 EXIT | EXIT |
+| Critic 非空 kill_shots | 允许 EXIT | EXIT |
+| AccountingRisk = RED | 立即 EXIT | 立即 EXIT |
+| label → REJECT / TOO_HARD | 允许 EXIT | EXIT |
+
+核心原则：**CORE 仓只因"公司永久性受损"卖出，绝不因"价格看起来贵"卖出。**
+
+**Post-process 防呆**（`agents/portfolio_strategy.py::_enforce_core_tier_rules`）：
+如果 LLM 把 `enterprise_quality != GREAT` 或 `final_label != INVESTABLE` 的标的标为 CORE，规则引擎自动降级为 SATELLITE。这防止 LLM 因乐观情绪滥用 CORE 分类。规则只降级不升级——升级完全是 LLM 的判断。
+
+**change_detector 的 tier 感知**：当持仓触发变化（QUALITY_DOWNGRADE / NEW_KILL_SHOT 等），trigger 的 `detail` 字段会带上 `[CORE]` 或 `[SATELLITE]` 前缀，传给 PortfolioStrategy LLM 和未来的 Trader Agent 使用。
+
+**为什么重要**：上一次回测的最大败笔是卖掉茅台（GREAT+INVESTABLE+WIDE_MOAT）去买格力、济川——这是典型的 CORE → SATELLITE 误配置。分级后，茅台这类标的只能在基本面永久恶化时才被卖出，避免"估值驱动的轮换"侵蚀复利。
+
+### 4.9 Trader Agent — Layer 4 执行裁决者
+
+**问题**：到上一步为止，PortfolioStrategy 给出的是"目标组合 + 分级"。但还缺一层——**这些决策应该怎么执行？什么节奏？当下市场环境是否适合立即动作？** 把投研职责和执行职责合在一个 LLM 里，会让基金经理替交易员操心，同时让交易员替基金经理做决策。这不符合机构投资的职责划分。
+
+**设计**：新增 Trader Agent 作为 Layer 4，位于 PortfolioStrategy 之后。采用**三层三明治架构**，和 Committee Agent 同样的 LLM + 规则混合模式：
+
+```
+PortfolioStrategy 输出 (proposed_decisions)
+  ↓
+Trader.pre_check（规则，零成本）
+  - CORE 仓 EXIT/REDUCE 硬阻断（若无 kill_shot / RED / 质量崩塌 / label 降级）
+  - 单一仓位 > 20% 截断
+  - 总权重 > 100% 归一化
+  - 被阻断的订单: action = BLOCKED, target_weight 回到当前持仓权重
+  ↓
+Trader.LLM（市场判断）
+  - market_regime: PANIC / NORMAL / EUPHORIA / UNKNOWN
+  - 每条订单打 urgency: IMMEDIATE / NORMAL / PATIENT
+  - market_assessment: 一句话市场环境概述
+  - execution_plan_summary: 整体执行计划
+  - **LLM 不能改变规则层设定的 action**
+  ↓
+Trader.post_check（规则兜底）
+  - 如果 LLM 试图把 BLOCKED 改回 EXIT → 强制改回 BLOCKED
+  - 如果 LLM 超仓位上限 → 截断
+  - 如果 LLM 漏了订单 → 从 pre_check 结果重建
+  - 如果 LLM 幻觉了新订单 → 丢弃
+  ↓
+TraderOutput（最终订单簿）
+```
+
+**规则层保护的边界（pre_check + post_check 双重防护）**：
+
+| 情形 | 规则层动作 |
+|------|-----------|
+| CORE 持仓 action=EXIT 且候选无 kill_shot/无 RED/quality 仍 GREAT/label 仍 INVESTABLE | action → BLOCKED, weight 保留原值 |
+| CORE 持仓 action=REDUCE 同上条件 | action → BLOCKED, weight 保留原值 |
+| CORE 持仓 action=EXIT 且 quality 降为 POOR | 允许 EXIT |
+| CORE 持仓 action=EXIT 且 Critic 给出 kill_shot | 允许 EXIT |
+| CORE 持仓 AccountingRisk=RED | 允许 EXIT |
+| SATELLITE 持仓任何卖出 | 允许 EXIT |
+| target_weight > 20% | 截断为 20% |
+| 总非阻断权重 > 100% | 按比例归一化 |
+
+**LLM 的职责边界**：
+
+- 能做：评估市场环境、为订单分配紧急度、写执行说明
+- 不能做：推翻规则层的 BLOCKED、修改 action、增减订单条目
+- 默认倾向：保守执行、减少冲击、尊重上游决策
+
+**紧急度语义**（Urgency → 执行天数映射，由下游 executor 消费）：
+
+| Urgency | 场景 | 天数 |
+|---------|------|------|
+| IMMEDIATE | RED 会计风险、kill_shot 驱动的 EXIT、PANIC 中的 CORE 加仓 | 1-2 |
+| NORMAL | 常规调仓 | 5 |
+| PATIENT | EUPHORIA 中的 BUY、CORE 的非紧急 ADD | 10+ |
+
+**与既有 MungerStrategy 执行器的关系**：
+当前回测执行器仅读 target_weight，对 urgency 标签尚未消费。Trader 的 tier/urgency 元数据会被持久化到 `candidate_store.json` 中的 `PortfolioHolding.position_tier` 字段（tier 已落地，urgency 留到后续版本消费）。
+
+**失败回退**：
+- Trader LLM 失败 → TraderAgent 内部回退到"规则-only"输出（orders 来自 pre_check 结果）
+- TraderAgent 整体失败 → decision_pipeline 回退使用 PortfolioStrategy 原始输出
+
+**关键效果**：上次回测中茅台在 2024-05（-15%）和 2025-09（-30%）被系统卖出的操作，在新架构下会被 pre_check 阻断——除非 Critic 在这些时点发现了茅台的 kill_shot 或会计转红。**CORE 仓的生命周期由"基本面永久性受损"决定，而不是"估值暂时难看"**。
+
 ## 5. 多 LLM Provider 支持
 
 系统需支持多个 LLM provider：

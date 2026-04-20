@@ -31,10 +31,17 @@ from poorcharlie.agents.portfolio_strategy import (
     PortfolioStrategyInput,
     StrategyHoldingInfo,
 )
+from poorcharlie.agents.trader import TraderAgent
 from poorcharlie.llm import LLMClient
 from poorcharlie.schemas.candidate import CandidateState, PortfolioHolding
 from poorcharlie.schemas.portfolio_strategy import ActionType
+from poorcharlie.schemas.trader import OrderAction, TraderInput
 from poorcharlie.store.candidate_store import CandidateStore
+from poorcharlie.workflow.change_detector import (
+    ChangeTrigger,
+    detect_change_triggers,
+    has_cold_start_marker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +186,27 @@ async def run_decision_pipeline(
         store.save()
         return {}
 
+    # ------------------------------------------------------------------
+    # Change detection: short-circuit if nothing material changed.
+    # Munger: "Never interrupt compound interest unnecessarily."
+    # ------------------------------------------------------------------
+    current_holdings_for_detect = store.get_current_holdings()
+    triggers = detect_change_triggers(candidates, current_holdings_for_detect)
+    is_cold_start = has_cold_start_marker(triggers)
+
+    if not triggers and current_holdings_for_detect:
+        logger.info(
+            "Decision pipeline: no change triggers — preserving previous "
+            "portfolio (%d holdings) and skipping LLM",
+            len(current_holdings_for_detect),
+        )
+        # Don't touch holdings; just re-save store to refresh last_updated.
+        store.save()
+        return store.to_portfolio_decisions()
+
+    # If there ARE triggers but no holdings yet, we need to run the pipeline
+    # anyway (cold start / first actual allocation).
+
     candidate_details = {
         c.ticker: c.model_dump(mode="json") for c in candidates
     }
@@ -259,6 +287,21 @@ async def run_decision_pipeline(
     current_holdings = store.get_current_holdings()
     current_weight = sum(h.target_weight for h in current_holdings)
 
+    # Pass change triggers to the LLM — so it knows WHY it was woken up
+    # and which positions deserve attention vs which should stay untouched.
+    # Cold-start marker is filtered out; it's a signal to the router, not
+    # useful context for the LLM itself.
+    trigger_dicts = [
+        {
+            "ticker": t.ticker,
+            "name": t.name,
+            "trigger_type": t.trigger_type.value,
+            "detail": t.detail,
+        }
+        for t in triggers
+        if not (t.ticker == "*" and t.name == "cold_start")
+    ]
+
     strategy_input = PortfolioStrategyInput(
         ranked_candidates=ranked,
         candidate_details=candidate_details,
@@ -269,10 +312,12 @@ async def run_decision_pipeline(
                 weight=h.target_weight,
                 industry=h.industry,
                 entry_reason=h.entry_reason,
+                position_tier=h.position_tier,
             )
             for h in current_holdings
         ],
         available_cash_pct=1.0 - current_weight,
+        change_triggers=trigger_dicts,
     )
 
     logger.info("Running PortfolioStrategyAgent (Layer 3)")
@@ -285,7 +330,67 @@ async def run_decision_pipeline(
         return store.to_portfolio_decisions()
 
     # ------------------------------------------------------------------
-    # Update store and return decisions
+    # Layer 4: Trader — final execution arbiter.
+    # Rules pre-check (CORE sell block, caps) + LLM (market regime, urgency)
+    # + rules post-check. Falls back to Strategy output if Trader fails.
+    # ------------------------------------------------------------------
+    logger.info("Running TraderAgent (Layer 4)")
+    trader_agent = TraderAgent(llm)
+    holdings_for_trader = [
+        {
+            "ticker": h.ticker,
+            "name": h.name,
+            "industry": h.industry,
+            "target_weight": h.target_weight,
+            "position_tier": h.position_tier,
+        }
+        for h in current_holdings
+    ]
+    trader_input = TraderInput(
+        proposed_decisions=[
+            {
+                "ticker": d.ticker,
+                "name": d.name,
+                "action": d.action.value,
+                "target_weight": d.target_weight,
+                "current_weight": d.current_weight,
+                "conviction_score": d.conviction_score,
+                "position_tier": d.position_tier.value,
+                "reason": d.reason,
+            }
+            for d in strategy_output.position_decisions
+        ],
+        current_holdings=holdings_for_trader,
+        candidate_details=candidate_details,
+        change_triggers=trigger_dicts,
+    )
+    try:
+        trader_output = await trader_agent.run(trader_input)
+        logger.info(
+            "Trader: regime=%s, blocked=%d, urgency=%s",
+            trader_output.market_regime.value,
+            trader_output.blocked_orders_count,
+            trader_output.overall_urgency.value,
+        )
+        for o in trader_output.orders:
+            logger.info(
+                "  %s %s [%s] %s weight=%.2f urgency=%s",
+                o.ticker, o.name, o.position_tier.value,
+                o.action.value, o.target_weight, o.urgency.value,
+            )
+    except Exception:
+        # If Trader fully fails (including its LLM fallback), we have no
+        # choice but to use Strategy output directly. But this is rare —
+        # TraderAgent.run() has an internal rules-only fallback already.
+        logger.error(
+            "Trader failed entirely — falling back to Strategy output",
+            exc_info=True,
+        )
+        trader_output = None
+
+    # ------------------------------------------------------------------
+    # Update store and return decisions.
+    # Use Trader output when available; Strategy output as fallback.
     # ------------------------------------------------------------------
     effective_date = scan_date or date.today()
     existing_entries = {
@@ -293,26 +398,85 @@ async def run_decision_pipeline(
         for h in store.get_current_holdings()
     }
     new_holdings = []
-    for d in strategy_output.position_decisions:
-        if d.action == ActionType.EXIT or d.target_weight <= 0:
-            continue
-        detail = candidate_details.get(d.ticker, {})
-        prev_date, prev_price = existing_entries.get(d.ticker, (None, None))
-        entry_date = prev_date or effective_date
-        entry_price = prev_price if prev_price is not None else detail.get("scan_close_price")
-        # LLM sometimes returns percentages (15.0) instead of fractions (0.15)
-        weight = d.target_weight
-        if weight > 1.0:
-            weight = weight / 100.0
-        new_holdings.append(PortfolioHolding(
-            ticker=d.ticker,
-            name=d.name,
-            industry=detail.get("industry", ""),
-            target_weight=weight,
-            entry_date=entry_date,
-            entry_reason=d.reason,
-            entry_price=entry_price,
-        ))
+
+    if trader_output is not None:
+        # Trader is the final arbiter. BLOCKED and EXIT are skipped (no
+        # holding to create); everything else becomes a PortfolioHolding.
+        for o in trader_output.orders:
+            if o.action in (OrderAction.EXIT, OrderAction.BLOCKED):
+                # BLOCKED means "keep current weight" — we still need to
+                # preserve the holding at the pre-check target_weight.
+                if o.action == OrderAction.BLOCKED and o.target_weight > 0:
+                    detail = candidate_details.get(o.ticker, {})
+                    prev_date, prev_price = existing_entries.get(
+                        o.ticker, (None, None),
+                    )
+                    entry_date = prev_date or effective_date
+                    entry_price = (
+                        prev_price if prev_price is not None
+                        else detail.get("scan_close_price")
+                    )
+                    new_holdings.append(PortfolioHolding(
+                        ticker=o.ticker,
+                        name=o.name,
+                        industry=detail.get("industry", ""),
+                        target_weight=o.target_weight,
+                        entry_date=entry_date,
+                        entry_reason=(
+                            o.rationale or o.blocked_reason
+                            or "preserved by Trader CORE protection"
+                        ),
+                        entry_price=entry_price,
+                        position_tier=o.position_tier.value,
+                    ))
+                continue
+            if o.target_weight <= 0:
+                continue
+            detail = candidate_details.get(o.ticker, {})
+            prev_date, prev_price = existing_entries.get(o.ticker, (None, None))
+            entry_date = prev_date or effective_date
+            entry_price = (
+                prev_price if prev_price is not None
+                else detail.get("scan_close_price")
+            )
+            weight = o.target_weight
+            if weight > 1.0:
+                weight = weight / 100.0
+            new_holdings.append(PortfolioHolding(
+                ticker=o.ticker,
+                name=o.name,
+                industry=detail.get("industry", ""),
+                target_weight=weight,
+                entry_date=entry_date,
+                entry_reason=o.rationale or "trader-confirmed",
+                entry_price=entry_price,
+                position_tier=o.position_tier.value,
+            ))
+    else:
+        # Strategy-only fallback path (used when Trader fails entirely).
+        for d in strategy_output.position_decisions:
+            if d.action == ActionType.EXIT or d.target_weight <= 0:
+                continue
+            detail = candidate_details.get(d.ticker, {})
+            prev_date, prev_price = existing_entries.get(d.ticker, (None, None))
+            entry_date = prev_date or effective_date
+            entry_price = (
+                prev_price if prev_price is not None
+                else detail.get("scan_close_price")
+            )
+            weight = d.target_weight
+            if weight > 1.0:
+                weight = weight / 100.0
+            new_holdings.append(PortfolioHolding(
+                ticker=d.ticker,
+                name=d.name,
+                industry=detail.get("industry", ""),
+                target_weight=weight,
+                entry_date=entry_date,
+                entry_reason=d.reason,
+                entry_price=entry_price,
+                position_tier=d.position_tier.value,
+            ))
 
     store.update_holdings(new_holdings, scan_date=effective_date)
     store.save()

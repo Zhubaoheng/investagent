@@ -483,6 +483,21 @@ def _extract_result(ctx: Any, stock: dict) -> dict:
         pass
 
     try:
+        critic = ctx.get_result("critic")
+        result["kill_shots"] = list(getattr(critic, "kill_shots", []) or [])
+    except (KeyError, AttributeError):
+        result["kill_shots"] = []
+
+    try:
+        ar = ctx.get_result("accounting_risk")
+        risk_level = getattr(ar, "risk_level", "")
+        result["accounting_risk_level"] = (
+            risk_level.value if hasattr(risk_level, "value") else str(risk_level)
+        )
+    except (KeyError, AttributeError):
+        result["accounting_risk_level"] = ""
+
+    try:
         info = ctx.get_result("info_capture")
         ms = getattr(info, "market_snapshot", None)
         if ms is not None and getattr(ms, "price", None) is not None:

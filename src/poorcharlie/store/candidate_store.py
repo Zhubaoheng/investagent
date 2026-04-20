@@ -79,6 +79,14 @@ class CandidateStore:
                     if prev is not None and prev.state == CandidateState.HELD
                     else CandidateState.ANALYZED
                 )
+                # Preserve previous scan's key fields for change detection.
+                # When prev is None (first time seeing this ticker), prev_*
+                # stays empty — change detector treats that as "no prior state".
+                prev_label = prev.final_label if prev is not None else ""
+                prev_quality = prev.enterprise_quality if prev is not None else ""
+                prev_kill_shots = list(prev.kill_shots) if prev is not None else []
+                prev_risk = prev.accounting_risk_level if prev is not None else ""
+                prev_scan = prev.scan_date if prev is not None else None
                 snapshot = CandidateSnapshot(
                     ticker=ticker,
                     name=r.get("name", ""),
@@ -98,6 +106,13 @@ class CandidateStore:
                     intrinsic_value_base=r.get("intrinsic_value_base"),
                     scan_close_price=r.get("scan_close_price"),
                     valuation_trigger_ratio=r.get("valuation_trigger_ratio"),
+                    kill_shots=list(r.get("kill_shots") or []),
+                    accounting_risk_level=r.get("accounting_risk_level", ""),
+                    prev_final_label=prev_label,
+                    prev_enterprise_quality=prev_quality,
+                    prev_kill_shots=prev_kill_shots,
+                    prev_accounting_risk_level=prev_risk,
+                    prev_scan_date=prev_scan,
                 )
                 self._state.candidates[ticker] = snapshot
             else:

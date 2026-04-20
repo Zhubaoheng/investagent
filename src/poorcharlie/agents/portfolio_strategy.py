@@ -7,13 +7,68 @@ with conviction-weighted sizing.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from pydantic import BaseModel
 
 from poorcharlie.agents.base import BaseAgent
 from poorcharlie.schemas.common import BaseAgentOutput
-from poorcharlie.schemas.portfolio_strategy import PortfolioStrategyOutput
+from poorcharlie.schemas.portfolio_strategy import (
+    PortfolioStrategyOutput,
+    PositionDecision,
+    PositionTier,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _enforce_core_tier_rules(
+    output: PortfolioStrategyOutput,
+    candidate_details: dict[str, dict],
+) -> PortfolioStrategyOutput:
+    """Post-process: downgrade illegitimate CORE claims to SATELLITE.
+
+    A position can only be CORE if BOTH:
+      1. enterprise_quality == "GREAT"
+      2. final_label == "INVESTABLE"
+
+    Without this guardrail, the LLM may be tempted to mark a merely good
+    holding as CORE out of optimism. CORE is the "sit on your ass forever"
+    tier — it must be earned.
+    """
+    downgrades: list[str] = []
+    new_decisions: list[PositionDecision] = []
+    for d in output.position_decisions:
+        if d.position_tier != PositionTier.CORE:
+            new_decisions.append(d)
+            continue
+
+        detail = candidate_details.get(d.ticker, {}) or {}
+        quality = (detail.get("enterprise_quality", "") or "").upper()
+        label = (detail.get("final_label", "") or "").upper()
+
+        eligible = quality == "GREAT" and label == "INVESTABLE"
+        if eligible:
+            new_decisions.append(d)
+        else:
+            downgrades.append(
+                f"{d.ticker} {d.name} (quality={quality or 'UNKNOWN'}, "
+                f"label={label or 'UNKNOWN'})"
+            )
+            new_decisions.append(
+                d.model_copy(update={"position_tier": PositionTier.SATELLITE}),
+            )
+
+    if downgrades:
+        logger.info(
+            "PortfolioStrategy post-process: downgraded %d CORE claim(s) "
+            "to SATELLITE — %s",
+            len(downgrades),
+            "; ".join(downgrades),
+        )
+
+    return output.model_copy(update={"position_decisions": new_decisions})
 
 
 class StrategyHoldingInfo(BaseModel, frozen=True):
@@ -22,6 +77,7 @@ class StrategyHoldingInfo(BaseModel, frozen=True):
     weight: float = 0.0
     industry: str = ""
     entry_reason: str = ""
+    position_tier: str = "SATELLITE"  # CORE or SATELLITE — propagated from PortfolioHolding
 
 
 class PortfolioStrategyInput(BaseModel, frozen=True):
@@ -29,6 +85,7 @@ class PortfolioStrategyInput(BaseModel, frozen=True):
     candidate_details: dict[str, dict] = {}  # ticker -> CandidateSnapshot summary
     current_holdings: list[StrategyHoldingInfo] = []
     available_cash_pct: float = 1.0
+    change_triggers: list[dict] = []  # [{ticker, name, trigger_type, detail}] — why we're re-evaluating
 
 
 class PortfolioStrategyAgent(BaseAgent):
@@ -44,6 +101,13 @@ class PortfolioStrategyAgent(BaseAgent):
             "你是组合策略代理（Portfolio Strategy Agent），负责将横向对比排名转化为具体的持仓决策。"
             "你为每个标的做出 BUY/HOLD/ADD/REDUCE/EXIT 决策，并给出基于确信度的仓位分配理由。"
             "你遵循芒格原则：集中持仓最好的主意，不够好就持现金。\n\n"
+            "【维持现状偏置 — 最重要的规则】\n"
+            "你被调用，是因为规则引擎在上一次扫描之后检测到了明确的变化触发（change_triggers）。"
+            "这不意味着整个组合都要重做，只意味着有**特定的信号**需要你回应。\n"
+            "默认动作是 **维持上期组合不变**。只对 change_triggers 里明确列出的标的做调整。"
+            "没有触发的持仓一律 HOLD 且保留上期 target_weight，不要因为'重新看了一眼觉得应该微调'就改权重。\n"
+            "芒格：'We are partial to putting out large amounts of money where we won't have to make another decision.'"
+            "'Never interrupt compound interest unnecessarily.'\n\n"
             "【长持偏置 — 关键规则】\n"
             "对已有持仓，默认动作是 HOLD，不是 REDUCE。只有在以下情形之一才 EXIT：\n"
             "  (a) upstream critic 报出非空的 kill_shots 或 permanent_loss_risks；\n"
@@ -100,6 +164,7 @@ class PortfolioStrategyAgent(BaseAgent):
                 "weight": f"{h.weight:.0%}",
                 "industry": h.industry or "未知",
                 "entry_reason": h.entry_reason or "无",
+                "position_tier": h.position_tier,
             })
 
         return {
@@ -107,4 +172,20 @@ class PortfolioStrategyAgent(BaseAgent):
             "current_holdings": holdings,
             "available_cash_pct": f"{data.available_cash_pct:.0%}",
             "has_holdings": len(holdings) > 0,
+            "change_triggers": data.change_triggers,
+            "has_triggers": len(data.change_triggers) > 0,
         }
+
+    async def run(
+        self, input_data: BaseModel, ctx: Any = None, *, max_retries: int = 2,
+    ) -> PortfolioStrategyOutput:
+        """Run LLM, then enforce CORE tier post-process rules."""
+        output: PortfolioStrategyOutput = await super().run(  # type: ignore[assignment]
+            input_data, ctx, max_retries=max_retries,
+        )
+        data = (
+            input_data
+            if isinstance(input_data, PortfolioStrategyInput)
+            else PortfolioStrategyInput.model_validate(input_data)
+        )
+        return _enforce_core_tier_rules(output, data.candidate_details)
