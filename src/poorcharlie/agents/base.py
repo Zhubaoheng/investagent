@@ -77,6 +77,37 @@ def _coerce_lists_to_strings(obj: Any, schema: dict[str, Any]) -> Any:
     return obj
 
 
+def _coerce_empty_string_to_none(obj: Any, schema: dict[str, Any]) -> Any:
+    """Coerce sentinel strings to None for object/array fields that allow null.
+
+    Qwen thinking-mode under tool_choice=auto sometimes fills a nullable
+    nested-object field (schema: ``anyOf: [$ref, null]``) with an empty
+    string ``""`` or the literal string ``"None"`` / ``"null"`` instead of
+    real null. Pydantic strict validation then rejects it with
+    ``input_type=str`` mismatching the expected model type. Coerce these
+    sentinel strings to ``None`` when the schema explicitly allows null.
+    """
+    if not isinstance(obj, dict) or not schema:
+        return obj
+    props = schema.get("properties", {})
+    for key, value in list(obj.items()):
+        prop = props.get(key, {})
+        if isinstance(value, str) and value.strip().lower() in ("", "none", "null"):
+            # Does this field expect an object/$ref AND allow null?
+            expects_obj_nullable = False
+            if "anyOf" in prop:
+                branches = prop["anyOf"]
+                has_null = any(b.get("type") == "null" for b in branches)
+                has_obj_or_ref = any(
+                    b.get("type") in ("object", "array") or "$ref" in b
+                    for b in branches
+                )
+                expects_obj_nullable = has_null and has_obj_or_ref
+            if expects_obj_nullable:
+                obj[key] = None
+    return obj
+
+
 def _coerce_strings_to_lists(obj: Any, schema: dict[str, Any]) -> Any:
     """Coerce string values to lists when the schema expects an array.
 
@@ -263,6 +294,7 @@ class BaseAgent(ABC):
             output_schema = self._output_type().model_json_schema()
             tool_input = _coerce_lists_to_strings(tool_input, output_schema)
             tool_input = _coerce_strings_to_lists(tool_input, output_schema)
+            tool_input = _coerce_empty_string_to_none(tool_input, output_schema)
 
             # Inject server-managed meta (overwrites anything the LLM emitted)
             meta = self._build_meta(self.name, response)

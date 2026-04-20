@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from poorcharlie.agents.base import (
     AgentOutputError,
     BaseAgent,
+    _coerce_empty_string_to_none,
     _coerce_lists_to_strings,
     _repair_json_strings,
 )
@@ -295,6 +296,9 @@ class FilingAgent(BaseAgent):
                     except (ValueError, TypeError):
                         tool_input[list_field] = []  # fallback: empty list
             tool_input = _coerce_lists_to_strings(
+                tool_input, FilingOutput.model_json_schema(),
+            )
+            tool_input = _coerce_empty_string_to_none(
                 tool_input, FilingOutput.model_json_schema(),
             )
 
